@@ -1,9 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 
-const INFURA_API_KEY = process.env.INFURA_API_KEY || "";
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "0000000000000000000000000000000000000000000000000000000000000000";
-
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
@@ -16,15 +13,18 @@ module.exports = {
     }
   },
   networks: {
-    defiOracleMeta: {
-      url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
-      chainId: 138,
-      accounts: [`0x${PRIVATE_KEY}`]
+    hardhat: {
+      chainId: 31337
     },
-    polygon: {
-      url: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+    defiOracleMeta: process.env.PRIVATE_KEY ? {
+      url: process.env.DEFI_ORACLE_META_RPC_URL || `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
+      chainId: 138,
+      accounts: [process.env.PRIVATE_KEY]
+    } : undefined,
+    polygon: process.env.PRIVATE_KEY ? {
+      url: process.env.POLYGON_RPC_URL || `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       chainId: 137,
-      accounts: [`0x${PRIVATE_KEY}`]
-    }
+      accounts: [process.env.PRIVATE_KEY]
+    } : undefined
   }
 };
