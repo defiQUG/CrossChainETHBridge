@@ -62,7 +62,7 @@ contract MockRouter is IRouterClient {
         address sender,
         bytes memory data
     ) external {
-        Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](0);
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
 
         IAny2EVMMessageReceiver(target).ccipReceive(
             Client.Any2EVMMessage({
@@ -70,7 +70,7 @@ contract MockRouter is IRouterClient {
                 sourceChainSelector: 1,
                 sender: abi.encode(sender),
                 data: data,
-                tokenAmounts: tokenAmounts
+                destTokenAmounts: destTokenAmounts
             })
         );
     }
