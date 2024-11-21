@@ -1,7 +1,7 @@
-require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-ethers");
 require("dotenv").config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.20",
@@ -12,7 +12,6 @@ module.exports = {
       }
     }
   },
-  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
       chainId: 31337

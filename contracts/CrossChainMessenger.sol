@@ -24,7 +24,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable {
      * @dev Constructor initializes the contract with Chainlink's Router address
      * @param _router The address of Chainlink's CCIP Router contract
      */
-    constructor(address _router) CCIPReceiver(_router) Ownable(msg.sender) {}
+    constructor(address _router) CCIPReceiver(_router) {}
 
     /**
      * @dev Sends ETH to Polygon, converting it to WETH
