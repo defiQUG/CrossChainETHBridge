@@ -45,11 +45,11 @@ contract CrossChainMessenger is CCIPReceiver, Ownable {
         });
 
         // Get the fee for sending message
-        uint256 fee = IRouterClient(router).getFee(POLYGON_SELECTOR, message);
+        uint256 fee = IRouterClient(i_router).getFee(POLYGON_SELECTOR, message);
         require(msg.value > fee, "Insufficient ETH for fees");
 
         // Send the message
-        bytes32 messageId = IRouterClient(router).ccipSend{value: msg.value}(
+        bytes32 messageId = IRouterClient(i_router).ccipSend{value: msg.value}(
             POLYGON_SELECTOR,
             message
         );
