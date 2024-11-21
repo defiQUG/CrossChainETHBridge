@@ -39,7 +39,10 @@ contract CrossChainMessenger is CCIPReceiver, Ownable {
             data: "",
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.EVMExtraArgsV1({gasLimit: 200_000})
+                Client.EVMExtraArgsV1({
+                    gasLimit: 200_000,
+                    strict: false
+                })
             ),
             feeToken: address(0) // Use native token for fees
         });
