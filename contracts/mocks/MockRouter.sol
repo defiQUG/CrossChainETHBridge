@@ -29,7 +29,7 @@ contract MockRouter is IRouterClient {
         emit MessageSent(
             messageId,
             destinationChainSelector,
-            message.receiver,
+            address(bytes20(message.receiver)), // Fix: Convert bytes to address
             message.data,
             address(0),
             msg.value
@@ -49,6 +49,12 @@ contract MockRouter is IRouterClient {
         return true;
     }
 
+    // Implement missing interface function
+    function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory tokens) {
+        tokens = new address[](0);
+        return tokens;
+    }
+
     // Helper function to simulate receiving messages
     function simulateMessageReceived(
         address target,
@@ -56,13 +62,15 @@ contract MockRouter is IRouterClient {
         address sender,
         bytes memory data
     ) external {
+        Client.EVMTokenAmount[] memory tokenAmounts = new Client.EVMTokenAmount[](0);
+
         IAny2EVMMessageReceiver(target).ccipReceive(
             Client.Any2EVMMessage({
                 messageId: messageId,
                 sourceChainSelector: 1,
                 sender: abi.encode(sender),
                 data: data,
-                tokenAmounts: new Client.EVMTokenAmount[](0)
+                tokenAmounts: tokenAmounts
             })
         );
     }
