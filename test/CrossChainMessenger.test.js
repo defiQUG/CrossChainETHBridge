@@ -8,8 +8,6 @@ describe("CrossChainMessenger", function () {
   let addr1;
   let addr2;
   let mockRouter;
-  const destinationChainSelector = "12532609583862916517"; // Example chain selector
-  const mockReceiver = "0x1234567890123456789012345678901234567890";
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
@@ -30,96 +28,107 @@ describe("CrossChainMessenger", function () {
       expect(await messenger.owner()).to.equal(owner.address);
     });
 
-    it("Should set the correct router address", async function () {
-      expect(await messenger.getRouter()).to.equal(mockRouter.address);
+    it("Should have correct chain selectors", async function () {
+      expect(await messenger.DEFI_ORACLE_META_SELECTOR()).to.equal(138);
+      expect(await messenger.POLYGON_SELECTOR()).to.equal(137);
     });
   });
 
-  describe("Cross-chain messaging", function () {
-    const message = ethers.utils.defaultAbiCoder.encode(["string"], ["Hello, Cross-chain!"]);
-    const fee = ethers.utils.parseEther("0.1");
+  describe("ETH Bridging", function () {
+    const receiverAddress = addr1.address;
+    const sendAmount = ethers.utils.parseEther("1.0");
+    const mockFee = ethers.utils.parseEther("0.1");
 
     beforeEach(async function () {
-      // Fund the contract for message fees
-      await owner.sendTransaction({
-        to: messenger.address,
-        value: ethers.utils.parseEther("1.0")
-      });
+      // Mock the router's getFee function to return our mock fee
+      await mockRouter.setFee(mockFee);
     });
 
-    it("Should send cross-chain message successfully", async function () {
-      const tx = await messenger.sendMessage(
-        destinationChainSelector,
-        mockReceiver,
-        message,
-        { value: fee }
-      );
+    it("Should send ETH to Polygon successfully", async function () {
+      const tx = await messenger.sendToPolygon(receiverAddress, {
+        value: sendAmount
+      });
 
       await expect(tx)
         .to.emit(messenger, "MessageSent")
-        .withArgs(destinationChainSelector, mockReceiver, message);
+        .withArgs(
+          ethers.BigNumber.from(0), // messageId from mock
+          owner.address,
+          sendAmount.sub(mockFee)
+        );
     });
 
-    it("Should fail when sending message with insufficient fee", async function () {
-      const insufficientFee = ethers.utils.parseEther("0.01");
+    it("Should fail when sending with insufficient ETH", async function () {
+      const insufficientAmount = mockFee.div(2);
       await expect(
-        messenger.sendMessage(
-          destinationChainSelector,
-          mockReceiver,
-          message,
-          { value: insufficientFee }
-        )
-      ).to.be.revertedWith("Insufficient fee");
-    });
-
-    it("Should handle message receipt correctly", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const sender = addr1.address;
-
-      await expect(
-        messenger.connect(mockRouter).ccipReceive({
-          messageId,
-          sender,
-          data: message
+        messenger.sendToPolygon(receiverAddress, {
+          value: insufficientAmount
         })
-      )
+      ).to.be.revertedWith("Insufficient ETH for fees");
+    });
+
+    it("Should handle CCIP message receipt correctly", async function () {
+      const messageId = ethers.utils.id("testMessage");
+      const sourceChain = 138; // DEFI_ORACLE_META_SELECTOR
+      const amount = ethers.utils.parseEther("0.5");
+
+      const message = {
+        messageId,
+        sourceChainSelector: sourceChain,
+        sender: mockRouter.address,
+        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
+        destTokenAmounts: [{
+          amount: amount
+        }]
+      };
+
+      await expect(messenger.connect(mockRouter)._ccipReceive(message))
         .to.emit(messenger, "MessageReceived")
-        .withArgs(messageId, sender, message);
+        .withArgs(messageId, receiverAddress, amount);
+    });
+
+    it("Should reject messages from invalid source chain", async function () {
+      const messageId = ethers.utils.id("testMessage");
+      const invalidSourceChain = 1; // Invalid chain selector
+
+      const message = {
+        messageId,
+        sourceChainSelector: invalidSourceChain,
+        sender: mockRouter.address,
+        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
+        destTokenAmounts: []
+      };
+
+      await expect(
+        messenger.connect(mockRouter)._ccipReceive(message)
+      ).to.be.revertedWith("Message from invalid chain");
     });
   });
 
-  describe("Security and Access Control", function () {
-    it("Should only allow router to call ccipReceive", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const sender = addr1.address;
+  describe("Security", function () {
+    it("Should only allow router to call _ccipReceive", async function () {
+      const message = {
+        messageId: ethers.utils.id("testMessage"),
+        sourceChainSelector: 138,
+        sender: addr1.address,
+        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+        destTokenAmounts: []
+      };
 
       await expect(
-        messenger.connect(addr1).ccipReceive({
-          messageId,
-          sender,
-          data: ethers.utils.defaultAbiCoder.encode(["string"], ["Test"])
-        })
-      ).to.be.revertedWith("Only router can call");
+        messenger.connect(addr1)._ccipReceive(message)
+      ).to.be.revertedWith("Caller is not the router");
     });
 
-    it("Should allow owner to withdraw funds", async function () {
+    it("Should allow contract to receive ETH", async function () {
       const amount = ethers.utils.parseEther("1.0");
       await owner.sendTransaction({
         to: messenger.address,
         value: amount
       });
 
-      const initialBalance = await ethers.provider.getBalance(owner.address);
-      await messenger.connect(owner).withdraw();
-      const finalBalance = await ethers.provider.getBalance(owner.address);
-
-      expect(finalBalance.sub(initialBalance)).to.be.gt(0);
-    });
-
-    it("Should not allow non-owner to withdraw funds", async function () {
-      await expect(
-        messenger.connect(addr1).withdraw()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      const balance = await ethers.provider.getBalance(messenger.address);
+      expect(balance).to.equal(amount);
     });
   });
 });
