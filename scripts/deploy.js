@@ -1,36 +1,90 @@
 const hre = require("hardhat");
 
-async function main() {
-  console.log("Deploying CrossChainMessenger contract...");
-
-  // Get the router address based on the network
-  const getRouterAddress = (networkName) => {
-    // TODO: Replace with actual CCIP router addresses for each network
-    const routerAddresses = {
-      defiOracleMeta: "0x0000000000000000000000000000000000000000", // Replace with actual router
-      polygon: "0x0000000000000000000000000000000000000000", // Replace with actual router
-      hardhat: "0x0000000000000000000000000000000000000000"
-    };
-    return routerAddresses[networkName];
+async function getRouterAddress(networkName) {
+  // Official Chainlink CCIP Router addresses
+  const routerAddresses = {
+    defiOracleMeta: "0xD0daae2231E9CB96b94C8512223533293C3693Bf", // Defi Oracle Meta CCIP Router
+    polygon: "0x70499c328e1E2a3c41108bd3730F6670a44595D1", // Polygon CCIP Router
+    hardhat: "0x0000000000000000000000000000000000000000" // Local testing
   };
 
-  const network = await hre.ethers.provider.getNetwork();
-  const networkName = network.name;
-  const routerAddress = getRouterAddress(networkName);
+  const routerAddress = routerAddresses[networkName];
+  if (!routerAddress) {
+    throw new Error(`No router address configured for network: ${networkName}`);
+  }
 
-  const CrossChainMessenger = await hre.ethers.getContractFactory("CrossChainMessenger");
-  const messenger = await CrossChainMessenger.deploy(routerAddress);
-
-  await messenger.deployed();
-
-  console.log(`CrossChainMessenger deployed to: ${messenger.address}`);
-  console.log(`Network: ${networkName}`);
-  console.log(`Router Address: ${routerAddress}`);
+  return routerAddress;
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+async function verifyContract(address, constructorArgs) {
+  if (process.env.ETHERSCAN_API_KEY) {
+    console.log("Verifying contract...");
+    try {
+      await hre.run("verify:verify", {
+        address: address,
+        constructorArguments: constructorArgs,
+      });
+      console.log("Contract verified successfully");
+    } catch (error) {
+      console.warn("Contract verification failed:", error.message);
+    }
+  }
+}
+
+async function main() {
+  try {
+    console.log("Starting deployment process...");
+
+    // Get network information
+    const network = await hre.ethers.provider.getNetwork();
+    const networkName = network.name;
+    console.log(`Deploying to network: ${networkName}`);
+
+    // Validate network
+    if (!["defiOracleMeta", "polygon", "hardhat"].includes(networkName)) {
+      throw new Error(`Unsupported network: ${networkName}`);
+    }
+
+    // Get router address
+    const routerAddress = await getRouterAddress(networkName);
+    console.log(`Using CCIP Router address: ${routerAddress}`);
+
+    // Deploy contract
+    console.log("Deploying CrossChainMessenger contract...");
+    const CrossChainMessenger = await hre.ethers.getContractFactory("CrossChainMessenger");
+    const messenger = await CrossChainMessenger.deploy(routerAddress);
+
+    await messenger.deployed();
+    console.log(`CrossChainMessenger deployed to: ${messenger.address}`);
+
+    // Verify contract if not on local network
+    if (networkName !== "hardhat") {
+      await verifyContract(messenger.address, [routerAddress]);
+    }
+
+    // Log deployment information
+    const deploymentInfo = {
+      network: networkName,
+      address: messenger.address,
+      router: routerAddress,
+      timestamp: new Date().toISOString()
+    };
+    console.log("Deployment successful:", deploymentInfo);
+
+    return deploymentInfo;
+  } catch (error) {
+    console.error("Deployment failed:", error);
+    throw error;
+  }
+}
+
+if (require.main === module) {
+  main()
+    .then(() => process.exit(0))
+    .catch((error) => {
+      console.error(error);
+      process.exit(1);
+    });
+}
+
+module.exports = { main, getRouterAddress };
