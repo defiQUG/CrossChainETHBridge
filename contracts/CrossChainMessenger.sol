@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import {CCIPReceiver} from "@chainlink/contracts-ccip/src/v0.8/ccip/applications/CCIPReceiver.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @title CrossChainMessenger
  * @dev A contract for bridging ETH between Defi Oracle Meta Mainnet and Polygon PoS using Chainlink's CCIP
  */
-contract CrossChainMessenger is Ownable {
-    // Chainlink Router interface for cross-chain communication
-    IRouterClient private immutable router;
-
+contract CrossChainMessenger is CCIPReceiver, Ownable {
     // Chain selectors for source and destination chains
     uint64 public constant DEFI_ORACLE_META_SELECTOR = 138;
     uint64 public constant POLYGON_SELECTOR = 137;
@@ -26,9 +24,7 @@ contract CrossChainMessenger is Ownable {
      * @dev Constructor initializes the contract with Chainlink's Router address
      * @param _router The address of Chainlink's CCIP Router contract
      */
-    constructor(address _router) Ownable(msg.sender) {
-        router = IRouterClient(_router);
-    }
+    constructor(address _router) CCIPReceiver(_router) Ownable(msg.sender) {}
 
     /**
      * @dev Sends ETH to Polygon, converting it to WETH
@@ -42,16 +38,18 @@ contract CrossChainMessenger is Ownable {
             receiver: abi.encode(_receiver),
             data: "",
             tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
+            extraArgs: Client._argsToBytes(
+                Client.EVMExtraArgsV1({gasLimit: 200_000})
+            ),
             feeToken: address(0) // Use native token for fees
         });
 
         // Get the fee for sending message
-        uint256 fee = router.getFee(POLYGON_SELECTOR, message);
+        uint256 fee = IRouterClient(router).getFee(POLYGON_SELECTOR, message);
         require(msg.value > fee, "Insufficient ETH for fees");
 
         // Send the message
-        bytes32 messageId = router.ccipSend{value: msg.value}(
+        bytes32 messageId = IRouterClient(router).ccipSend{value: msg.value}(
             POLYGON_SELECTOR,
             message
         );
@@ -61,20 +59,20 @@ contract CrossChainMessenger is Ownable {
 
     /**
      * @dev Handles incoming messages from other chains
-     * @param message The CCIP message containing transfer details
+     * @param any2EvmMessage The CCIP message containing transfer details
      */
-    function _ccipReceive(Client.Any2EVMMessage memory message) internal {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override {
         require(
-            message.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
+            any2EvmMessage.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
             "Message from invalid chain"
         );
 
-        address receiver = abi.decode(message.receiver, (address));
+        address receiver = abi.decode(any2EvmMessage.data, (address));
 
         emit MessageReceived(
-            message.messageId,
+            any2EvmMessage.messageId,
             receiver,
-            message.amount
+            any2EvmMessage.destTokenAmounts.length > 0 ? any2EvmMessage.destTokenAmounts[0].amount : 0
         );
     }
 
