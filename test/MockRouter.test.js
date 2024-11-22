@@ -83,8 +83,9 @@ describe("MockRouter", function () {
 
   describe("Message Handling", function () {
     it("Should emit MessageSent event on ccipSend", async function () {
+      const encodedAddress = "0x" + addr1.address.slice(2).padStart(40, "0");
       const message = {
-        receiver: "0x" + addr1.address.slice(2).padStart(40, "0"),
+        receiver: encodedAddress,
         data: "0x",
         tokenAmounts: [],
         extraArgs: "0x",
@@ -95,7 +96,7 @@ describe("MockRouter", function () {
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
           ["uint64", "bytes", "bytes"],
-          [137, bytes20Address, message.data]
+          [137, encodedAddress, message.data]
         )
       );
       await mockRouter.setNextMessageId(messageId);
