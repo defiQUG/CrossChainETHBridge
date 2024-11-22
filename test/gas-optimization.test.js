@@ -21,9 +21,9 @@ describe("Gas Optimization Tests", function() {
     mockWeth = await MockWETH.deploy();
     await mockWeth.deployed();
 
-    // Deploy CrossChainMessenger with both router and WETH addresses
+    // Deploy CrossChainMessenger with router, WETH addresses, and maxMessagesPerPeriod
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address, mockWeth.address);
+    crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address, mockWeth.address, 100); // 100 messages per period
     await crossChainMessenger.deployed();
   });
 
@@ -45,14 +45,26 @@ describe("Gas Optimization Tests", function() {
       });
 
       const messageId = ethers.utils.formatBytes32String("testMessage");
-      const sourceChainSelector = 138;
+      const sourceChainSelector = 138; // Defi Oracle Meta Chain ID
+      const sender = ethers.utils.hexZeroPad(owner.address, 32);
+      const data = ethers.utils.defaultAbiCoder.encode(
+        ['address', 'uint256'],
+        [user.address, amount]
+      );
+
+      // Create CCIP message format
+      const message = {
+        messageId: messageId,
+        sourceChainSelector: sourceChainSelector,
+        sender: sender,
+        data: data,
+        destTokenAmounts: []
+      };
 
       // Send message directly to the target using MockRouter's sendMessage function
       const tx = await mockRouter.simulateMessageReceived(
         crossChainMessenger.address,
-        messageId,
-        owner.address,
-        amount
+        message
       );
 
       const receipt = await tx.wait();

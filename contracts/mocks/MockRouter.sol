@@ -65,23 +65,21 @@ contract MockRouter is IRouterClient {
 
     function simulateMessageReceived(
         address target,
-        bytes32 messageId,
-        address sender,
-        uint256 amount
+        Client.Any2EVMMessage memory message
     ) external {
-        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
-        bytes memory data = abi.encode(msg.sender, amount);
-        bytes memory encodedSender = abi.encodePacked(sender);
+        require(message.sourceChainSelector == 138, "Invalid source chain");
+        require(target != address(0), "Invalid target address");
 
-        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
-            messageId: messageId,
-            sourceChainSelector: 138, // Defi Oracle Meta Mainnet
-            sender: encodedSender,
-            data: data,
-            destTokenAmounts: destTokenAmounts
-        });
-
-        IAny2EVMMessageReceiver(target).ccipReceive(message);
+        // Ensure the message format matches what CrossChainMessenger expects
+        IAny2EVMMessageReceiver(target).ccipReceive(
+            Client.Any2EVMMessage({
+                messageId: message.messageId,
+                sourceChainSelector: message.sourceChainSelector,
+                sender: message.sender,
+                data: message.data,
+                destTokenAmounts: message.destTokenAmounts
+            })
+        );
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
