@@ -11,6 +11,7 @@
   "license": "ISC",
   "devDependencies": {
     "@chainlink/contracts-ccip": "^0.7.6",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "@openzeppelin/contracts": "4.9.3",
@@ -18,6 +19,8 @@
     "dotenv": "^16.4.5",
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.7.2",
-    "hardhat": "2.12.7"
+    "hardhat": "2.12.7",
+    "hardhat-gas-reporter": "^2.2.1",
+    "solidity-coverage": "^0.8.13"
   }
 }

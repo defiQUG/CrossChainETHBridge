@@ -1,10 +1,11 @@
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-ethers");
-require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
+require("solidity-coverage");
+require("hardhat-gas-reporter");
 
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.19",
     settings: {
       optimizer: {
         enabled: true,
@@ -16,5 +17,14 @@ module.exports = {
     hardhat: {
       chainId: 31337
     }
+  },
+  gasReporter: {
+    enabled: true,
+    currency: 'USD',
+    outputFile: 'gas-report.txt',
+    noColors: true
+  },
+  mocha: {
+    timeout: 40000
   }
 };
