@@ -8,10 +8,17 @@ import "@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
+interface IWETH {
+    function deposit() external payable;
+    function withdraw(uint256) external;
+    function transfer(address to, uint256 value) external returns (bool);
+}
+
 contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable router;
+    IWETH public immutable weth;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
     uint256 public bridgeFee;
     uint256 public messageCounter;
@@ -22,9 +29,11 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
     event BridgeFeeUpdated(uint256 newFee);
     event EmergencyWithdraw(address indexed recipient, uint256 amount);
 
-    constructor(address _router) {
+    constructor(address _router, address _weth) {
         require(_router != address(0), "Invalid router address");
+        require(_weth != address(0), "Invalid WETH address");
         router = IRouterClient(_router);
+        weth = IWETH(_weth);
         bridgeFee = 0.1 ether;
     }
 
