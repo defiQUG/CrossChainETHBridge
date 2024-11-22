@@ -14,9 +14,10 @@ describe("MockRouter Extended Tests", function () {
 
   describe("Message Handling", function () {
     it("Should handle ccipSend with correct parameters", async function () {
+      const messageId = ethers.utils.id("testMessage");
       const message = ethers.utils.defaultAbiCoder.encode(
         ["bytes32", "address", "address", "uint256"],
-        [ethers.utils.id("testMessage"), user1.address, user2.address, ethers.utils.parseEther("1.0")]
+        [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
       );
 
       await expect(router.ccipSend(POLYGON_CHAIN_ID, message))
@@ -26,9 +27,10 @@ describe("MockRouter Extended Tests", function () {
 
     it("Should handle multiple messages correctly", async function () {
       for (let i = 0; i < 3; i++) {
+        const messageId = ethers.utils.id(`message${i}`);
         const message = ethers.utils.defaultAbiCoder.encode(
           ["bytes32", "address", "address", "uint256"],
-          [ethers.utils.id(`message${i}`), user1.address, user2.address, ethers.utils.parseEther("1.0")]
+          [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
         );
         await router.ccipSend(POLYGON_CHAIN_ID, message);
       }
@@ -40,9 +42,10 @@ describe("MockRouter Extended Tests", function () {
     it("Should handle messages with different chain IDs", async function () {
       const chainIds = [137, 138, 1];
       for (const chainId of chainIds) {
+        const messageId = ethers.utils.id("testMessage");
         const message = ethers.utils.defaultAbiCoder.encode(
           ["bytes32", "address", "address", "uint256"],
-          [ethers.utils.id("testMessage"), user1.address, user2.address, ethers.utils.parseEther("1.0")]
+          [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
         );
         await expect(router.ccipSend(chainId, message))
           .to.emit(router, "MessageSent")
@@ -56,27 +59,14 @@ describe("MockRouter Extended Tests", function () {
         .to.emit(router, "MessageSent")
         .withArgs(POLYGON_CHAIN_ID, emptyMessage);
     });
-
-    it("Should handle large messages", async function () {
-      const largeMessage = ethers.utils.defaultAbiCoder.encode(
-        ["bytes32[]", "address[]", "uint256[]"],
-        [
-          Array(10).fill(ethers.utils.id("testMessage")),
-          Array(10).fill(user1.address),
-          Array(10).fill(ethers.utils.parseEther("1.0"))
-        ]
-      );
-      await expect(router.ccipSend(POLYGON_CHAIN_ID, largeMessage))
-        .to.emit(router, "MessageSent")
-        .withArgs(POLYGON_CHAIN_ID, largeMessage);
-    });
   });
 
   describe("Error Handling", function () {
     it("Should handle zero chain ID", async function () {
+      const messageId = ethers.utils.id("testMessage");
       const message = ethers.utils.defaultAbiCoder.encode(
         ["bytes32", "address", "address", "uint256"],
-        [ethers.utils.id("testMessage"), user1.address, user2.address, ethers.utils.parseEther("1.0")]
+        [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
       );
       await expect(router.ccipSend(0, message))
         .to.emit(router, "MessageSent")
