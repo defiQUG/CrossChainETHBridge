@@ -98,21 +98,16 @@ describe("CrossChainMessenger", function () {
         value: amount
       });
 
-      // Encode the receiver address as bytes20
-      const bytes20Receiver = ethers.utils.hexDataSlice(
-        ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
-        12
-      );
-
       const encodedData = ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256"],
         [receiverAddress, amount]
       );
 
+      // Calculate message ID using the same method as MockRouter.simulateMessageReceived
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
-          ["uint64", "bytes", "bytes"],
-          [sourceChain, bytes20Receiver, encodedData]
+          ["uint64", "address", "bytes"],
+          [sourceChain, mockRouter.address, encodedData]
         )
       );
       await mockRouter.setNextMessageId(messageId);
