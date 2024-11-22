@@ -200,5 +200,8 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         _unpause();
     }
 
-    receive() external payable nonReentrant whenNotPaused {}
+    receive() external payable nonReentrant whenNotPaused {
+        // Emit an event for monitoring
+        emit MessageReceived(bytes32(0), msg.sender, msg.value);
+    }
 }
