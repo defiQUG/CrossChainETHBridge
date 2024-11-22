@@ -55,30 +55,32 @@ describe("MockRouter Coverage Tests", function() {
     it("Should validate message data correctly", async function() {
       const message = {
         sourceChainSelector: DOM_CHAIN_SELECTOR,
-        sender: ethers.utils.hexZeroPad(addr1.address, 32),
-        data: ethers.utils.defaultAbiCoder.encode(
+        sender: ethers.utils.hexlify(ethers.utils.zeroPad(addr1.address, 32)),
+        data: ethers.utils.hexlify(ethers.utils.defaultAbiCoder.encode(
           ["address", "uint256"],
           [addr2.address, ethers.utils.parseEther("1.0")]
-        ),
+        )),
         destTokenAmounts: []
       };
 
-      expect(await mockRouter.validateMessage(message)).to.be.true;
+      const encodedMessage = Client.Any2EVMMessage(message);
+      expect(await mockRouter.validateMessage(encodedMessage)).to.be.true;
     });
 
     it("Should handle message validation errors", async function() {
       const message = {
         sourceChainSelector: 0n,
-        sender: ethers.utils.hexZeroPad(addr1.address, 32),
-        data: ethers.utils.defaultAbiCoder.encode(
+        sender: ethers.utils.hexlify(ethers.utils.zeroPad(addr1.address, 32)),
+        data: ethers.utils.hexlify(ethers.utils.defaultAbiCoder.encode(
           ["address", "uint256"],
           [addr2.address, ethers.utils.parseEther("1.0")]
-        ),
+        )),
         destTokenAmounts: []
       };
 
+      const encodedMessage = Client.Any2EVMMessage(message);
       await expect(
-        mockRouter.validateMessage(message)
+        mockRouter.validateMessage(encodedMessage)
       ).to.be.revertedWith("Invalid chain selector");
     });
   });
