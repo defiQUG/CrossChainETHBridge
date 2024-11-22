@@ -166,11 +166,15 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
-            // Fund the contract first
+            // Fund the contract with ETH
             await owner.sendTransaction({
                 to: crossChainMessenger.address,
                 value: ethers.utils.parseEther("10")
             });
+
+            // Fund contract with WETH
+            await mockWETH.deposit({ value: ethers.utils.parseEther("10") });
+            await mockWETH.transfer(crossChainMessenger.address, ethers.utils.parseEther("10"));
 
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
