@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
+const { ethers } = require('hardhat');
 
 // Ensure logs directory exists
 !fs.existsSync('logs') && fs.mkdirSync('logs');
@@ -45,9 +45,11 @@ async function verifyHardhatNode() {
         id: 1
       })
     });
+    if (!response.ok) return false;
     const data = await response.json();
     return data.result !== undefined;
   } catch (error) {
+    console.error('Error verifying Hardhat node:', error);
     return false;
   }
 }
@@ -78,6 +80,7 @@ async function main() {
         nodeRunning = true;
         break;
       }
+      console.log('Retrying node verification...');
     }
 
     if (!nodeRunning) {
