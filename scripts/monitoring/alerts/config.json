@@ -1,0 +1,28 @@
+{
+  "thresholds": {
+    "gasPrice": {
+      "warning": 100,
+      "critical": 200
+    },
+    "messageDelay": {
+      "warning": 300,
+      "critical": 600
+    },
+    "failedMessages": {
+      "warning": 2,
+      "critical": 5
+    }
+  },
+  "networks": {
+    "defiOracleMeta": {
+      "chainId": 138,
+      "name": "Defi Oracle Meta Mainnet",
+      "rpcUrl": "https://rpc.oracle.defi.meta"
+    },
+    "polygon": {
+      "chainId": 137,
+      "name": "Polygon PoS",
+      "rpcUrl": "https://polygon-rpc.com"
+    }
+  }
+}
