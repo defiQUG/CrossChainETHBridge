@@ -18,6 +18,6 @@ contract MockWETH is ERC20 {
     }
 
     receive() external payable {
-        this.deposit();
+        deposit();
     }
 }
