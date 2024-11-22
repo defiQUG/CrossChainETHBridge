@@ -334,7 +334,11 @@ describe("CrossChainMessenger", function () {
     it("Should prevent reentrant calls", async function () {
       // Deploy a new instance of CrossChainMessenger for this test
       const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-      const testMessenger = await CrossChainMessenger.deploy(mockRouter.address);
+      const testMessenger = await CrossChainMessenger.deploy(
+        mockRouter.address,
+        138, // Defi Oracle Meta chain selector
+        137  // Polygon chain selector
+      );
       await testMessenger.deployed();
 
       // Verify the messenger is deployed
