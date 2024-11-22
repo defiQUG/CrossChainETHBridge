@@ -7,10 +7,11 @@ import "./MockRouter.sol";
 contract ReentrancyAttacker {
     CrossChainMessenger public messenger;
     MockRouter public router;
-    bool public attacking;
+    uint256 public attackCount;
     uint256 public constant ATTACK_VALUE = 1 ether;
+    bool public attacking;
 
-    event AttackAttempted(bool success);
+    event AttackAttempted(uint256 attempt, bool success);
 
     constructor(address payable _messenger, address _router) {
         require(_messenger != address(0) && _router != address(0), "Invalid addresses");
@@ -21,23 +22,46 @@ contract ReentrancyAttacker {
     // Main attack function that initiates the reentrancy attempt
     function attack() external payable {
         require(msg.value >= ATTACK_VALUE, "Insufficient ETH");
+        require(!attacking, "Attack in progress");
+
         attacking = true;
+        attackCount = 0;
 
         // First call to potentially trigger a refund
         try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
-            emit AttackAttempted(true);
+            emit AttackAttempted(attackCount, true);
         } catch {
-            emit AttackAttempted(false);
+            emit AttackAttempted(attackCount, false);
+            attacking = false;
         }
     }
 
     // Fallback function that attempts reentry during refund
     fallback() external payable {
-        if (attacking) {
-            attacking = false; // Prevent recursive fallback
-            messenger.sendToPolygon{value: address(this).balance}(address(this));
+        if (attacking && attackCount < 3) {
+            attackCount++;
+
+            // Try to reenter during ETH transfer
+            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+                emit AttackAttempted(attackCount, true);
+            } catch {
+                emit AttackAttempted(attackCount, false);
+                attacking = false;
+            }
         }
     }
 
-    receive() external payable {}
+    receive() external payable {
+        if (attacking && attackCount < 3) {
+            attackCount++;
+
+            // Try to reenter during ETH transfer
+            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+                emit AttackAttempted(attackCount, true);
+            } catch {
+                emit AttackAttempted(attackCount, false);
+                attacking = false;
+            }
+        }
+    }
 }
