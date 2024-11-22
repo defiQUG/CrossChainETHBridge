@@ -1,12 +1,1 @@
-const { ethers } = require("ethers");
-
-module.exports = {
-  POLYGON_CHAIN_ID: 137,
-  DEFI_ORACLE_META_CHAIN_ID: 138,
-  CHECK_INTERVAL: 60000,
-  MAX_GAS_PRICE: ethers.utils.parseUnits("100", "gwei"),
-  MAX_MESSAGES_PER_HOUR: 100,
-  ALERT_THRESHOLD_MESSAGES: 80,
-  CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000",
-  RPC_URL: process.env.RPC_URL || "http://127.0.0.1:8545"
-};
+require('dotenv').config();\n\nmodule.exports = {\n    networks: {\n        polygon: {\n            chainId: 137,\n            name: 'Polygon PoS',\n            rpc: process.env.POLYGON_RPC || 'https://polygon-rpc.com'\n        },\n        defiOracle: {\n            chainId: 138,\n            name: 'Defi Oracle Meta',\n            rpc: process.env.DEFI_ORACLE_RPC\n        }\n    },\n    contracts: {\n        CrossChainMessenger: process.env.CROSS_CHAIN_MESSENGER_ADDRESS\n    },\n    monitoring: {\n        interval: 60000,\n        retries: 3,\n        timeout: 30000\n    },\n    alerts: {\n        maxMessagesPer1h: 100,\n        minBalance: '1000000000000000000'\n    }\n};
