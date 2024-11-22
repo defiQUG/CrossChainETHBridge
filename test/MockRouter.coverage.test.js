@@ -100,6 +100,7 @@ describe("MockRouter Coverage Tests", function () {
     });
 
     it("Should handle fee calculations correctly", async function () {
+      // Test fee calculation with message object
       const message = {
         receiver: ethers.utils.defaultAbiCoder.encode(['address'], [addr1.address]),
         data: ethers.utils.defaultAbiCoder.encode(
@@ -111,7 +112,6 @@ describe("MockRouter Coverage Tests", function () {
         feeToken: ethers.constants.AddressZero
       };
 
-      // Test fee calculation with message object
       const messageFee = await mockRouter.getFee(137, message);
       expect(messageFee).to.equal(ethers.utils.parseEther("0.1"));
 

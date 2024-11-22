@@ -7,23 +7,27 @@ describe("CrossChainMessenger Coverage Tests", function () {
   let addr1;
   let mockRouter;
   let mockWETH;
+  const MAX_MESSAGES_PER_PERIOD = 5;
 
   beforeEach(async function () {
     [owner, addr1] = await ethers.getSigners();
 
+    // Deploy MockWETH
+    const MockWETH = await ethers.getContractFactory("MockWETH");
+    mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
+    await mockWETH.deployed();
+
+    // Deploy MockRouter
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
     await mockRouter.deployed();
 
-    const MockWETH = await ethers.getContractFactory("MockWETH");
-    mockWETH = await MockWETH.deploy();
-    await mockWETH.deployed();
-
+    // Deploy CrossChainMessenger with router, WETH, and rate limit
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(
       mockRouter.address,
       mockWETH.address,
-      ethers.utils.parseUnits("100", 0) // Set max messages per period to 100
+      MAX_MESSAGES_PER_PERIOD
     );
     await messenger.deployed();
 
