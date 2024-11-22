@@ -95,14 +95,17 @@ describe("MockRouter", function () {
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
           ["uint64", "bytes", "bytes"],
-          [137, ethers.utils.hexDataSlice(message.receiver, 12, 32), message.data]
+          [137, message.receiver, message.data]
         )
       );
       await mockRouter.setNextMessageId(messageId);
 
+      // Get the bytes20 representation of the address for event comparison
+      const bytes20Receiver = ethers.utils.hexDataSlice(message.receiver, 12);
+
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(messageId, 137, addr1.address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
+        .withArgs(messageId, 137, bytes20Receiver, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
     });
   });
 });
