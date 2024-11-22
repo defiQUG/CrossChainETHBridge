@@ -52,7 +52,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @param _router The address of Chainlink's CCIP Router contract
      * @param _weth The address of the WETH contract
      */
-    constructor(address _router, address payable _weth) CCIPReceiver(_router) {
+    constructor(address _router, address payable _weth) CCIPReceiver(_router) ReentrancyGuard() {
         require(_router != address(0), "Invalid router address");
         require(_weth != address(0), "Invalid WETH address");
         WETH_ADDRESS = _weth;
