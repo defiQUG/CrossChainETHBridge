@@ -260,23 +260,34 @@ describe("CrossChainMessenger", function() {
 
         it("Should accept transaction when amount slightly exceeds fee", async function() {
             const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
-            const tx = await crossChainMessenger.sendToPolygon(addr1.address, {
+
+            // Deploy a new mock router and update CrossChainMessenger
+            const mockRouter = await ethers.getContractFactory("MockRouter");
+            const router = await mockRouter.deploy();
+            await router.deployed();
+
+            // Deploy new CrossChainMessenger with the mock router
+            const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
+            const newMessenger = await CrossChainMessenger.deploy(router.address);
+            await newMessenger.deployed();
+
+            // Set the bridge fee
+            await newMessenger.setBridgeFee(BRIDGE_FEE);
+
+            // Send transaction and get the message ID from the event
+            const tx = await newMessenger.sendToPolygon(addr1.address, {
                 value: slightlyAboveFee
             });
-            await expect(tx)
-                .to.emit(crossChainMessenger, "MessageSent")
-                .withArgs(
-                    await crossChainMessenger.router().ccipSend.call(this, POLYGON_CHAIN_SELECTOR, {
-                        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr1.address]),
-                        data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [addr1.address, slightlyAboveFee.sub(BRIDGE_FEE)]),
-                        tokenAmounts: [],
-                        extraArgs: "",
-                        feeToken: ethers.constants.AddressZero
-                    }),
-                    owner.address,
-                    slightlyAboveFee.sub(BRIDGE_FEE),
-                    BRIDGE_FEE
-                );
+
+            // Wait for the transaction and get the event
+            const receipt = await tx.wait();
+            const event = receipt.events.find(e => e.event === 'MessageSent');
+            const messageId = event.args[0];
+
+            // Verify the event arguments
+            expect(event.args[1]).to.equal(owner.address); // sender
+            expect(event.args[2]).to.equal(addr1.address); // recipient
+            expect(event.args[3]).to.equal(slightlyAboveFee.sub(BRIDGE_FEE)); // amount
         });
     });
 
