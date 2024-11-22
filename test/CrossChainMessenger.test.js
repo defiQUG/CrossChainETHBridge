@@ -372,8 +372,8 @@ describe("CrossChainMessenger", function () {
       const initialAttackerBalance = await ethers.provider.getBalance(attacker.address);
       console.log("Initial attacker balance:", ethers.utils.formatEther(initialAttackerBalance), "ETH");
 
-      // Attempt the attack
-      const attackValue = ethers.utils.parseEther("1.0");
+      // Attempt the attack with enough ETH for transfer + fee
+      const attackValue = ethers.utils.parseEther("1.1"); // 1 ETH + 0.1 ETH for fees
       console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
 
       // Use proper Hardhat/Chai matcher for revert checking

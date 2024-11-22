@@ -6,6 +6,8 @@ import "../CrossChainMessenger.sol";
 contract ReentrancyAttacker {
     CrossChainMessenger public messenger;
     uint256 public attackCount;
+    uint256 public constant ATTACK_VALUE = 1 ether;
+    uint256 public constant FEE_BUFFER = 0.1 ether;
 
     event AttackAttempted(uint256 value, uint256 count);
     event FallbackCalled(uint256 value);
@@ -16,7 +18,7 @@ contract ReentrancyAttacker {
     }
 
     function attack() external payable {
-        require(msg.value >= 1.1 ether, "Need at least 1.1 ETH"); // Extra for fees
+        require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Need at least 1.1 ETH"); // Extra for fees
         attackCount = 0;
         // Send enough to cover both transfer and fee
         messenger.sendToPolygon{value: msg.value}(address(this));
@@ -26,11 +28,11 @@ contract ReentrancyAttacker {
     receive() external payable {
         emit FallbackCalled(msg.value);
 
-        if (attackCount < 2 && address(this).balance >= 1.1 ether) {
+        if (attackCount < 2 && address(this).balance >= ATTACK_VALUE + FEE_BUFFER) {
             attackCount++;
             // Try to reenter with enough value for transfer and fee
-            messenger.sendToPolygon{value: 1.1 ether}(address(this));
-            emit AttackAttempted(1.1 ether, attackCount);
+            messenger.sendToPolygon{value: ATTACK_VALUE + FEE_BUFFER}(address(this));
+            emit AttackAttempted(ATTACK_VALUE + FEE_BUFFER, attackCount);
         }
     }
 }
