@@ -3,10 +3,45 @@ require("@nomiclabs/hardhat-ethers");
 require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
 
+// Load environment variables, with fallbacks for local development
 const DEFI_ORACLE_META_RPC_URL = process.env.DEFI_ORACLE_META_RPC_URL;
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
+
+// Network configurations
+const networks = {
+  hardhat: {
+    chainId: 31337
+  }
+};
+
+// Add external networks only if environment variables are available
+if (DEFI_ORACLE_META_RPC_URL && PRIVATE_KEY) {
+  networks.defiOracleMeta = {
+    url: DEFI_ORACLE_META_RPC_URL,
+    accounts: [PRIVATE_KEY],
+    chainId: 138,
+    verify: {
+      etherscan: {
+        apiUrl: "https://scan.dofm.org"
+      }
+    }
+  };
+}
+
+if (POLYGON_RPC_URL && PRIVATE_KEY) {
+  networks.polygon = {
+    url: POLYGON_RPC_URL,
+    accounts: [PRIVATE_KEY],
+    chainId: 137,
+    verify: {
+      etherscan: {
+        apiKey: POLYGONSCAN_API_KEY
+      }
+    }
+  };
+}
 
 module.exports = {
   solidity: {
@@ -18,31 +53,7 @@ module.exports = {
       }
     }
   },
-  networks: {
-    hardhat: {
-      chainId: 31337
-    },
-    defiOracleMeta: {
-      url: DEFI_ORACLE_META_RPC_URL,
-      accounts: [PRIVATE_KEY],
-      chainId: 138,
-      verify: {
-        etherscan: {
-          apiUrl: "https://scan.dofm.org"
-        }
-      }
-    },
-    polygon: {
-      url: POLYGON_RPC_URL,
-      accounts: [PRIVATE_KEY],
-      chainId: 137,
-      verify: {
-        etherscan: {
-          apiKey: POLYGONSCAN_API_KEY
-        }
-      }
-    }
-  },
+  networks,
   etherscan: {
     apiKey: {
       polygon: POLYGONSCAN_API_KEY
