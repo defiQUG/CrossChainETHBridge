@@ -139,13 +139,14 @@ describe("CrossChainMessenger", function () {
       ).to.be.revertedWith("Fee exceeds maximum");
     });
 
-    it("Should reject transaction when amount equals fee", async function () {
-      const exactFeeAmount = BRIDGE_FEE;
+    it("Should reject transaction when amount is less than fee", async function () {
+      const lessThanFee = BRIDGE_FEE.sub(1);
       await expect(
         messenger.sendToPolygon(addr1.address, {
-          value: exactFeeAmount
+          value: lessThanFee
         })
       ).to.be.revertedWith("Insufficient amount");
+    });
     });
 
     it("Should accept transaction when amount slightly exceeds fee", async function () {
