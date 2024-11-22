@@ -40,8 +40,9 @@ describe("CrossChainMessenger Coverage Tests", function () {
 
   describe("Edge Cases and Error Handling", function () {
     it("Should handle zero amount transfers correctly", async function () {
+      const recipient = addr1.address;
       await expect(
-        messenger.sendToPolygon({ value: 0 })
+        messenger.sendToPolygon(recipient, { value: 0 })
       ).to.be.revertedWith("Amount must be greater than 0");
     });
 
@@ -54,8 +55,9 @@ describe("CrossChainMessenger Coverage Tests", function () {
     });
 
     it("Should handle invalid chain ID correctly", async function () {
+      const recipient = addr1.address;
       await expect(
-        messenger.sendToPolygon({ value: ethers.utils.parseEther("1.0") })
+        messenger.sendToPolygon(recipient, { value: ethers.utils.parseEther("1.0") })
       ).to.be.revertedWith("Invalid chain ID");
     });
   });
