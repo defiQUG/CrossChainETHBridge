@@ -345,10 +345,10 @@ describe("CrossChainMessenger", function () {
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
 
-      // Fund the attacker contract with enough ETH for multiple attempts
+      // Fund the attacker contract with enough ETH for both calls
       await owner.sendTransaction({
         to: attacker.address,
-        value: ethers.utils.parseEther("5.0")
+        value: ethers.utils.parseEther("3.0") // Enough for initial + reentrant call + gas
       });
 
       // Set bridge fee to minimum to maximize attack potential
@@ -356,14 +356,13 @@ describe("CrossChainMessenger", function () {
 
       // Attempt the attack
       await expect(
-        attacker.attack({ value: ethers.utils.parseEther("1.0") })
+        attacker.attack()
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
-      // Verify no funds are stuck
+      // Verify contract state
       const messengerBalance = await ethers.provider.getBalance(testMessenger.address);
       expect(messengerBalance).to.equal(0, "No funds should be stuck in contract");
 
-      // Verify attacker state
       const attackCount = await attacker.attackCount();
       expect(attackCount).to.equal(0, "Attack should not have succeeded");
     });
