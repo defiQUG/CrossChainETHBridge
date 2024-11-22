@@ -138,6 +138,31 @@ describe("CrossChainMessenger", function () {
         messenger.updateBridgeFee(tooHighFee)
       ).to.be.revertedWith("Fee exceeds maximum");
     });
+
+    it("Should reject transaction when amount equals fee", async function () {
+      const exactFeeAmount = BRIDGE_FEE;
+      await expect(
+        messenger.sendToPolygon(addr1.address, {
+          value: exactFeeAmount
+        })
+      ).to.be.revertedWith("Insufficient amount");
+    });
+
+    it("Should accept transaction when amount slightly exceeds fee", async function () {
+      const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
+      const tx = await messenger.sendToPolygon(addr1.address, {
+        value: slightlyAboveFee
+      });
+
+      await expect(tx)
+        .to.emit(messenger, "MessageSent")
+        .withArgs(
+          ethers.constants.HashZero,
+          owner.address,
+          slightlyAboveFee.sub(BRIDGE_FEE),
+          BRIDGE_FEE
+        );
+    });
   });
 
   describe("Emergency Functions", function () {
