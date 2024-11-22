@@ -54,32 +54,23 @@ contract MockRouter is IRouterClient {
         address sender,
         uint256 amount
     ) external {
-        // Properly encode the sender address as bytes
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
+        bytes memory data = abi.encode(amount);
         bytes memory encodedSender = abi.encodePacked(sender);
 
-        // Create token amounts array (empty for ETH transfers)
-        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
+        Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
+            messageId: messageId,
+            sourceChainSelector: 138, // Defi Oracle Meta Mainnet
+            sender: encodedSender,
+            data: data,
+            destTokenAmounts: destTokenAmounts
+        });
 
-        // Encode amount as bytes
-        bytes memory data = abi.encode(amount);
-
-        IAny2EVMMessageReceiver(target).ccipReceive(
-            Client.Any2EVMMessage({
-                messageId: messageId,
-                sourceChainSelector: 138, // Defi Oracle Meta Mainnet
-                sender: encodedSender,
-                data: data,
-                destTokenAmounts: destTokenAmounts
-            })
-        );
+        IAny2EVMMessageReceiver(target).ccipReceive(message);
     }
 
-    // Add sendMessage function for testing
-    function sendMessage(
-        address target,
-        Client.Any2EVMMessage memory message
-    ) external {
-        IAny2EVMMessageReceiver(target).ccipReceive(message);
+    function ccipReceive(Client.Any2EVMMessage memory message) external {
+        IAny2EVMMessageReceiver(msg.sender).ccipReceive(message);
     }
 
     receive() external payable {}

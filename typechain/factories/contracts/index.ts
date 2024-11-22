@@ -3,3 +3,4 @@
 /* eslint-disable */
 export * as crossChainMessengerSol from "./CrossChainMessenger.sol";
 export * as mocks from "./mocks";
+export { RateLimiter__factory } from "./RateLimiter__factory";

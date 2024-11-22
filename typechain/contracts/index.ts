@@ -5,3 +5,4 @@ import type * as crossChainMessengerSol from "./CrossChainMessenger.sol";
 export type { crossChainMessengerSol };
 import type * as mocks from "./mocks";
 export type { mocks };
+export type { RateLimiter } from "./RateLimiter";
