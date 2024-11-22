@@ -35,17 +35,23 @@ contract MockRouter is IRouterClient {
         Client.EVM2AnyMessage memory message
     ) external payable returns (bytes32) {
         require(!processingMessage, "Reentrant call detected");
+        require(message.receiver.length > 0, "Invalid receiver");
+        require(destinationChainSelector == 137 || destinationChainSelector == 138, "Unsupported chain");
+
         processingMessage = true;
 
         bytes32 messageId = nextMessageId == bytes32(0)
             ? keccak256(abi.encode(destinationChainSelector, message.receiver, message.data))
             : nextMessageId;
 
+        address target = address(bytes20(message.receiver));
+        require(target != address(0), "Invalid target address");
+
         // Emit message sent event
         emit MessageSent(
             messageId,
             destinationChainSelector,
-            address(bytes20(message.receiver)),
+            target,
             message.data,
             address(0),
             msg.value
@@ -53,7 +59,8 @@ contract MockRouter is IRouterClient {
 
         // For testing reentrancy, simulate message to Polygon first
         if (destinationChainSelector == 137) {
-            address target = address(bytes20(message.receiver));
+            require(message.data.length >= 64, "Invalid message data");
+
             // Decode both receiver and amount from message data
             (address receiver, uint256 transferAmount) = abi.decode(message.data, (address, uint256));
             require(receiver == target, "Receiver mismatch");
@@ -62,9 +69,12 @@ contract MockRouter is IRouterClient {
             // Store fee before simulation
             uint256 fee = mockFee;
 
+            // Verify target is a contract that implements IAny2EVMMessageReceiver
+            require(target.code.length > 0, "Target must be a contract");
+
             // Simulate CCIP message first
             bytes32 simulatedMessageId = keccak256(abi.encode(destinationChainSelector, target, message.data));
-            IAny2EVMMessageReceiver(target).ccipReceive(
+            try IAny2EVMMessageReceiver(target).ccipReceive(
                 Client.Any2EVMMessage({
                     messageId: simulatedMessageId,
                     sourceChainSelector: destinationChainSelector,
@@ -72,7 +82,9 @@ contract MockRouter is IRouterClient {
                     data: message.data,
                     destTokenAmounts: new Client.EVMTokenAmount[](0)
                 })
-            );
+            ) {} catch Error(string memory reason) {
+                revert(string.concat("CCIP receive failed: ", reason));
+            }
 
             // Then handle ETH transfer
             (bool success,) = payable(target).call{value: transferAmount}("");
