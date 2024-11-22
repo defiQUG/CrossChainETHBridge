@@ -80,6 +80,7 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
+    "processMessage()": FunctionFragment;
     "router()": FunctionFragment;
     "sendToPolygon(address)": FunctionFragment;
     "setMaxMessagesPerPeriod(uint256)": FunctionFragment;
@@ -107,6 +108,7 @@ export interface CrossChainMessengerInterface extends utils.Interface {
       | "owner"
       | "pause"
       | "paused"
+      | "processMessage"
       | "router"
       | "sendToPolygon"
       | "setMaxMessagesPerPeriod"
@@ -165,6 +167,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "processMessage",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "router", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "sendToPolygon",
@@ -234,6 +240,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "pause", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "processMessage",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "router", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "sendToPolygon",
@@ -464,6 +474,10 @@ export interface CrossChainMessenger extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     router(overrides?: CallOverrides): Promise<[string]>;
 
     sendToPolygon(
@@ -542,6 +556,10 @@ export interface CrossChainMessenger extends BaseContract {
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
+  processMessage(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   router(overrides?: CallOverrides): Promise<string>;
 
   sendToPolygon(
@@ -611,6 +629,8 @@ export interface CrossChainMessenger extends BaseContract {
     pause(overrides?: CallOverrides): Promise<void>;
 
     paused(overrides?: CallOverrides): Promise<boolean>;
+
+    processMessage(overrides?: CallOverrides): Promise<void>;
 
     router(overrides?: CallOverrides): Promise<string>;
 
@@ -759,6 +779,10 @@ export interface CrossChainMessenger extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     router(overrides?: CallOverrides): Promise<BigNumber>;
 
     sendToPolygon(
@@ -841,6 +865,10 @@ export interface CrossChainMessenger extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     router(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 

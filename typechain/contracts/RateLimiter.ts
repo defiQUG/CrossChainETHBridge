@@ -38,6 +38,7 @@ export interface RateLimiterInterface extends utils.Interface {
     "messageCountByPeriod(uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "paused()": FunctionFragment;
+    "processMessage()": FunctionFragment;
     "setMaxMessagesPerPeriod(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
@@ -53,6 +54,7 @@ export interface RateLimiterInterface extends utils.Interface {
       | "messageCountByPeriod"
       | "owner"
       | "paused"
+      | "processMessage"
       | "setMaxMessagesPerPeriod"
       | "transferOwnership"
   ): FunctionFragment;
@@ -87,6 +89,10 @@ export interface RateLimiterInterface extends utils.Interface {
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
+  encodeFunctionData(
+    functionFragment: "processMessage",
+    values?: undefined
+  ): string;
   encodeFunctionData(
     functionFragment: "setMaxMessagesPerPeriod",
     values: [PromiseOrValue<BigNumberish>]
@@ -126,6 +132,10 @@ export interface RateLimiterInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "processMessage",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "setMaxMessagesPerPeriod",
     data: BytesLike
@@ -266,6 +276,10 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -304,6 +318,10 @@ export interface RateLimiter extends BaseContract {
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
+  processMessage(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   setMaxMessagesPerPeriod(
     _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -335,6 +353,8 @@ export interface RateLimiter extends BaseContract {
     owner(overrides?: CallOverrides): Promise<string>;
 
     paused(overrides?: CallOverrides): Promise<boolean>;
+
+    processMessage(overrides?: CallOverrides): Promise<void>;
 
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
@@ -407,6 +427,10 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -447,6 +471,10 @@ export interface RateLimiter extends BaseContract {
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    processMessage(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
