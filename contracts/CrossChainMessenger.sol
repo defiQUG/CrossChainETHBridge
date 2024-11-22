@@ -127,7 +127,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @dev Recovers stuck tokens in emergency
      * @param _token Token address (address(0) for ETH)
      */
-    function recoverFunds(address _token) external onlyOwner {
+    function recoverFunds(address _token) external onlyOwner nonReentrant {
         if (_token == address(0)) {
             uint256 balance = address(this).balance;
             require(balance > 0, "No ETH to recover");
