@@ -91,7 +91,7 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, RateLimiter {
         emit MessageReceived(message.messageId, sender, recipient, amount);
     }
 
-    function updateBridgeFee(uint256 _newFee) external onlyOwner {
+    function setBridgeFee(uint256 _newFee) external onlyOwner {
         bridgeFee = _newFee;
         emit BridgeFeeUpdated(_newFee);
     }
