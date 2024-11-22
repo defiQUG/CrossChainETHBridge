@@ -122,12 +122,14 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @param any2EvmMessage The CCIP message containing transfer details
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant rateLimit(tx.origin) whenNotPaused {
+        // Checks
         require(msg.sender == address(i_router), "Caller is not the router");
         require(
             any2EvmMessage.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
             "Message from invalid chain"
         );
 
+        // Effects (decode and validate message)
         (address receiver, uint256 amount) = abi.decode(
             any2EvmMessage.data,
             (address, uint256)
@@ -135,14 +137,21 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         require(receiver != address(0), "Invalid receiver");
         require(amount > 0, "Invalid amount");
 
-        // Mint WETH to receiver
+        // Store message details before interactions
+        bytes32 messageId = any2EvmMessage.messageId;
+
+        // Interactions (after all checks and effects)
+        // First deposit ETH to get WETH
         IWETH(WETH_ADDRESS).deposit{value: amount}();
+
+        // Then transfer WETH to receiver
         require(
             IWETH(WETH_ADDRESS).transfer(receiver, amount),
             "WETH transfer failed"
         );
 
-        emit MessageReceived(any2EvmMessage.messageId, receiver, amount);
+        // Events after all state changes and interactions
+        emit MessageReceived(messageId, receiver, amount);
     }
 
     /**
@@ -191,5 +200,5 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         _unpause();
     }
 
-    receive() external payable nonReentrant {}
+    receive() external payable nonReentrant whenNotPaused {}
 }
