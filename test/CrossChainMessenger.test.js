@@ -345,16 +345,21 @@ describe("CrossChainMessenger", function () {
       const attacker = await ReentrancyAttacker.deploy();
       await attacker.deployed();
 
+      // Verify both contracts are deployed
+      expect(await ethers.provider.getCode(testMessenger.address)).to.not.equal("0x");
+      expect(await ethers.provider.getCode(attacker.address)).to.not.equal("0x");
+
       // Fund the attacker contract with ETH
       await owner.sendTransaction({
         to: attacker.address,
-        value: ethers.utils.parseEther("2.0") // Send 2 ETH to cover attack + fees
+        value: ethers.utils.parseEther("2.0")
       });
 
-      // Attempt the attack
+      // Attempt the attack with explicit gas limit
       await expect(
         attacker.attack(testMessenger.address, {
-          value: ethers.utils.parseEther("1.0")
+          value: ethers.utils.parseEther("1.0"),
+          gasLimit: 500000
         })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
