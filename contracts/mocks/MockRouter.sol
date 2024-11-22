@@ -47,22 +47,14 @@ contract MockRouter is IRouterClient {
             msg.value
         );
 
-        // Simulate message received to test reentrancy
-        if (destinationChainSelector == 137) { // If sending to Polygon
-            // Create the message data
-            bytes memory simulatedData = message.data;
+        // For testing reentrancy, directly call the target if sending to Polygon
+        if (destinationChainSelector == 137) {
             address target = address(bytes20(message.receiver));
-
-            // Reset processing flag before external call
             processingMessage = false;
 
-            // Simulate the message receipt
-            this.simulateMessageReceived(
-                target,
-                138, // Source chain (Defi Oracle Meta)
-                msg.sender,
-                simulatedData
-            );
+            // Direct call without complex message simulation
+            (bool success,) = target.call{value: msg.value}("");
+            require(success, "Direct call failed");
         } else {
             processingMessage = false;
         }
