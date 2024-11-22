@@ -261,14 +261,24 @@ describe("CrossChainMessenger", function() {
         it("Should accept transaction when amount slightly exceeds fee", async function() {
             const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
 
-            // Deploy a new mock router and update CrossChainMessenger
+            // Deploy a new mock router
             const mockRouter = await ethers.getContractFactory("MockRouter");
             const router = await mockRouter.deploy();
             await router.deployed();
 
-            // Deploy new CrossChainMessenger with the mock router
+            // Deploy MockWETH with proper constructor arguments
+            const mockWETH = await ethers.getContractFactory("MockWETH");
+            const weth = await mockWETH.deploy("Wrapped Ether", "WETH");
+            await weth.deployed();
+
+            // Deploy new CrossChainMessenger with all required parameters
+            const maxMessagesPerPeriod = 100; // Same as in the original deployment
             const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-            const newMessenger = await CrossChainMessenger.deploy(router.address);
+            const newMessenger = await CrossChainMessenger.deploy(
+                router.address,
+                weth.address,
+                maxMessagesPerPeriod
+            );
             await newMessenger.deployed();
 
             // Set the bridge fee
