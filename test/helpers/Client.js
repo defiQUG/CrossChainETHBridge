@@ -1,4 +1,6 @@
 // Mock Client library for testing
+const { ethers } = require("hardhat");
+
 const Client = {
   EVM2AnyMessage: function(message) {
     return {
@@ -17,6 +19,18 @@ const Client = {
       data: message.data || '0x',
       destTokenAmounts: message.destTokenAmounts || []
     };
+  },
+  encodeEVM2AnyMessage: function(message, version) {
+    return ethers.utils.defaultAbiCoder.encode(
+      ["tuple(bytes, bytes, tuple(address, uint256)[], bytes, address)"],
+      [[
+        message.receiver,
+        message.data,
+        message.tokenAmounts,
+        message.extraArgs,
+        message.feeToken
+      ]]
+    );
   }
 };
 
