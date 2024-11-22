@@ -340,9 +340,9 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract with the messenger address
+      // Deploy the attacker contract with both messenger and router addresses
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-      const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
+      const attacker = await ReentrancyAttacker.deploy(testMessenger.address, mockRouter.address);
       await attacker.deployed();
 
       // Verify both contracts are deployed
