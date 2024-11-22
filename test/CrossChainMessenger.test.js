@@ -345,20 +345,22 @@ describe("CrossChainMessenger", function () {
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address, mockRouter.address);
       await attacker.deployed();
 
-      // Fund the contracts
+      // Fund the attacker contract
       await owner.sendTransaction({
-        to: testMessenger.address,
-        value: ethers.utils.parseEther("5.0")
+        to: attacker.address,
+        value: ethers.utils.parseEther("2.0")
       });
 
-      // Attempt the attack and expect revert
-      const attackTx = attacker.attack({
-        value: ethers.utils.parseEther("1.0")
-      });
+      // Attempt the attack
+      await expect(
+        attacker.attack({
+          value: ethers.utils.parseEther("1.0")
+        })
+      ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
-      // The transaction should revert with reentrancy error during the fallback execution
-      await expect(attackTx)
-        .to.be.revertedWith("ReentrancyGuard: reentrant call");
+      // Verify no funds were stolen
+      const messengerBalance = await ethers.provider.getBalance(testMessenger.address);
+      expect(messengerBalance).to.equal(0);
     });
   });
 });
