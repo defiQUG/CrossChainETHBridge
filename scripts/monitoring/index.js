@@ -13,12 +13,17 @@ class MonitoringSystem {
   }
 
   setupProviders() {
-    Object.entries(config.chains).forEach(([name, chain]) => {
-      if (!chain.rpcUrl) {
+    Object.entries(config.networks).forEach(([name, network]) => {
+      if (!network.rpcUrl) {
         console.warn(`No RPC URL configured for ${name}`);
         return;
       }
-      this.providers[chain.id] = new ethers.providers.JsonRpcProvider(chain.rpcUrl);
+      try {
+        this.providers[network.chainId] = new ethers.providers.JsonRpcProvider(network.rpcUrl);
+        console.log(`Provider setup complete for ${name} (Chain ID: ${network.chainId})`);
+      } catch (error) {
+        console.error(`Failed to setup provider for ${name}:`, error);
+      }
     });
   }
 

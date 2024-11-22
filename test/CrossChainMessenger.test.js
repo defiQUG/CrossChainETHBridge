@@ -374,7 +374,10 @@ describe("CrossChainMessenger", function () {
 
       // The attack should fail due to reentrancy protection
       try {
-        await attacker.attack({ value: attackValue });
+        await attacker.attack({
+          value: attackValue,
+          gasLimit: 500000 // Provide manual gas limit since estimation will fail
+        });
         expect.fail("Attack should have been reverted");
       } catch (error) {
         expect(error.message).to.include("Transaction reverted silently");
