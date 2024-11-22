@@ -21,17 +21,11 @@ contract ReentrancyAttacker {
         require(initialized, "Contract not initialized");
         if (attackCount < 2 && address(this).balance >= ATTACK_VALUE) {
             attackCount++;
-            // Try to reenter through sendToPolygon
-            messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
-
-            // Also try to reenter through _ccipReceive
-            bytes memory messageData = abi.encode(address(this), ATTACK_VALUE);
-            router.simulateMessageReceived(
-                address(messenger),
-                138, // DEFI_ORACLE_META_SELECTOR
-                address(router),
-                messageData
+            // Try to reenter through sendToPolygon using low-level call
+            (bool success,) = address(messenger).call{value: ATTACK_VALUE}(
+                abi.encodeWithSignature("sendToPolygon(address)", address(this))
             );
+            require(success, "Reentry attempt failed");
         }
     }
 

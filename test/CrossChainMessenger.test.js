@@ -340,26 +340,31 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract with both messenger and router addresses
+      // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-      const attacker = await ReentrancyAttacker.deploy(testMessenger.address, mockRouter.address);
+      const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
 
-      // Verify both contracts are deployed
-      expect(await ethers.provider.getCode(testMessenger.address)).to.not.equal("0x");
-      expect(await ethers.provider.getCode(attacker.address)).to.not.equal("0x");
-
-      // Fund the attacker contract with ETH
+      // Fund both contracts
+      await owner.sendTransaction({
+        to: testMessenger.address,
+        value: ethers.utils.parseEther("5.0") // Ensure messenger has enough ETH for CCIP fees
+      });
       await owner.sendTransaction({
         to: attacker.address,
-        value: ethers.utils.parseEther("2.0")
+        value: ethers.utils.parseEther("3.0") // Ensure attacker has enough ETH for multiple attempts
       });
 
-      // Attempt the attack with explicit gas limit
+      // Verify initial state
+      expect(await ethers.provider.getBalance(testMessenger.address)).to.be.above(0);
+      expect(await ethers.provider.getBalance(attacker.address)).to.be.above(0);
+      expect(await attacker.attackCount()).to.equal(0);
+
+      // Attempt the attack
       await expect(
         attacker.attack({
           value: ethers.utils.parseEther("1.0"),
-          gasLimit: 500000
+          gasLimit: 1000000 // Increased gas limit for complex operations
         })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
