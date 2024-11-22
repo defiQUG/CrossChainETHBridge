@@ -8,21 +8,28 @@ describe("CrossChainMessenger Extended Tests", function() {
   beforeEach(async function() {
     [owner, user] = await ethers.getSigners();
 
+    // Deploy MockRouter first
     const MockRouter = await ethers.getContractFactory("MockRouter");
     router = await MockRouter.deploy();
     await router.deployed();
 
+    // Deploy MockWETH
     const MockWETH = await ethers.getContractFactory("MockWETH");
     weth = await MockWETH.deploy();
     await weth.deployed();
 
+    // Deploy CrossChainMessenger with router and WETH addresses
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(router.address, weth.address);
     await messenger.deployed();
 
-    // Fund the messenger contract with some ETH for testing
+    // Fund contracts for testing
     await owner.sendTransaction({
       to: messenger.address,
+      value: ethers.utils.parseEther("10.0")
+    });
+    await owner.sendTransaction({
+      to: weth.address,
       value: ethers.utils.parseEther("10.0")
     });
   });
@@ -43,19 +50,28 @@ describe("CrossChainMessenger Extended Tests", function() {
   });
 
   describe("Message Processing", function() {
+    const testAmount = ethers.utils.parseEther("1.0");
+
+    beforeEach(async function() {
+      // Fund user for testing
+      await owner.sendTransaction({
+        to: user.address,
+        value: ethers.utils.parseEther("5.0")
+      });
+    });
+
     it("Should process received messages correctly", async function() {
-      const amount = ethers.utils.parseEther("1.0");
       const balanceBefore = await ethers.provider.getBalance(user.address);
 
       await router.simulateMessageReceived(
         messenger.address,
         mockMessageId,
         user.address,
-        amount
+        testAmount
       );
 
       const balanceAfter = await ethers.provider.getBalance(user.address);
-      expect(balanceAfter.sub(balanceBefore)).to.equal(amount);
+      expect(balanceAfter.sub(balanceBefore)).to.equal(testAmount);
     });
 
     it("Should handle zero amount messages", async function() {
