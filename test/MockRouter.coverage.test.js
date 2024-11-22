@@ -110,7 +110,8 @@ describe("MockRouter Coverage Tests", function () {
           amount: ethers.utils.parseEther("1.0")
         }]
       };
-      const fee = await mockRouter.getFee(137, message);
+
+      const fee = await mockRouter.getFee(137, addr1.address);
       expect(fee).to.equal(ethers.utils.parseEther("0.1"));
     });
 
@@ -121,24 +122,27 @@ describe("MockRouter Coverage Tests", function () {
         sender: ethers.utils.hexZeroPad(owner.address, 32),
         data: ethers.utils.defaultAbiCoder.encode(
           ['address', 'uint256'],
-          [ethers.constants.AddressZero, 0]
+          [ethers.constants.AddressZero, ethers.utils.parseEther("1.0")]
         ),
         destTokenAmounts: []
       };
-      await expect(mockRouter.ccipReceive(message))
-        .to.be.revertedWith("Invalid message data");
+      await expect(mockRouter.validateMessage(message))
+        .to.be.revertedWith("Invalid recipient");
     });
 
     it("Should handle message validation errors", async function () {
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
-        sourceChainSelector: 138,
-        sender: ethers.utils.hexZeroPad(ethers.constants.AddressZero, 32),
-        data: "0x",
+        sourceChainSelector: 0,
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256'],
+          [owner.address, ethers.utils.parseEther("1.0")]
+        ),
         destTokenAmounts: []
       };
-      await expect(mockRouter.ccipReceive(message))
-        .to.be.revertedWith("Invalid sender");
+      await expect(mockRouter.validateMessage(message))
+        .to.be.revertedWith("Invalid chain selector");
     });
   });
 });

@@ -22,10 +22,15 @@ describe("CrossChainMessenger Coverage Tests", function () {
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(
       mockRouter.address,
-      mockWETH.address,
-      { value: ethers.utils.parseEther("1.0") }
+      mockWETH.address
     );
     await messenger.deployed();
+
+    // Send initial ETH after deployment
+    await owner.sendTransaction({
+      to: messenger.address,
+      value: ethers.utils.parseEther("1.0")
+    });
   });
 
   describe("Edge Cases and Error Handling", function () {
