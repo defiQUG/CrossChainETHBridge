@@ -8,21 +8,22 @@ if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir);
 }
 
-// Helper to create a logging stream
-const createLogStream = (filename) => {
-    return fs.createWriteStream(path.join(logsDir, filename), { flags: 'a' });
-};
-
 // Helper to spawn a process with logging
 const spawnProcess = (command, args, logFile) => {
-    const logStream = createLogStream(logFile);
     const process = spawn(command, args, {
-        stdio: ['ignore', logStream, logStream],
+        stdio: 'pipe',
         shell: true
     });
 
+    const logPath = path.join(logsDir, logFile);
+    const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+
+    process.stdout.pipe(logStream);
+    process.stderr.pipe(logStream);
+
     process.on('error', (err) => {
         console.error(`Failed to start ${command}:`, err);
+        logStream.write(`Error: ${err.message}\n`);
     });
 
     return process;
