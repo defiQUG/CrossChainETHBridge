@@ -102,33 +102,46 @@ describe("CrossChainMessenger", function () {
         value: amount
       });
 
-      const message = {
-        messageId,
-        sourceChainSelector: sourceChain,
-        sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(
-          ["address", "uint256"],
-          [receiverAddress, amount]
-        ),
-        destTokenAmounts: []
-      };
+      const encodedData = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256"],
+        [receiverAddress, amount]
+      );
 
-      await expect(messenger.connect(mockRouter)._ccipReceive(message))
-        .to.emit(messenger, "MessageReceived")
-        .withArgs(messageId, receiverAddress, amount);
+      await expect(
+        mockRouter.simulateMessageReceived(
+          messenger.address,
+          sourceChain,
+          mockRouter.address,
+          encodedData
+        )
+      ).to.emit(messenger, "MessageReceived")
+        .withArgs(
+          ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
+            ["uint64", "address", "bytes"],
+            [sourceChain, mockRouter.address, encodedData]
+          )),
+          receiverAddress,
+          amount
+        );
     });
 
     it("Should reject messages from invalid source chain", async function () {
       const messageId = ethers.utils.id("testMessage");
       const invalidSourceChain = 1; // Invalid chain selector
+      const encodedData = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256"],
+        [receiverAddress, ethers.utils.parseEther("1.0")]
+      );
 
-      const message = {
-        messageId,
-        sourceChainSelector: invalidSourceChain,
-        sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
-        destTokenAmounts: []
-      };
+      await expect(
+        mockRouter.simulateMessageReceived(
+          messenger.address,
+          invalidSourceChain,
+          mockRouter.address,
+          encodedData
+        )
+      ).to.be.revertedWith("Message from invalid chain");
+    });
 
       await expect(
         messenger.connect(mockRouter)._ccipReceive(message)
@@ -211,13 +224,21 @@ describe("CrossChainMessenger", function () {
 
   describe("Security", function () {
     it("Should only allow router to call _ccipReceive", async function () {
-      const message = {
-        messageId: ethers.utils.id("testMessage"),
-        sourceChainSelector: 138,
-        sender: addr1.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
-        destTokenAmounts: []
-      };
+      const encodedData = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256"],
+        [addr2.address, ethers.utils.parseEther("1.0")]
+      );
+
+      // Try to simulate message from non-router address
+      await expect(
+        mockRouter.connect(addr1).simulateMessageReceived(
+          messenger.address,
+          138, // DEFI_ORACLE_META_SELECTOR
+          addr1.address,
+          encodedData
+        )
+      ).to.be.revertedWith("Caller is not the router");
+    });
 
       await expect(
         messenger.connect(addr1)._ccipReceive(message)
