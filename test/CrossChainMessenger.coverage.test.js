@@ -22,7 +22,8 @@ describe("CrossChainMessenger Coverage Tests", function () {
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(
       mockRouter.address,
-      mockWETH.address
+      mockWETH.address,
+      ethers.utils.parseUnits("100", 0) // Set max messages per period to 100
     );
     await messenger.deployed();
 
