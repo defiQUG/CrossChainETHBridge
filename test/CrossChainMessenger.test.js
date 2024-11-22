@@ -373,23 +373,13 @@ describe("CrossChainMessenger", function () {
       console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
 
       // The attack should fail due to reentrancy protection
-      try {
-        await attacker.attack({
-          value: attackValue,
-          gasLimit: 500000 // Provide manual gas limit since estimation will fail
-        });
-        expect.fail("Attack should have been reverted");
-      } catch (error) {
-        expect(error.message).to.satisfy((msg) =>
-          msg.includes("Transaction reverted silently") ||
-          msg.includes("VM Exception while processing transaction")
-        );
-      }
+      await expect(
+        attacker.attackWithGas({
+          value: attackValue
+        })
+      ).to.be.revertedWith("Transaction reverted silently");
 
-      // Verify state
-      const finalAttackerBalance = await ethers.provider.getBalance(attacker.address);
-      console.log("Final attacker balance:", ethers.utils.formatEther(finalAttackerBalance), "ETH");
-
+      // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
       expect(attackCount).to.equal(0, "Attack should not have succeeded");
     });
