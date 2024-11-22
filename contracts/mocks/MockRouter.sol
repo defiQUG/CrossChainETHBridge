@@ -18,6 +18,10 @@ contract MockRouter is IRouterClient {
     bytes32 private nextMessageId;
     bool private processingMessage;
 
+    // Allow contract to receive ETH
+    receive() external payable {}
+    fallback() external payable {}
+
     function setFee(uint256 _fee) external {
         mockFee = _fee;
     }
