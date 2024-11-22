@@ -101,12 +101,13 @@ describe("MockRouter Coverage Tests", function () {
 
     it("Should handle fee calculations correctly", async function () {
       const { utils } = ethers;
-      // Test fee calculation with EVM2AnyMessage
+
+      // Test fee calculation with EVM2AnyMessage using constructor pattern
       const message = {
         receiver: utils.defaultAbiCoder.encode(['address'], [addr1.address]),
         data: utils.defaultAbiCoder.encode(['uint256'], [utils.parseEther("1.0")]),
-        tokenAmounts: [],  // Empty array as per sendMessage implementation
-        extraArgs: "0x",
+        tokenAmounts: new Array(),  // Initialize as empty array like in MockRouter.sendMessage
+        extraArgs: "0x",  // Empty bytes as shown in MockRouter.sendMessage
         feeToken: ethers.constants.AddressZero
       };
 
