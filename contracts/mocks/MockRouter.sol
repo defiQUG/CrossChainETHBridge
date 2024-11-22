@@ -12,23 +12,6 @@ contract MockRouter is IRouterClient {
         uint256 amount
     );
 
-    // Add sendMessage function for testing
-    function sendMessage(
-        address receiver,
-        uint256 amount
-    ) external payable returns (bytes32) {
-        bytes memory data = abi.encode(amount);
-        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(receiver),
-            data: data,
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: address(0)
-        });
-
-        return ccipSend(137, message);
-    }
-
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
@@ -47,6 +30,21 @@ contract MockRouter is IRouterClient {
         return keccak256(abi.encodePacked(block.timestamp, msg.sender, receiver, amount));
     }
 
+    function sendMessage(
+        address receiver,
+        uint256 amount
+    ) external payable returns (bytes32) {
+        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+            receiver: abi.encode(receiver),
+            data: abi.encode(amount),
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: "",
+            feeToken: address(0)
+        });
+
+        return ccipSend(137, message);
+    }
+
     function getFee(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
@@ -58,13 +56,11 @@ contract MockRouter is IRouterClient {
         return chainSelector == 137;
     }
 
-    // Implement missing interface function
     function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory tokens) {
         tokens = new address[](0);
         return tokens;
     }
 
-    // Helper function to simulate receiving messages
     function simulateMessageReceived(
         address target,
         bytes32 messageId,
