@@ -147,6 +147,21 @@ describe("CrossChainMessenger", function () {
         messenger.connect(mockRouter)._ccipReceive(message)
       ).to.be.revertedWith("Message from invalid chain");
     });
+
+    it("Should reject direct calls to _ccipReceive", async function () {
+      const message = {
+        sourceChainSelector: 138,
+        sender: mockRouter.address,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [addr1.address, ethers.utils.parseEther("1.0")]
+        )
+      };
+
+      await expect(
+        messenger.connect(addr1)._ccipReceive(message)
+      ).to.be.revertedWith("Caller is not the router");
+    });
   });
 
   describe("Fee Management", function () {
@@ -239,6 +254,16 @@ describe("CrossChainMessenger", function () {
         )
       ).to.be.revertedWith("Caller is not the router");
     });
+
+    it("Should reject unauthorized _ccipReceive calls", async function () {
+      const message = {
+        sourceChainSelector: 138,
+        sender: mockRouter.address,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [addr1.address, ethers.utils.parseEther("1.0")]
+        )
+      };
 
       await expect(
         messenger.connect(addr1)._ccipReceive(message)
