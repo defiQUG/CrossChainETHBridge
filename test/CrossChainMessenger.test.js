@@ -373,11 +373,15 @@ describe("CrossChainMessenger", function () {
       console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
 
       // The attack should fail due to reentrancy protection
-      await expect(
-        attacker.attackWithGas({
-          value: attackValue
-        })
-      ).to.be.revertedWith("Transaction reverted silently");
+      try {
+        await attacker.attackWithGas({
+          value: attackValue,
+          gasLimit: 500000 // Explicitly set gas limit
+        });
+        expect.fail("Attack should have failed");
+      } catch (error) {
+        expect(error.message).to.include("Transaction reverted silently");
+      }
 
       // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
