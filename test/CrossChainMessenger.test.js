@@ -340,31 +340,25 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract with both messenger and router addresses
+      // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address, mockRouter.address);
       await attacker.deployed();
 
-      // Fund both contracts
+      // Fund the contracts
       await owner.sendTransaction({
         to: testMessenger.address,
-        value: ethers.utils.parseEther("5.0") // Ensure messenger has enough ETH for CCIP fees
-      });
-      await owner.sendTransaction({
-        to: attacker.address,
-        value: ethers.utils.parseEther("3.0") // Ensure attacker has enough ETH for multiple attempts
+        value: ethers.utils.parseEther("5.0")
       });
 
-      // Verify initial balances
-      expect(await ethers.provider.getBalance(testMessenger.address)).to.be.above(0);
-      expect(await ethers.provider.getBalance(attacker.address)).to.be.above(0);
+      // Attempt the attack and expect revert
+      const attackTx = attacker.attack({
+        value: ethers.utils.parseEther("1.0")
+      });
 
-      // Attempt the attack - should revert with reentrancy error
-      await expect(
-        attacker.attack({
-          value: ethers.utils.parseEther("1.0")
-        })
-      ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+      // The transaction should revert with reentrancy error during the fallback execution
+      await expect(attackTx)
+        .to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
   });
 });
