@@ -7,6 +7,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "./RateLimiter.sol";
 
 interface IWETH {
     function deposit() external payable;
@@ -14,22 +15,20 @@ interface IWETH {
     function transfer(address to, uint256 value) external returns (bool);
 }
 
-contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
+contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable, RateLimiter {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable router;
     IWETH public immutable weth;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
     uint256 public bridgeFee;
-    uint256 public messageCounter;
-    uint256 public constant MAX_MESSAGES_PER_HOUR = 100;
 
     event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event MessageReceived(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event BridgeFeeUpdated(uint256 newFee);
     event EmergencyWithdraw(address indexed recipient, uint256 amount);
 
-    constructor(address _router, address _weth) {
+    constructor(address _router, address _weth, uint256 _maxMessagesPerPeriod) RateLimiter(_maxMessagesPerPeriod) {
         require(_router != address(0), "Invalid router address");
         require(_weth != address(0), "Invalid WETH address");
         router = IRouterClient(_router);
@@ -47,8 +46,10 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
 
     function sendToPolygon(address _recipient) external payable nonReentrant whenNotPaused {
         require(msg.value > bridgeFee, "Insufficient amount");
-        require(messageCounter < MAX_MESSAGES_PER_HOUR, "Message limit exceeded");
         require(_recipient != address(0), "Invalid recipient");
+
+        // Process message through rate limiter
+        processMessage();
 
         uint256 transferAmount = msg.value - bridgeFee;
         bytes memory data = abi.encode(_recipient, transferAmount);
@@ -66,13 +67,15 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
             message
         );
 
-        messageCounter++;
         emit MessageSent(messageId, msg.sender, _recipient, transferAmount);
     }
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external whenNotPaused {
         require(msg.sender == address(router), "Unauthorized sender");
         require(message.sourceChainSelector == 138, "Invalid source chain");  // Must be from Defi Oracle Meta
+
+        // Process message through rate limiter
+        processMessage();
 
         address sender = address(bytes20(message.sender));
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
