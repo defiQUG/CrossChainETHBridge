@@ -53,6 +53,7 @@ contract MockRouter is IRouterClient {
             // Decode both receiver and amount from message data
             (address receiver, uint256 transferAmount) = abi.decode(message.data, (address, uint256));
             require(receiver == target, "Receiver mismatch");
+            require(msg.value >= transferAmount, "Insufficient ETH value");
 
             // Direct call while maintaining reentrancy lock
             (bool success,) = target.call{value: transferAmount}("");
