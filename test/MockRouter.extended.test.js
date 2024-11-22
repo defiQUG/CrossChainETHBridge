@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { Client } = require("@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client");
+const { Client } = require("./helpers/Client");
 
 describe("MockRouter Extended Tests", function () {
   let router, owner, user1, user2;
