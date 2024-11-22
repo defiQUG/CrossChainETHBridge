@@ -105,23 +105,24 @@ describe("CrossChainMessenger", function() {
         it("Should receive message and convert to WETH", async function() {
             const amount = ethers.utils.parseEther("1");
             const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
+                ["address", "uint256"],
+                [user.address, amount]
+            );
 
+            // Create CCIP message format
             const message = {
-                messageId,
+                messageId: messageId,
                 sourceChainSelector: 138, // Defi Oracle Meta
-                sender: ethers.utils.hexZeroPad(user.address, 32),
-                data: ethers.utils.defaultAbiCoder.encode(
-                    ["address", "uint256"],
-                    [user.address, amount]
-                ),
+                sender: sender,
+                data: data,
                 destTokenAmounts: []
             };
 
             await mockRouter.simulateMessageReceived(
                 crossChainMessenger.address,
-                messageId,
-                user.address,
-                amount
+                message
             );
 
             // Verify WETH transfer event
@@ -134,38 +135,66 @@ describe("CrossChainMessenger", function() {
         it("Should reject messages from invalid source chain", async function() {
             const amount = ethers.utils.parseEther("1");
             const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
+                ["address", "uint256"],
+                [user.address, amount]
+            );
+
+            // Create CCIP message with invalid chain selector
+            const message = {
+                messageId: messageId,
+                sourceChainSelector: 1, // Invalid chain selector
+                sender: sender,
+                data: data,
+                destTokenAmounts: []
+            };
 
             await expect(
                 mockRouter.simulateMessageReceived(
                     crossChainMessenger.address,
-                    messageId,
-                    user.address,
-                    amount,
-                    1 // Invalid chain selector
+                    message
                 )
             ).to.be.revertedWith("Invalid source chain");
         });
 
         it("Should enforce rate limiting on message receiving", async function() {
             const amount = ethers.utils.parseEther("1");
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
+                ["address", "uint256"],
+                [user.address, amount]
+            );
 
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
+                const message = {
+                    messageId: ethers.utils.randomBytes(32),
+                    sourceChainSelector: 138,
+                    sender: sender,
+                    data: data,
+                    destTokenAmounts: []
+                };
+
                 await mockRouter.simulateMessageReceived(
                     crossChainMessenger.address,
-                    ethers.utils.randomBytes(32),
-                    user.address,
-                    amount
+                    message
                 );
             }
 
             // Next message should fail
+            const message = {
+                messageId: ethers.utils.randomBytes(32),
+                sourceChainSelector: 138,
+                sender: sender,
+                data: data,
+                destTokenAmounts: []
+            };
+
             await expect(
                 mockRouter.simulateMessageReceived(
                     crossChainMessenger.address,
-                    ethers.utils.randomBytes(32),
-                    user.address,
-                    amount
+                    message
                 )
             ).to.be.revertedWith("Rate limit exceeded");
         });
