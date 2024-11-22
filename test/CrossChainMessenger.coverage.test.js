@@ -20,7 +20,11 @@ describe("CrossChainMessenger Coverage Tests", function () {
     await mockWETH.deployed();
 
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    messenger = await CrossChainMessenger.deploy(mockRouter.address, mockWETH.address);
+    messenger = await CrossChainMessenger.deploy(
+      mockRouter.address,
+      mockWETH.address,
+      { value: ethers.utils.parseEther("1.0") }
+    );
     await messenger.deployed();
   });
 
@@ -37,6 +41,12 @@ describe("CrossChainMessenger Coverage Tests", function () {
       await owner.sendTransaction({ to: messenger.address, value: amount });
       await messenger.emergencyWithdraw(owner.address);
       expect(await ethers.provider.getBalance(messenger.address)).to.equal(0);
+    });
+
+    it("Should handle invalid chain ID correctly", async function () {
+      await expect(
+        messenger.sendToPolygon({ value: ethers.utils.parseEther("1.0") })
+      ).to.be.revertedWith("Invalid chain ID");
     });
   });
 });
