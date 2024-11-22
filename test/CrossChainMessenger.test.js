@@ -366,7 +366,7 @@ describe("CrossChainMessenger", function () {
 
       // Attempt the attack - should revert with reentrancy guard message
       await expect(attacker.attack())
-        .to.be.revertedWith("ReentrancyGuard: reentrant call");
+        .to.be.revertedWith("CCIP receive failed: ReentrancyGuard: reentrant call");
 
       // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
