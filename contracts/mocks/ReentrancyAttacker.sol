@@ -12,7 +12,7 @@ contract ReentrancyAttacker {
     event AttackAttempted(uint256 value, uint256 count);
     event FallbackCalled(uint256 value);
 
-    constructor(address _messenger) payable {
+    constructor(address payable _messenger) payable {
         require(_messenger != address(0), "Invalid messenger address");
         messenger = CrossChainMessenger(_messenger);
     }
