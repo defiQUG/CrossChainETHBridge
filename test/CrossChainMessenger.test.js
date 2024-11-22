@@ -340,9 +340,9 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract
+      // Deploy the attacker contract with the messenger address
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-      const attacker = await ReentrancyAttacker.deploy();
+      const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
 
       // Verify both contracts are deployed
@@ -357,7 +357,7 @@ describe("CrossChainMessenger", function () {
 
       // Attempt the attack with explicit gas limit
       await expect(
-        attacker.attack(testMessenger.address, {
+        attacker.attack({
           value: ethers.utils.parseEther("1.0"),
           gasLimit: 500000
         })
