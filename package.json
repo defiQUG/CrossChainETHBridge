@@ -10,10 +10,11 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@chainlink/contracts": "^1.3.0",
     "@chainlink/contracts-ccip": "^0.7.6",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-waffle": "^2.0.6",
-    "@openzeppelin/contracts": "4.9.3",
+    "@openzeppelin/contracts": "5.1.0",
     "chai": "^4.3.7",
     "dotenv": "^16.4.5",
     "ethereum-waffle": "^3.4.4",
