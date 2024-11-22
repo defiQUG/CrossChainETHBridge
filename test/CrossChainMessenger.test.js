@@ -166,6 +166,12 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
+            // Fund the contract first
+            await owner.sendTransaction({
+                to: crossChainMessenger.address,
+                value: ethers.utils.parseEther("10")
+            });
+
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
                 const message = {
