@@ -12,8 +12,13 @@ const Client = {
     };
   },
   Any2EVMMessage: function(message) {
+    // Generate a deterministic messageId based on the message content
+    const messageId = ethers.utils.hexZeroPad(
+      ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+      32
+    );
     return {
-      messageId: message.messageId || '0x',
+      messageId: messageId,
       sourceChainSelector: message.sourceChainSelector || 0,
       sender: message.sender || '0x',
       data: message.data || '0x',
