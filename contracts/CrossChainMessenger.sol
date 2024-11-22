@@ -60,7 +60,8 @@ contract CrossChainMessenger is ReentrancyGuard, RateLimiter {
             feeToken: address(0)
         });
 
-        bytes32 messageId = router.ccipSend{value: msg.value}(
+        // Use bridgeFee for the ccipSend call, not the full msg.value
+        bytes32 messageId = router.ccipSend{value: bridgeFee}(
             POLYGON_CHAIN_SELECTOR,
             message
         );
@@ -106,6 +107,7 @@ contract CrossChainMessenger is ReentrancyGuard, RateLimiter {
     function emergencyWithdraw(address payable _recipient) external onlyOwner whenPaused {
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
         uint256 balance = address(this).balance;
+        require(balance > 0, "CrossChainMessenger: no balance to withdraw");
         (bool success, ) = _recipient.call{value: balance}("");
         require(success, "CrossChainMessenger: transfer failed");
         emit EmergencyWithdraw(_recipient, balance);
