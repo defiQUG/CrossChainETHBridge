@@ -14,7 +14,8 @@ After this change is implemented:
    ```bash
    git branch -m master main
    git fetch origin
-   git branch -u origin/main main
+git branch -u origin/main main
+git config --global --replace-all init.defaultBranch main
    ```
 2. Update any existing branches to use 'main' as their base
 
