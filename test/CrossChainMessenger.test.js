@@ -336,27 +336,26 @@ describe("CrossChainMessenger", function () {
       const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
       const testMessenger = await CrossChainMessenger.deploy(
         mockRouter.address,
-        mockWETH.address  // Add WETH address as second constructor argument
+        mockWETH.address
       );
       await testMessenger.deployed();
 
-      // Verify the messenger is deployed
-      const code = await ethers.provider.getCode(testMessenger.address);
-      expect(code).to.not.equal("0x", "Contract not deployed");
-
+      // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy();
       await attacker.deployed();
 
-      // Fund attacker contract
+      // Fund the attacker contract with ETH
       await owner.sendTransaction({
         to: attacker.address,
-        value: ethers.utils.parseEther("2.0")
+        value: ethers.utils.parseEther("2.0") // Send 2 ETH to cover attack + fees
       });
 
-      // Attempt reentrant attack
+      // Attempt the attack
       await expect(
-        attacker.attack(testMessenger.address, { value: ethers.utils.parseEther("1.0") })
+        attacker.attack(testMessenger.address, {
+          value: ethers.utils.parseEther("1.0")
+        })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
       // Verify attack was prevented
