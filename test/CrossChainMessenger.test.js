@@ -231,7 +231,7 @@ describe("CrossChainMessenger", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Invalid amount");
+            ).to.be.revertedWith("Amount must be greater than 0");
         });
     });
 });
