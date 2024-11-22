@@ -104,8 +104,11 @@ describe("MockRouter Coverage Tests", function () {
       const message = {
         receiver: ethers.utils.defaultAbiCoder.encode(['address'], [addr1.address]),
         data: ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther("1.0")]),
-        tokenAmounts: [],  // Empty array for token amounts
-        extraArgs: "0x",   // Empty bytes for extraArgs
+        tokenAmounts: [{
+          token: ethers.constants.AddressZero,
+          amount: ethers.utils.parseEther("1.0")
+        }],
+        extraArgs: "0x",
         feeToken: ethers.constants.AddressZero
       };
 
