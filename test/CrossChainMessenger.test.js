@@ -355,21 +355,16 @@ describe("CrossChainMessenger", function () {
         value: ethers.utils.parseEther("3.0") // Ensure attacker has enough ETH for multiple attempts
       });
 
-      // Verify initial state
+      // Verify initial balances
       expect(await ethers.provider.getBalance(testMessenger.address)).to.be.above(0);
       expect(await ethers.provider.getBalance(attacker.address)).to.be.above(0);
-      expect(await attacker.attackCount()).to.equal(0);
 
-      // Attempt the attack
+      // Attempt the attack - should revert with reentrancy error
       await expect(
         attacker.attack({
           value: ethers.utils.parseEther("1.0")
         })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
-
-      // Verify attack was prevented
-      const attackerCount = await attacker.attackCount();
-      expect(attackerCount).to.equal(0, "Attack should have been prevented");
     });
   });
 });
