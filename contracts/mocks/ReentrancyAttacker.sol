@@ -23,10 +23,12 @@ contract ReentrancyAttacker {
     }
 
     receive() external payable {
+        emit FallbackCalled(msg.value);
+
         if (attackCount == 0 && address(this).balance >= 1 ether) {
-            emit FallbackCalled(msg.value);
-            attackCount++;
+            // Attempt reentrant call before state changes
             messenger.sendToPolygon{value: 1 ether}(address(this));
+            attackCount++;
             emit AttackAttempted(1 ether, attackCount);
         }
     }
