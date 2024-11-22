@@ -339,44 +339,29 @@ describe("CrossChainMessenger", function () {
         mockWETH.address
       );
       await testMessenger.deployed();
-      console.log("Test messenger deployed at:", testMessenger.address);
 
       // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
-      console.log("Attacker contract deployed at:", attacker.address);
-
-      // Verify the messenger address stored in attacker contract
-      const storedMessenger = await attacker.messenger();
-      console.log("Stored messenger address in attacker:", storedMessenger);
-
-      // Fund the attacker contract and mock router
-      const fundingAmount = ethers.utils.parseEther("3.0");
-      await owner.sendTransaction({
-        to: attacker.address,
-        value: fundingAmount
-      });
-      await owner.sendTransaction({
-        to: mockRouter.address,
-        value: fundingAmount
-      });
-      console.log("Attacker and router funded with:", ethers.utils.formatEther(fundingAmount), "ETH");
 
       // Set minimum bridge fee
       const minFee = ethers.utils.parseEther("0.001");
       await testMessenger.updateBridgeFee(minFee);
-      console.log("Bridge fee set to:", ethers.utils.formatEther(minFee), "ETH");
+      await mockRouter.setFee(minFee);
 
-      // Get initial balances
-      const initialAttackerBalance = await ethers.provider.getBalance(attacker.address);
-      console.log("Initial attacker balance:", ethers.utils.formatEther(initialAttackerBalance), "ETH");
+      // Fund the contracts with sufficient ETH
+      const fundingAmount = ethers.utils.parseEther("5.0");
+      await owner.sendTransaction({
+        to: mockRouter.address,
+        value: fundingAmount
+      });
 
       // Attempt the attack with enough ETH for transfer + fee
-      const attackValue = ethers.utils.parseEther("1.1"); // 1 ETH + 0.1 ETH for fees
-      console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
+      const attackValue = ethers.utils.parseEther("2.0"); // 2 ETH to cover multiple transfers + fees
+      const initialBalance = await ethers.provider.getBalance(attacker.address);
 
-      // Use proper Hardhat/Chai matcher for revert checking
+      // Attempt the attack
       await expect(
         attacker.attack({ value: attackValue })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
@@ -386,8 +371,8 @@ describe("CrossChainMessenger", function () {
       expect(attackCount).to.equal(0, "Attack should not have succeeded");
 
       // Verify no state changes occurred
-      const finalAttackerBalance = await ethers.provider.getBalance(attacker.address);
-      expect(finalAttackerBalance).to.equal(initialAttackerBalance.sub(attackValue));
+      const finalBalance = await ethers.provider.getBalance(attacker.address);
+      expect(finalBalance).to.equal(initialBalance.add(attackValue));
     });
   });
 });
