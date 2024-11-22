@@ -95,5 +95,43 @@ describe("MockRouter Coverage Tests", function () {
 
       await mockRouter.ccipReceive(message);
     });
+
+    it("Should handle fee calculations correctly", async function () {
+      const fee = await mockRouter.getFee(137, {
+        messageId: ethers.utils.hexZeroPad("0x1", 32),
+        sourceChainSelector: 138,
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
+        data: "0x",
+        destTokenAmounts: []
+      });
+      expect(fee).to.equal(ethers.utils.parseEther("0.1"));
+    });
+
+    it("Should validate message data correctly", async function () {
+      const message = {
+        messageId: ethers.utils.hexZeroPad("0x1", 32),
+        sourceChainSelector: 138,
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256'],
+          [ethers.constants.AddressZero, 0]
+        ),
+        destTokenAmounts: []
+      };
+      await expect(mockRouter.ccipReceive(message))
+        .to.be.revertedWith("Invalid message data");
+    });
+
+    it("Should handle message validation errors", async function () {
+      const message = {
+        messageId: ethers.utils.hexZeroPad("0x1", 32),
+        sourceChainSelector: 138,
+        sender: ethers.utils.hexZeroPad(ethers.constants.AddressZero, 32),
+        data: "0x",
+        destTokenAmounts: []
+      };
+      await expect(mockRouter.ccipReceive(message))
+        .to.be.revertedWith("Invalid sender");
+    });
   });
 });
