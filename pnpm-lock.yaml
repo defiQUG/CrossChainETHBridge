@@ -24,8 +24,8 @@ importers:
         specifier: ^2.0.6
         version: 2.0.6(@nomiclabs/hardhat-ethers@2.2.3(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(hardhat@2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10)))(@types/sinon-chai@3.2.12)(ethereum-waffle@3.4.4(bufferutil@4.0.8)(encoding@0.1.13)(typescript@5.6.3)(utf-8-validate@5.0.10))(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(hardhat@2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10))
       '@openzeppelin/contracts':
-        specifier: 5.0.0
-        version: 5.0.0
+        specifier: 4.9.3
+        version: 4.9.3
       chai:
         specifier: ^4.3.7
         version: 4.5.0
@@ -483,9 +483,6 @@ packages:
 
   '@openzeppelin/contracts@4.9.3':
     resolution: {integrity: sha512-He3LieZ1pP2TNt5JbkPA4PNT9WC3gOTOlDcFGJW4Le4QKqwmiNJCRt44APfxMxvq7OugU/cqYuPcSBzOw38DAg==}
-
-  '@openzeppelin/contracts@5.0.0':
-    resolution: {integrity: sha512-bv2sdS6LKqVVMLI5+zqnNrNU/CA+6z6CmwFXm/MzmOPBRSO5reEJN7z0Gbzvs0/bv/MZZXNklubpwy3v2+azsw==}
 
   '@openzeppelin/upgrades-core@1.40.0':
     resolution: {integrity: sha512-4bPSXdEqHsNRL5T1ybPLneWGYjzGl6XWGWkv7aUoFFgz8mOdarstRBX1Wi4XJFw6IeHPUI7mMSQr2jdz8Y2ypQ==}
@@ -5267,8 +5264,6 @@ snapshots:
   '@openzeppelin/contracts@4.8.3': {}
 
   '@openzeppelin/contracts@4.9.3': {}
-
-  '@openzeppelin/contracts@5.0.0': {}
 
   '@openzeppelin/upgrades-core@1.40.0':
     dependencies:
