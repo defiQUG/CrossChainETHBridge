@@ -22,13 +22,18 @@ contract ReentrancyAttacker {
         messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
     }
 
-    // Receive function that attempts immediate reentry
-    receive() external payable {
+    // Fallback function that attempts reentry
+    fallback() external payable {
         if (attackCount == 0) {
             attackCount++;
             emit AttackAttempted(address(this).balance, attackCount);
-            // Immediate reentrant call attempt
-            messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
+            // Try to reenter during the first message processing
+            (bool success,) = address(messenger).call{value: ATTACK_VALUE}(
+                abi.encodeWithSignature("sendToPolygon(address)", address(this))
+            );
+            require(success, "Reentrant call failed");
         }
     }
+
+    receive() external payable {}
 }
