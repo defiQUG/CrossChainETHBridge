@@ -28,6 +28,10 @@ contract ReentrancyAttacker {
         }
     }
 
+    fallback() external payable {
+        emit FallbackCalled(msg.value);
+    }
+
     function attack() external payable {
         require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Need at least 1.1 ETH"); // Extra for fees
         attackCount = 0;
