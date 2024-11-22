@@ -55,8 +55,21 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should send ETH to Polygon successfully", async function () {
-      const expectedMessageId = ethers.utils.id("testMessage");
-      await mockRouter.setNextMessageId(expectedMessageId);
+      const message = {
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
+        data: ethers.utils.defaultAbiCoder.encode(["uint256"], [sendAmount.sub(BRIDGE_FEE)]),
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
+      };
+
+      const messageId = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["uint64", "bytes", "bytes"],
+          [137, message.receiver, message.data]
+        )
+      );
+      await mockRouter.setNextMessageId(messageId);
 
       const tx = await messenger.sendToPolygon(receiverAddress, {
         value: sendAmount
@@ -64,12 +77,7 @@ describe("CrossChainMessenger", function () {
 
       await expect(tx)
         .to.emit(messenger, "MessageSent")
-        .withArgs(
-          expectedMessageId,
-          owner.address,
-          sendAmount.sub(BRIDGE_FEE),
-          BRIDGE_FEE
-        );
+        .withArgs(messageId, owner.address, sendAmount.sub(BRIDGE_FEE), BRIDGE_FEE);
     });
 
     it("Should fail when sending with insufficient amount", async function () {
