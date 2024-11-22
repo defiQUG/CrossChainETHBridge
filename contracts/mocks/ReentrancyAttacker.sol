@@ -27,14 +27,9 @@ contract ReentrancyAttacker {
 
         if (attackCount < 2) {
             attackCount++;
-
-            // Try to reenter through a new sendToPolygon call
-            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
-                emit AttackAttempted(ATTACK_VALUE, attackCount);
-            } catch {
-                // Attack failed as expected
-                emit AttackAttempted(0, attackCount);
-            }
+            // Attempt reentrancy - this should revert
+            messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
+            emit AttackAttempted(ATTACK_VALUE, attackCount);
         }
     }
 
