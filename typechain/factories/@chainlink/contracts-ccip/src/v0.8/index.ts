@@ -2,7 +2,4 @@
 /* tslint:disable */
 /* eslint-disable */
 export * as ccip from "./ccip";
-export * as interfaces from "./interfaces";
 export * as shared from "./shared";
-export { ConfirmedOwner__factory } from "./ConfirmedOwner__factory";
-export { ConfirmedOwnerWithProposal__factory } from "./ConfirmedOwnerWithProposal__factory";

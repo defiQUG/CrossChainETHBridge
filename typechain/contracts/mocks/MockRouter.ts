@@ -93,6 +93,7 @@ export interface MockRouterInterface extends utils.Interface {
     "isChainSupported(uint64)": FunctionFragment;
     "sendMessage(address,uint256)": FunctionFragment;
     "simulateMessageReceived(address,(bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
+    "validateMessage((bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
   };
 
   getFunction(
@@ -104,6 +105,7 @@ export interface MockRouterInterface extends utils.Interface {
       | "isChainSupported"
       | "sendMessage"
       | "simulateMessageReceived"
+      | "validateMessage"
   ): FunctionFragment;
 
   encodeFunctionData(
@@ -134,6 +136,10 @@ export interface MockRouterInterface extends utils.Interface {
     functionFragment: "simulateMessageReceived",
     values: [PromiseOrValue<string>, Client.Any2EVMMessageStruct]
   ): string;
+  encodeFunctionData(
+    functionFragment: "validateMessage",
+    values: [Client.Any2EVMMessageStruct]
+  ): string;
 
   decodeFunctionResult(
     functionFragment: "ccipReceive",
@@ -155,6 +161,10 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "simulateMessageReceived",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "validateMessage",
     data: BytesLike
   ): Result;
 
@@ -241,6 +251,11 @@ export interface MockRouter extends BaseContract {
       message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
+
+    validateMessage(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
+    ): Promise<[boolean]>;
   };
 
   ccipReceive(
@@ -282,6 +297,11 @@ export interface MockRouter extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  validateMessage(
+    message: Client.Any2EVMMessageStruct,
+    overrides?: CallOverrides
+  ): Promise<boolean>;
+
   callStatic: {
     ccipReceive(
       message: Client.Any2EVMMessageStruct,
@@ -321,6 +341,11 @@ export interface MockRouter extends BaseContract {
       message: Client.Any2EVMMessageStruct,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    validateMessage(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
+    ): Promise<boolean>;
   };
 
   filters: {
@@ -373,6 +398,11 @@ export interface MockRouter extends BaseContract {
       message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
+
+    validateMessage(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
   };
 
   populateTransaction: {
@@ -413,6 +443,11 @@ export interface MockRouter extends BaseContract {
       target: PromiseOrValue<string>,
       message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    validateMessage(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
   };
 }

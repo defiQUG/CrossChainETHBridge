@@ -16,12 +16,10 @@ export type { IRouterClient } from "./@chainlink/contracts-ccip/src/v0.8/ccip/in
 export { IRouterClient__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient__factory";
 export type { Client } from "./@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client";
 export { Client__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client__factory";
-export type { ConfirmedOwner } from "./@chainlink/contracts-ccip/src/v0.8/ConfirmedOwner";
-export { ConfirmedOwner__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/ConfirmedOwner__factory";
-export type { ConfirmedOwnerWithProposal } from "./@chainlink/contracts-ccip/src/v0.8/ConfirmedOwnerWithProposal";
-export { ConfirmedOwnerWithProposal__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/ConfirmedOwnerWithProposal__factory";
-export type { OwnableInterface } from "./@chainlink/contracts-ccip/src/v0.8/interfaces/OwnableInterface";
-export { OwnableInterface__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/interfaces/OwnableInterface__factory";
+export type { ConfirmedOwner } from "./@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner";
+export { ConfirmedOwner__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwner__factory";
+export type { ConfirmedOwnerWithProposal } from "./@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwnerWithProposal";
+export { ConfirmedOwnerWithProposal__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/shared/access/ConfirmedOwnerWithProposal__factory";
 export type { OwnerIsCreator } from "./@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator";
 export { OwnerIsCreator__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator__factory";
 export type { IOwnable } from "./@chainlink/contracts-ccip/src/v0.8/shared/interfaces/IOwnable";
