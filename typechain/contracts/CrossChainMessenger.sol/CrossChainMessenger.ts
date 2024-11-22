@@ -83,10 +83,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     "processMessage()": FunctionFragment;
     "router()": FunctionFragment;
     "sendToPolygon(address)": FunctionFragment;
+    "setBridgeFee(uint256)": FunctionFragment;
     "setMaxMessagesPerPeriod(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "unpause()": FunctionFragment;
-    "updateBridgeFee(uint256)": FunctionFragment;
     "weth()": FunctionFragment;
   };
 
@@ -111,10 +111,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
       | "processMessage"
       | "router"
       | "sendToPolygon"
+      | "setBridgeFee"
       | "setMaxMessagesPerPeriod"
       | "transferOwnership"
       | "unpause"
-      | "updateBridgeFee"
       | "weth"
   ): FunctionFragment;
 
@@ -177,6 +177,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
+    functionFragment: "setBridgeFee",
+    values: [PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setMaxMessagesPerPeriod",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
@@ -185,10 +189,6 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(functionFragment: "unpause", values?: undefined): string;
-  encodeFunctionData(
-    functionFragment: "updateBridgeFee",
-    values: [PromiseOrValue<BigNumberish>]
-  ): string;
   encodeFunctionData(functionFragment: "weth", values?: undefined): string;
 
   decodeFunctionResult(
@@ -250,6 +250,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setBridgeFee",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setMaxMessagesPerPeriod",
     data: BytesLike
   ): Result;
@@ -258,10 +262,6 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "unpause", data: BytesLike): Result;
-  decodeFunctionResult(
-    functionFragment: "updateBridgeFee",
-    data: BytesLike
-  ): Result;
   decodeFunctionResult(functionFragment: "weth", data: BytesLike): Result;
 
   events: {
@@ -485,6 +485,11 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    setBridgeFee(
+      _newFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -496,11 +501,6 @@ export interface CrossChainMessenger extends BaseContract {
     ): Promise<ContractTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    updateBridgeFee(
-      _newFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -567,6 +567,11 @@ export interface CrossChainMessenger extends BaseContract {
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  setBridgeFee(
+    _newFee: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   setMaxMessagesPerPeriod(
     _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -578,11 +583,6 @@ export interface CrossChainMessenger extends BaseContract {
   ): Promise<ContractTransaction>;
 
   unpause(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  updateBridgeFee(
-    _newFee: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -639,6 +639,11 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    setBridgeFee(
+      _newFee: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
@@ -650,11 +655,6 @@ export interface CrossChainMessenger extends BaseContract {
     ): Promise<void>;
 
     unpause(overrides?: CallOverrides): Promise<void>;
-
-    updateBridgeFee(
-      _newFee: PromiseOrValue<BigNumberish>,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     weth(overrides?: CallOverrides): Promise<string>;
   };
@@ -790,6 +790,11 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    setBridgeFee(
+      _newFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -801,11 +806,6 @@ export interface CrossChainMessenger extends BaseContract {
     ): Promise<BigNumber>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    updateBridgeFee(
-      _newFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -877,6 +877,11 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    setBridgeFee(
+      _newFee: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -888,11 +893,6 @@ export interface CrossChainMessenger extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     unpause(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    updateBridgeFee(
-      _newFee: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
