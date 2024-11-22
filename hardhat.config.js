@@ -1,6 +1,6 @@
-require("@nomicfoundation/hardhat-ethers");
+require("@nomiclabs/hardhat-ethers");
 require("@nomicfoundation/hardhat-verify");
-require("@nomicfoundation/hardhat-chai-matchers");
+require("@nomiclabs/hardhat-waffle");
 require("solidity-coverage");
 require("dotenv").config();
 
