@@ -14,6 +14,9 @@ importers:
       '@chainlink/contracts-ccip':
         specifier: ^0.7.6
         version: 0.7.6(bufferutil@4.0.8)(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(utf-8-validate@5.0.10)
+      '@nomicfoundation/hardhat-verify':
+        specifier: ^2.0.12
+        version: 2.0.12(hardhat@2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10))
       '@nomiclabs/hardhat-ethers':
         specifier: ^2.2.3
         version: 2.2.3(ethers@5.7.2(bufferutil@4.0.8)(utf-8-validate@5.0.10))(hardhat@2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10))
@@ -356,6 +359,11 @@ packages:
     resolution: {integrity: sha512-PRTyxZMP6kx+OdAzBhuH1LD2Yw+hrSpaytftvaK//thDy2OI07S0nrTdbrdk7b8ZVPAc9H9oTwFBl3/wJ3w15g==}
     engines: {node: '>=14'}
 
+  '@nomicfoundation/hardhat-verify@2.0.12':
+    resolution: {integrity: sha512-Lg3Nu7DCXASQRVI/YysjuAX2z8jwOCbS0w5tz2HalWGSTZThqA0v9N0v0psHbKNqzPJa8bNOeapIVSziyJTnAg==}
+    peerDependencies:
+      hardhat: ^2.0.4
+
   '@nomicfoundation/slang-darwin-arm64@0.17.0':
     resolution: {integrity: sha512-O0q94EUtoWy9A5kOTOa9/khtxXDYnLqmuda9pQELurSiwbQEVCPQL8kb34VbOW+ifdre66JM/05Xw9JWhIZ9sA==}
     engines: {node: '>= 10'}
@@ -679,6 +687,9 @@ packages:
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
+  ajv@8.17.1:
+    resolution: {integrity: sha512-B/gBuNg5SiMTrPkC+A2+cW0RszwxYmn6VYxB/inlBStS5nx6xHIt/ehKRhIMhqusl7a8LjQoZnjCs5vhwxOQ1g==}
+
   ansi-colors@4.1.3:
     resolution: {integrity: sha512-/6w/C21Pm1A7aZitlI5Ni/2J6FFQN8i1Cvz3kHABAAbw93v/NlvKdVOqz7CCWz/3iv/JplRSEEZ83XION15ovw==}
     engines: {node: '>=6'}
@@ -776,6 +787,10 @@ packages:
   assign-symbols@1.0.0:
     resolution: {integrity: sha512-Q+JC7Whu8HhmTdBph/Tq59IoRtoy6KAm5zzPv00WdujX82lbAL8K7WVjne7vdCsAmbF4AYaDOPyO3k0kl8qIrw==}
     engines: {node: '>=0.10.0'}
+
+  astral-regex@2.0.0:
+    resolution: {integrity: sha512-Z7tMw1ytTXt5jqMcOP+OQteU1VuNK9Y02uuJtKQ1Sv69jXQKKg5cibLwGJow8yzZP+eAc18EmLGPal0bp36rvQ==}
+    engines: {node: '>=8'}
 
   async-eventemitter@0.2.4:
     resolution: {integrity: sha512-pd20BwL7Yt1zwDFy+8MX8F1+WCT8aQeKj0kQnTrH9WaeRETlRamVhD0JtRPmrV4GfOJ2F9CvdQkZeZhnh2TuHw==}
@@ -1163,6 +1178,10 @@ packages:
   catering@2.1.1:
     resolution: {integrity: sha512-K7Qy8O9p76sL3/3m7/zLKbRkyOlSZAgzEaLhyj2mXS8PsCud2Eo4hAb8aLtZqHh0QGqLcb9dlJSu6lHRVENm1w==}
     engines: {node: '>=6'}
+
+  cbor@8.1.0:
+    resolution: {integrity: sha512-DwGjNW9omn6EwP70aXsn7FQJx5kO12tX0bZkaTjzdVFM6/7nhA4t0EENocKGx6D2Bch9PE2KzCUf5SceBdeijg==}
+    engines: {node: '>=12.19'}
 
   cbor@9.0.2:
     resolution: {integrity: sha512-JPypkxsB10s9QOWwa6zwPzqE1Md3vqpPc+cai4sAecuCsRyAtAl/pMyhPlMbT/xtPnm2dznJZYRLui57qiRhaQ==}
@@ -1874,6 +1893,9 @@ packages:
   fast-json-stable-stringify@2.1.0:
     resolution: {integrity: sha512-lhd/wF+Lk98HZoTCtlVraHtfh5XYijIjalXck7saUtuanSDyLMxnHhSXEDJqHxD7msR8D0uCmqlkwjCV8xvwHw==}
 
+  fast-uri@3.0.3:
+    resolution: {integrity: sha512-aLrHthzCjH5He4Z2H9YZ+v6Ujb9ocRuW6ZzkJQOrTxleEijANq4v1TsaPaVG1PZcuurEzrLcWRyYBYXD5cEiaw==}
+
   fastq@1.17.1:
     resolution: {integrity: sha512-sRVD3lWVIXWg6By68ZN7vho9a1pQcN/WBFaAAsDDFzlJjvoGx0P8z7V1t72grFJfJhu3YPZBuu25f7Kaw2jN1w==}
 
@@ -2538,6 +2560,9 @@ packages:
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
 
+  json-schema-traverse@1.0.0:
+    resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+
   json-schema@0.4.0:
     resolution: {integrity: sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==}
 
@@ -2684,8 +2709,14 @@ packages:
   lodash.assign@4.2.0:
     resolution: {integrity: sha512-hFuH8TY+Yji7Eja3mGiuAxBqLagejScbG8GbG0j6o9vzn0YL14My+ktnqtZgFTosKymC9/44wP6s7xyuLfnClw==}
 
+  lodash.clonedeep@4.5.0:
+    resolution: {integrity: sha512-H5ZhCF25riFd9uB5UCkVKo61m3S/xZk1x4wA6yp/L3RFP6Z/eHH1ymQcGLo7J3GMPfm0V/7m1tryHuGVxpqEBQ==}
+
   lodash.startcase@4.4.0:
     resolution: {integrity: sha512-+WKqsK294HMSc2jEbNgpHpd0JfIBhp7rEV4aqXWqFr6AlXov+SlcgB1Fv01y2kGe3Gc8nMW7VA0SrGuSkRfIEg==}
+
+  lodash.truncate@4.4.2:
+    resolution: {integrity: sha512-jttmRe7bRse52OsWIMDLaXxWqRAmtIUccAQ3garviCqJjafXOfNMO0yMfNpdD6zbGaTU0P5Nz7e7gAT6cKmJRw==}
 
   lodash@4.17.20:
     resolution: {integrity: sha512-PlhdFcillOINfeV7Ni6oF1TAEayyZBoZ8bcshTHqOYJYlrqzRK5hagpagky5o4HfCzzd1TRkXPMFq6cKk9rGmA==}
@@ -3644,6 +3675,10 @@ packages:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
 
+  slice-ansi@4.0.0:
+    resolution: {integrity: sha512-qMCMfhY040cVHT43K9BFygqYbUPFZKHOg7K73mtTWJRb8pyP3fzf4Ixd5SzdEJQ6MRUg/WBnOLxghZtKKurENQ==}
+    engines: {node: '>=10'}
+
   snapdragon-node@2.1.1:
     resolution: {integrity: sha512-O27l4xaMYt/RSQ5TR3vpWCAB5Kb/czIcqUFOM/C4fYcLnbZUc1PkjTAMjof2pBWaSTwOUd6qUHcFGVGj7aIwnw==}
     engines: {node: '>=0.10.0'}
@@ -3818,6 +3853,10 @@ packages:
 
   swarm-js@0.1.42:
     resolution: {integrity: sha512-BV7c/dVlA3R6ya1lMlSSNPLYrntt0LUq4YMgy3iwpCIc6rZnS5W2wUoctarZ5pXlpKtxDDf9hNziEkcfrxdhqQ==}
+
+  table@6.8.2:
+    resolution: {integrity: sha512-w2sfv80nrAh2VCbqR5AK27wswXhqcck2AhfnNW76beQXskGZ1V12GwS//yYVa3d3fcvAip2OUnbDAjW2k3v9fA==}
+    engines: {node: '>=10.0.0'}
 
   tape@4.17.0:
     resolution: {integrity: sha512-KCuXjYxCZ3ru40dmND+oCLsXyuA8hoseu2SS404Px5ouyS0A99v8X/mdiLqsR5MTAyamMBN7PRwt2Dv3+xGIxw==}
@@ -5105,6 +5144,21 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@nomicfoundation/hardhat-verify@2.0.12(hardhat@2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10))':
+    dependencies:
+      '@ethersproject/abi': 5.7.0
+      '@ethersproject/address': 5.7.0
+      cbor: 8.1.0
+      debug: 4.3.7(supports-color@8.1.1)
+      hardhat: 2.12.7(bufferutil@4.0.8)(typescript@5.6.3)(utf-8-validate@5.0.10)
+      lodash.clonedeep: 4.5.0
+      picocolors: 1.1.1
+      semver: 6.3.1
+      table: 6.8.2
+      undici: 5.28.4
+    transitivePeerDependencies:
+      - supports-color
+
   '@nomicfoundation/slang-darwin-arm64@0.17.0':
     optional: true
 
@@ -5507,6 +5561,13 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
+  ajv@8.17.1:
+    dependencies:
+      fast-deep-equal: 3.1.3
+      fast-uri: 3.0.3
+      json-schema-traverse: 1.0.0
+      require-from-string: 2.0.2
+
   ansi-colors@4.1.3: {}
 
   ansi-escapes@4.3.2:
@@ -5602,6 +5663,8 @@ snapshots:
 
   assign-symbols@1.0.0: {}
 
+  astral-regex@2.0.0: {}
+
   async-eventemitter@0.2.4:
     dependencies:
       async: 2.6.4
@@ -5612,7 +5675,7 @@ snapshots:
 
   async@2.6.2:
     dependencies:
-      lodash: 4.17.20
+      lodash: 4.17.21
 
   async@2.6.4:
     dependencies:
@@ -5653,7 +5716,7 @@ snapshots:
       convert-source-map: 1.9.0
       debug: 2.6.9
       json5: 0.5.1
-      lodash: 4.17.20
+      lodash: 4.17.21
       minimatch: 3.1.2
       path-is-absolute: 1.0.1
       private: 0.1.8
@@ -5669,7 +5732,7 @@ snapshots:
       babel-types: 6.26.0
       detect-indent: 4.0.0
       jsesc: 1.3.0
-      lodash: 4.17.20
+      lodash: 4.17.21
       source-map: 0.5.7
       trim-right: 1.0.1
 
@@ -5695,7 +5758,7 @@ snapshots:
       babel-helper-function-name: 6.24.1
       babel-runtime: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     transitivePeerDependencies:
       - supports-color
 
@@ -5736,7 +5799,7 @@ snapshots:
     dependencies:
       babel-runtime: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
 
   babel-helper-remap-async-to-generator@6.24.1:
     dependencies:
@@ -5802,7 +5865,7 @@ snapshots:
       babel-template: 6.26.0
       babel-traverse: 6.26.0
       babel-types: 6.26.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     transitivePeerDependencies:
       - supports-color
 
@@ -5990,7 +6053,7 @@ snapshots:
       babel-runtime: 6.26.0
       core-js: 2.6.12
       home-or-tmp: 2.0.0
-      lodash: 4.17.20
+      lodash: 4.17.21
       mkdirp: 0.5.6
       source-map-support: 0.4.18
     transitivePeerDependencies:
@@ -6007,7 +6070,7 @@ snapshots:
       babel-traverse: 6.26.0
       babel-types: 6.26.0
       babylon: 6.18.0
-      lodash: 4.17.20
+      lodash: 4.17.21
     transitivePeerDependencies:
       - supports-color
 
@@ -6021,7 +6084,7 @@ snapshots:
       debug: 2.6.9
       globals: 9.18.0
       invariant: 2.2.4
-      lodash: 4.17.20
+      lodash: 4.17.21
     transitivePeerDependencies:
       - supports-color
 
@@ -6029,7 +6092,7 @@ snapshots:
     dependencies:
       babel-runtime: 6.26.0
       esutils: 2.0.3
-      lodash: 4.17.20
+      lodash: 4.17.21
       to-fast-properties: 1.0.3
 
   babelify@7.3.0:
@@ -6312,6 +6375,10 @@ snapshots:
   caseless@0.12.0: {}
 
   catering@2.1.1: {}
+
+  cbor@8.1.0:
+    dependencies:
+      nofilter: 3.1.0
 
   cbor@9.0.2:
     dependencies:
@@ -7403,6 +7470,8 @@ snapshots:
 
   fast-json-stable-stringify@2.1.0: {}
 
+  fast-uri@3.0.3: {}
+
   fastq@1.17.1:
     dependencies:
       reusify: 1.0.4
@@ -8181,6 +8250,8 @@ snapshots:
 
   json-schema-traverse@0.4.1: {}
 
+  json-schema-traverse@1.0.0: {}
+
   json-schema@0.4.0: {}
 
   json-stable-stringify@1.1.1:
@@ -8379,7 +8450,11 @@ snapshots:
 
   lodash.assign@4.2.0: {}
 
+  lodash.clonedeep@4.5.0: {}
+
   lodash.startcase@4.4.0: {}
+
+  lodash.truncate@4.4.2: {}
 
   lodash@4.17.20: {}
 
@@ -8712,8 +8787,7 @@ snapshots:
 
   node-gyp-build@4.8.4: {}
 
-  nofilter@3.1.0:
-    optional: true
+  nofilter@3.1.0: {}
 
   normalize-package-data@2.5.0:
     dependencies:
@@ -9465,6 +9539,12 @@ snapshots:
 
   slash@3.0.0: {}
 
+  slice-ansi@4.0.0:
+    dependencies:
+      ansi-styles: 4.3.0
+      astral-regex: 2.0.0
+      is-fullwidth-code-point: 3.0.0
+
   snapdragon-node@2.1.1:
     dependencies:
       define-property: 1.0.0
@@ -9703,6 +9783,14 @@ snapshots:
       - supports-color
       - utf-8-validate
     optional: true
+
+  table@6.8.2:
+    dependencies:
+      ajv: 8.17.1
+      lodash.truncate: 4.4.2
+      slice-ansi: 4.0.0
+      string-width: 4.2.3
+      strip-ansi: 6.0.1
 
   tape@4.17.0:
     dependencies:
