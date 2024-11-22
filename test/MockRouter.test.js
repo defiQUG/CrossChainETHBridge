@@ -83,10 +83,16 @@ describe("MockRouter", function () {
 
   describe("Message Handling", function () {
     it("Should emit MessageSent event on ccipSend", async function () {
-      // Convert address to bytes that will be cast to bytes20 by the contract
-      const paddedAddress = ethers.utils.hexZeroPad(addr1.address, 32);
+      // Create message with properly encoded address
+      // Log the address values to understand the encoding
+      console.log("Original address:", addr1.address);
+      const encodedAddress = ethers.utils.defaultAbiCoder.encode(["address"], [addr1.address]);
+      console.log("Encoded address:", encodedAddress);
+      const bytes20Address = "0x" + addr1.address.slice(2).padStart(40, "0");
+      console.log("Bytes20 address:", bytes20Address);
+
       const message = {
-        receiver: paddedAddress,  // Will be cast to bytes20 then address by contract
+        receiver: bytes20Address,
         data: "0x",
         tokenAmounts: [],
         extraArgs: "0x",
@@ -97,12 +103,11 @@ describe("MockRouter", function () {
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
           ["uint64", "bytes", "bytes"],
-          [137, paddedAddress, message.data]
+          [137, bytes20Address, message.data]
         )
       );
       await mockRouter.setNextMessageId(messageId);
 
-      // The contract will cast bytes20(message.receiver) to address
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
         .withArgs(messageId, 137, addr1.address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
