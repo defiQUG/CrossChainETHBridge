@@ -8,5 +8,5 @@ module.exports = {
   MAX_MESSAGES_PER_HOUR: 100,
   ALERT_THRESHOLD_MESSAGES: 80,
   CONTRACT_ADDRESS: process.env.CONTRACT_ADDRESS || "0x0000000000000000000000000000000000000000",
-  RPC_URL: process.env.RPC_URL || "http://localhost:8545"
+  RPC_URL: process.env.RPC_URL || "http://127.0.0.1:8545"
 };

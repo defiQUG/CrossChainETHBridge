@@ -9717,7 +9717,7 @@ snapshots:
 
   rimraf@2.7.1:
     dependencies:
-      glob: 7.2.3
+      glob: 7.2.0
 
   ripemd160@2.0.2:
     dependencies:

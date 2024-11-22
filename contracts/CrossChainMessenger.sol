@@ -25,16 +25,26 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
     constructor(address _router) {
         require(_router != address(0), "Invalid router address");
         router = IRouterClient(_router);
-        bridgeFee = 0.001 ether;
+        bridgeFee = 0.1 ether;
+    }
+
+    function getRouter() external view returns (address) {
+        return address(router);
+    }
+
+    function getBridgeFee() external view returns (uint256) {
+        return bridgeFee;
     }
 
     function sendToPolygon(address _recipient) external payable nonReentrant whenNotPaused {
         require(msg.value > bridgeFee, "Insufficient amount");
         require(messageCounter < MAX_MESSAGES_PER_HOUR, "Message limit exceeded");
 
+        bytes memory data = abi.encode(_recipient, msg.value - bridgeFee);
+
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
-            data: abi.encode(msg.value - bridgeFee),
+            data: data,
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
             feeToken: address(0)
