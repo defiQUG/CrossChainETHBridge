@@ -55,7 +55,10 @@
 - Testing: 35%
 - Documentation: 30%
 - Infrastructure: 45%
-- Deployment Readiness: 25%
+ Deployment Readiness: 25%
+ - CI/CD Pipeline Configuration: 40%
+ - Environment Setup: 20%
+ - Security Compliance: 15%
 - Overall Progress: 35%
 
 Estimated time to completion: 120-160 hours
