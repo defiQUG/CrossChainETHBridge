@@ -372,25 +372,22 @@ describe("CrossChainMessenger", function () {
       const attackValue = ethers.utils.parseEther("1.0");
       console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
 
-      // The attack should fail due to reentrancy protection
-      const tx = {
-        to: attacker.address,
-        value: attackValue,
-        gasLimit: 500000
-      };
-
       try {
-        // Send transaction directly instead of using contract method
-        await owner.sendTransaction(tx);
+        // Call the attack function on the contract instead of sending directly
+        await attacker.attack({ value: attackValue });
         expect.fail("Attack should have failed");
       } catch (error) {
-        // With assembly-level calls, we expect a revert without reason
-        expect(error.message).to.include("reverted");
+        // Expect revert from reentrancy guard
+        expect(error.message).to.include("revert");
       }
 
       // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
       expect(attackCount).to.equal(0, "Attack should not have succeeded");
+
+      // Verify no state changes occurred
+      const finalAttackerBalance = await ethers.provider.getBalance(attacker.address);
+      expect(finalAttackerBalance).to.equal(initialAttackerBalance.sub(attackValue));
     });
   });
 });
