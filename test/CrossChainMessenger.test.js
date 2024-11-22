@@ -364,10 +364,11 @@ describe("CrossChainMessenger", function () {
       // Verify initial state
       expect(await attacker.attackCount()).to.equal(0);
 
-      // Attempt the attack
-      await attacker.attack();
+      // Attempt the attack - should revert with reentrancy guard message
+      await expect(attacker.attack())
+        .to.be.revertedWith("ReentrancyGuard: reentrant call");
 
-      // Verify attack was unsuccessful (counter should still be 0 if reentrancy guard worked)
+      // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
       expect(attackCount).to.equal(0, "Reentrancy guard failed to prevent attack");
     });
