@@ -60,6 +60,28 @@ export declare namespace Client {
     feeToken: string;
     extraArgs: string;
   };
+
+  export type Any2EVMMessageStruct = {
+    messageId: PromiseOrValue<BytesLike>;
+    sourceChainSelector: PromiseOrValue<BigNumberish>;
+    sender: PromiseOrValue<BytesLike>;
+    data: PromiseOrValue<BytesLike>;
+    destTokenAmounts: Client.EVMTokenAmountStruct[];
+  };
+
+  export type Any2EVMMessageStructOutput = [
+    string,
+    BigNumber,
+    string,
+    string,
+    Client.EVMTokenAmountStructOutput[]
+  ] & {
+    messageId: string;
+    sourceChainSelector: BigNumber;
+    sender: string;
+    data: string;
+    destTokenAmounts: Client.EVMTokenAmountStructOutput[];
+  };
 }
 
 export interface MockRouterInterface extends utils.Interface {
@@ -68,6 +90,7 @@ export interface MockRouterInterface extends utils.Interface {
     "getFee(uint64,(bytes,bytes,(address,uint256)[],address,bytes))": FunctionFragment;
     "getSupportedTokens(uint64)": FunctionFragment;
     "isChainSupported(uint64)": FunctionFragment;
+    "sendMessage(address,(bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
     "simulateMessageReceived(address,bytes32,address,bytes)": FunctionFragment;
   };
 
@@ -77,6 +100,7 @@ export interface MockRouterInterface extends utils.Interface {
       | "getFee"
       | "getSupportedTokens"
       | "isChainSupported"
+      | "sendMessage"
       | "simulateMessageReceived"
   ): FunctionFragment;
 
@@ -97,6 +121,10 @@ export interface MockRouterInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "sendMessage",
+    values: [PromiseOrValue<string>, Client.Any2EVMMessageStruct]
+  ): string;
+  encodeFunctionData(
     functionFragment: "simulateMessageReceived",
     values: [
       PromiseOrValue<string>,
@@ -114,6 +142,10 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "isChainSupported",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "sendMessage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -192,6 +224,12 @@ export interface MockRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean] & { supported: boolean }>;
 
+    sendMessage(
+      target: PromiseOrValue<string>,
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     simulateMessageReceived(
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
@@ -223,6 +261,12 @@ export interface MockRouter extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean>;
 
+  sendMessage(
+    target: PromiseOrValue<string>,
+    message: Client.Any2EVMMessageStruct,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   simulateMessageReceived(
     target: PromiseOrValue<string>,
     messageId: PromiseOrValue<BytesLike>,
@@ -253,6 +297,12 @@ export interface MockRouter extends BaseContract {
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<boolean>;
+
+    sendMessage(
+      target: PromiseOrValue<string>,
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
+    ): Promise<void>;
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
@@ -305,6 +355,12 @@ export interface MockRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    sendMessage(
+      target: PromiseOrValue<string>,
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     simulateMessageReceived(
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
@@ -335,6 +391,12 @@ export interface MockRouter extends BaseContract {
     isChainSupported(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    sendMessage(
+      target: PromiseOrValue<string>,
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     simulateMessageReceived(
