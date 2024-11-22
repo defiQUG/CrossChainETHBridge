@@ -25,9 +25,21 @@ describe("CrossChainMessenger", function () {
     mockWETH = await MockWETH.deploy();
     await mockWETH.deployed();
 
-    // Deploy the messenger contract
-    CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    messenger = await CrossChainMessenger.deploy(mockRouter.address);
+    // Override POLYGON_WETH address in messenger contract
+    const overrideAddress = mockWETH.address;
+    const messengerFactory = await ethers.getContractFactory("CrossChainMessenger");
+    const messengerArtifact = await hre.artifacts.readArtifact("CrossChainMessenger");
+    const modifiedBytecode = messengerArtifact.bytecode.replace(
+        /0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619/i,
+        overrideAddress.slice(2).padStart(40, '0')
+    );
+
+    // Deploy the messenger contract with modified bytecode
+    messenger = await ethers.getContractFactory(
+        messengerArtifact.abi,
+        modifiedBytecode
+    ).then(factory => factory.deploy(mockRouter.address));
+
     await messenger.deployed();
   });
 
@@ -79,14 +91,21 @@ describe("CrossChainMessenger", function () {
       const sourceChain = 138; // DEFI_ORACLE_META_SELECTOR
       const amount = ethers.utils.parseEther("0.5");
 
+      // Fund the messenger contract with ETH for WETH minting
+      await owner.sendTransaction({
+        to: messenger.address,
+        value: amount
+      });
+
       const message = {
         messageId,
         sourceChainSelector: sourceChain,
         sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
-        destTokenAmounts: [{
-          amount: amount
-        }]
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [receiverAddress, amount]
+        ),
+        destTokenAmounts: []
       };
 
       await expect(messenger.connect(mockRouter)._ccipReceive(message))
