@@ -19,7 +19,7 @@ contract MockRouter is IRouterClient {
         require(destinationChainSelector == 137, "Invalid chain selector");
 
         address receiver = address(bytes20(message.receiver));
-        uint256 amount = abi.decode(message.data, (uint256));
+        (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
 
         emit MessageSent(
             destinationChainSelector,
@@ -27,7 +27,7 @@ contract MockRouter is IRouterClient {
             amount
         );
 
-        return keccak256(abi.encodePacked(block.timestamp, msg.sender, receiver, amount));
+        return keccak256(abi.encodePacked(block.timestamp, msg.sender, recipient, amount));
     }
 
     function sendMessage(
