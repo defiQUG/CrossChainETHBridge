@@ -28,12 +28,12 @@ describe("CrossChainMessenger", function() {
         mockRouter = await MockRouter.deploy();
         await mockRouter.deployed();
 
-        // Deploy CrossChainMessenger
+        // Deploy CrossChainMessenger with correct parameters
         const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
         crossChainMessenger = await CrossChainMessenger.deploy(
             mockRouter.address,
             mockWETH.address,
-            ethers.utils.parseEther("0.1")
+            5  // maxMessagesPerPeriod
         );
         await crossChainMessenger.deployed();
 
@@ -237,24 +237,24 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should allow owner to update fee", async function() {
-            const newFee = ethers.utils.parseEther("0.002");
-            await expect(crossChainMessenger.updateBridgeFee(newFee))
+            const newFee = ethers.utils.parseEther("0.2");
+            await expect(crossChainMessenger.setBridgeFee(newFee))
                 .to.emit(crossChainMessenger, "BridgeFeeUpdated")
                 .withArgs(newFee);
             expect(await crossChainMessenger.bridgeFee()).to.equal(newFee);
         });
 
         it("Should prevent non-owner from updating fee", async function() {
-            const newFee = ethers.utils.parseEther("0.002");
+            const newFee = ethers.utils.parseEther("0.2");
             await expect(
-                crossChainMessenger.connect(addr1).updateBridgeFee(newFee)
+                crossChainMessenger.connect(addr1).setBridgeFee(newFee)
             ).to.be.revertedWith("Ownable: caller is not the owner");
         });
 
         it("Should prevent setting fee above maximum", async function() {
-            const tooHighFee = MAX_FEE.add(1);
+            const maxFee = ethers.utils.parseEther("1.0");
             await expect(
-                crossChainMessenger.updateBridgeFee(tooHighFee)
+                crossChainMessenger.setBridgeFee(maxFee.add(1))
             ).to.be.revertedWith("Fee exceeds maximum");
         });
 
@@ -306,15 +306,17 @@ describe("CrossChainMessenger", function() {
                 value: amount
             });
 
+            await crossChainMessenger.pause();
+
             const initialBalance = await owner.getBalance();
-            await expect(crossChainMessenger.recoverFunds(ethers.constants.AddressZero))
-                .to.emit(crossChainMessenger, "FundsRecovered")
-                .withArgs(ethers.constants.AddressZero, amount);
+            await expect(crossChainMessenger.emergencyWithdraw(owner.address))
+                .to.emit(crossChainMessenger, "EmergencyWithdraw")
+                .withArgs(owner.address, amount);
 
             const finalBalance = await owner.getBalance();
             expect(finalBalance.sub(initialBalance)).to.be.closeTo(
                 amount,
-                ethers.utils.parseEther("0.001")
+                ethers.utils.parseEther("0.001") // Account for gas
             );
         });
     });
