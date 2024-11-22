@@ -92,7 +92,7 @@ export interface MockRouterInterface extends utils.Interface {
     "getSupportedTokens(uint64)": FunctionFragment;
     "isChainSupported(uint64)": FunctionFragment;
     "sendMessage(address,uint256)": FunctionFragment;
-    "simulateMessageReceived(address,bytes32,address,uint256)": FunctionFragment;
+    "simulateMessageReceived(address,(bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
   };
 
   getFunction(
@@ -132,12 +132,7 @@ export interface MockRouterInterface extends utils.Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "simulateMessageReceived",
-    values: [
-      PromiseOrValue<string>,
-      PromiseOrValue<BytesLike>,
-      PromiseOrValue<string>,
-      PromiseOrValue<BigNumberish>
-    ]
+    values: [PromiseOrValue<string>, Client.Any2EVMMessageStruct]
   ): string;
 
   decodeFunctionResult(
@@ -244,9 +239,7 @@ export interface MockRouter extends BaseContract {
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
-      messageId: PromiseOrValue<BytesLike>,
-      sender: PromiseOrValue<string>,
-      amount: PromiseOrValue<BigNumberish>,
+      message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
@@ -286,9 +279,7 @@ export interface MockRouter extends BaseContract {
 
   simulateMessageReceived(
     target: PromiseOrValue<string>,
-    messageId: PromiseOrValue<BytesLike>,
-    sender: PromiseOrValue<string>,
-    amount: PromiseOrValue<BigNumberish>,
+    message: Client.Any2EVMMessageStruct,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -328,9 +319,7 @@ export interface MockRouter extends BaseContract {
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
-      messageId: PromiseOrValue<BytesLike>,
-      sender: PromiseOrValue<string>,
-      amount: PromiseOrValue<BigNumberish>,
+      message: Client.Any2EVMMessageStruct,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -384,9 +373,7 @@ export interface MockRouter extends BaseContract {
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
-      messageId: PromiseOrValue<BytesLike>,
-      sender: PromiseOrValue<string>,
-      amount: PromiseOrValue<BigNumberish>,
+      message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
@@ -427,9 +414,7 @@ export interface MockRouter extends BaseContract {
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
-      messageId: PromiseOrValue<BytesLike>,
-      sender: PromiseOrValue<string>,
-      amount: PromiseOrValue<BigNumberish>,
+      message: Client.Any2EVMMessageStruct,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };
