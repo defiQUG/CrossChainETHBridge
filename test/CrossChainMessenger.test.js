@@ -342,7 +342,11 @@ describe("CrossChainMessenger", function () {
 
       // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-      const attacker = await ReentrancyAttacker.deploy(testMessenger.address, { value: ethers.utils.parseEther("2.0") });
+      const attacker = await ReentrancyAttacker.deploy(
+        testMessenger.address,
+        mockRouter.address,
+        { value: ethers.utils.parseEther("2.0") }
+      );
       await attacker.deployed();
 
       // Set minimum bridge fee
