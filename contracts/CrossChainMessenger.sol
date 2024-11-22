@@ -25,7 +25,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     uint64 public constant POLYGON_SELECTOR = 137;
 
     // WETH contract on Polygon
-    address public constant POLYGON_WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
+    address payable public constant POLYGON_WETH = payable(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619);
 
     // Fee configuration
     uint256 public bridgeFee = 0.001 ether; // 0.1% fee
