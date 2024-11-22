@@ -89,7 +89,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
 
         uint256 transferAmount = msg.value - bridgeFee;
 
-        // Prepare the CCIP message
+        // Prepare message data before any external calls
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_receiver),
             data: abi.encode(transferAmount),
@@ -100,19 +100,20 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
                     strict: true
                 })
             ),
-            feeToken: address(0) // Use native token for fees
+            feeToken: address(0)
         });
 
-        // Get the fee for sending message
+        // Get fee (external read-only call)
         uint256 ccipFee = IRouterClient(i_router).getFee(POLYGON_SELECTOR, message);
         require(bridgeFee >= ccipFee, "Insufficient fee for CCIP");
 
-        // Send the message
+        // Interactions (after all checks and effects)
         bytes32 messageId = IRouterClient(i_router).ccipSend{value: ccipFee}(
             POLYGON_SELECTOR,
             message
         );
 
+        // Events after all state changes and interactions
         emit MessageSent(messageId, msg.sender, transferAmount, bridgeFee);
     }
 
