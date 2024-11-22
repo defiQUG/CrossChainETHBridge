@@ -2,32 +2,32 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("CrossChainMessenger", function() {
-    let crossChainMessenger;
-    let mockRouter;
-    let mockWeth;
     let owner;
     let user;
+    let mockRouter;
+    let mockWETH;
+    let crossChainMessenger;
     const POLYGON_CHAIN_SELECTOR = 137;
-    const MAX_MESSAGES_PER_PERIOD = 100;
+    const MAX_MESSAGES_PER_PERIOD = 5;
 
     beforeEach(async function() {
         [owner, user] = await ethers.getSigners();
+
+        // Deploy MockWETH
+        const MockWETH = await ethers.getContractFactory("MockWETH");
+        mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
+        await mockWETH.deployed();
 
         // Deploy MockRouter
         const MockRouter = await ethers.getContractFactory("MockRouter");
         mockRouter = await MockRouter.deploy();
         await mockRouter.deployed();
 
-        // Deploy MockWETH
-        const MockWETH = await ethers.getContractFactory("MockWETH");
-        mockWeth = await MockWETH.deploy();
-        await mockWeth.deployed();
-
         // Deploy CrossChainMessenger with router, WETH, and rate limit
         const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
         crossChainMessenger = await CrossChainMessenger.deploy(
             mockRouter.address,
-            mockWeth.address,
+            mockWETH.address,
             MAX_MESSAGES_PER_PERIOD
         );
         await crossChainMessenger.deployed();
