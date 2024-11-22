@@ -16,6 +16,7 @@ contract MockRouter is IRouterClient {
 
     uint256 private mockFee = 0.001 ether;
     bytes32 private nextMessageId;
+    bool private processingMessage;
 
     function setFee(uint256 _fee) external {
         mockFee = _fee;
@@ -29,6 +30,9 @@ contract MockRouter is IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable returns (bytes32) {
+        require(!processingMessage, "Reentrant call detected");
+        processingMessage = true;
+
         bytes32 messageId = nextMessageId == bytes32(0)
             ? keccak256(abi.encode(destinationChainSelector, message.receiver, message.data))
             : nextMessageId;
@@ -43,14 +47,24 @@ contract MockRouter is IRouterClient {
             msg.value
         );
 
-        // Immediately simulate message received to test reentrancy
+        // Simulate message received to test reentrancy
         if (destinationChainSelector == 137) { // If sending to Polygon
+            // Create the message data
+            bytes memory simulatedData = message.data;
+            address target = address(bytes20(message.receiver));
+
+            // Reset processing flag before external call
+            processingMessage = false;
+
+            // Simulate the message receipt
             this.simulateMessageReceived(
-                address(bytes20(message.receiver)),
+                target,
                 138, // Source chain (Defi Oracle Meta)
                 msg.sender,
-                message.data
+                simulatedData
             );
+        } else {
+            processingMessage = false;
         }
 
         return messageId;
@@ -81,6 +95,9 @@ contract MockRouter is IRouterClient {
         address sender,
         bytes memory data
     ) external {
+        require(!processingMessage, "Reentrant call detected");
+        processingMessage = true;
+
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
         bytes32 messageId = keccak256(abi.encode(sourceChainSelector, sender, data));
 
@@ -93,5 +110,7 @@ contract MockRouter is IRouterClient {
                 destTokenAmounts: destTokenAmounts
             })
         );
+
+        processingMessage = false;
     }
 }
