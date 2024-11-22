@@ -228,14 +228,16 @@ describe("CrossChainMessenger", function () {
         [addr2.address, ethers.utils.parseEther("1.0")]
       );
 
+      // Try to call with non-router address
       await expect(
-        mockRouter.connect(addr1).simulateMessageReceived(
-          messenger.address,
-          138,
-          addr1.address,
-          encodedData
-        )
-      ).to.be.revertedWith("Caller is not the router");
+        messenger.connect(addr1).ccipReceive({
+          messageId: ethers.utils.id("testMessage"),
+          sourceChainSelector: 138,
+          sender: mockRouter.address,
+          data: encodedData,
+          destTokenAmounts: []
+        })
+      ).to.be.revertedWith("InvalidRouter");
     });
 
     it("Should allow contract to receive ETH", async function () {
