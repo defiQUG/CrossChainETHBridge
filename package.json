@@ -20,6 +20,7 @@
     "dotenv": "^16.4.5",
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.7.2",
-    "hardhat": "2.12.7"
+    "hardhat": "2.12.7",
+    "solidity-coverage": "^0.8.13"
   }
 }

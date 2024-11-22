@@ -55,10 +55,11 @@ describe("CrossChainMessenger", function () {
   });
 
   describe("ETH Bridging", function () {
-    const receiverAddress = addr1.address;
+    let receiverAddress;
     const sendAmount = ethers.utils.parseEther("1.0");
 
     beforeEach(async function () {
+      receiverAddress = addr1.address;
       await mockRouter.setFee(BRIDGE_FEE);
     });
 
@@ -75,16 +76,6 @@ describe("CrossChainMessenger", function () {
         .to.emit(messenger, "MessageSent")
         .withArgs(
           expectedMessageId,
-          owner.address,
-          sendAmount.sub(BRIDGE_FEE),
-          BRIDGE_FEE
-        );
-    });
-
-      await expect(tx)
-        .to.emit(messenger, "MessageSent")
-        .withArgs(
-          ethers.constants.HashZero,
           owner.address,
           sendAmount.sub(BRIDGE_FEE),
           BRIDGE_FEE
