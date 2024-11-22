@@ -130,18 +130,20 @@ describe("CrossChainMessenger", function () {
       ).to.be.revertedWith("Message from invalid chain");
     });
 
-    it("Should reject direct calls to _ccipReceive", async function () {
+    it("Should reject direct calls to ccipReceive", async function () {
       const message = {
+        messageId: ethers.utils.id("testMessage"),
         sourceChainSelector: 138,
-        sender: mockRouter.address,
+        sender: ethers.utils.defaultAbiCoder.encode(["address"], [addr1.address]),
         data: ethers.utils.defaultAbiCoder.encode(
           ["address", "uint256"],
           [addr1.address, ethers.utils.parseEther("1.0")]
-        )
+        ),
+        destTokenAmounts: []
       };
 
       await expect(
-        messenger.connect(addr1)._ccipReceive(message)
+        messenger.connect(addr1).ccipReceive(message)
       ).to.be.revertedWith("Caller is not the router");
     });
   });
