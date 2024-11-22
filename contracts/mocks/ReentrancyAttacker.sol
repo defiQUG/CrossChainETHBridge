@@ -38,14 +38,15 @@ contract ReentrancyAttacker {
             attackCount++;
 
             // Try to reenter during message processing
-            (bool success, bytes memory data) = address(messenger).call{value: ATTACK_VALUE}(
-                abi.encodeWithSignature("sendToPolygon(address)", address(this))
-            );
-
-            if (!success) {
-                string memory reason = data.length > 0 ? _getRevertMsg(data) : "Unknown error";
+            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+                emit AttackAttempted(ATTACK_VALUE, attackCount);
+            } catch Error(string memory reason) {
                 emit ReentrancyCallFailed(reason);
                 revert(reason);
+            } catch (bytes memory reason) {
+                string memory decodedReason = _getRevertMsg(reason);
+                emit ReentrancyCallFailed(decodedReason);
+                revert(decodedReason);
             }
         }
     }
