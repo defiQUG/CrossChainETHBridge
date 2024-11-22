@@ -41,13 +41,14 @@ describe("MockWETH", function () {
       const amount = ethers.utils.parseEther("1.0");
       await mockWETH.connect(addr1).deposit({ value: amount });
 
-      const initialBalance = await addr1.getBalance();
+      const initialBalance = await ethers.provider.getBalance(addr1.address);
       const tx = await mockWETH.connect(addr1).withdraw(amount);
       const receipt = await tx.wait();
       const gasUsed = receipt.gasUsed.mul(tx.gasPrice);
 
       expect(await mockWETH.balanceOf(addr1.address)).to.equal(0);
-      expect(await addr1.getBalance()).to.equal(initialBalance.sub(gasUsed));
+      const finalBalance = await ethers.provider.getBalance(addr1.address);
+      expect(finalBalance).to.equal(initialBalance.add(amount).sub(gasUsed));
     });
 
     it("Should revert withdrawal with insufficient balance", async function () {
@@ -60,11 +61,15 @@ describe("MockWETH", function () {
   describe("Receive Function", function () {
     it("Should mint WETH when receiving ETH", async function () {
       const amount = ethers.utils.parseEther("1.0");
+      const initialBalance = await mockWETH.balanceOf(addr1.address);
+
       await addr1.sendTransaction({
         to: mockWETH.address,
         value: amount
       });
-      expect(await mockWETH.balanceOf(addr1.address)).to.equal(amount);
+
+      const finalBalance = await mockWETH.balanceOf(addr1.address);
+      expect(finalBalance.sub(initialBalance)).to.equal(amount);
     });
   });
 });
