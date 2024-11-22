@@ -111,11 +111,13 @@ describe("MockRouter Coverage Tests", function () {
         feeToken: ethers.constants.AddressZero
       };
 
-      const fee = await mockRouter.getFee(137, message);
-      expect(fee).to.equal(ethers.utils.parseEther("0.1"));
+      // Test fee calculation with message object
+      const messageFee = await mockRouter.getFee(137, message);
+      expect(messageFee).to.equal(ethers.utils.parseEther("0.1"));
 
-      const fee = await mockRouter.getFee(137, addr1.address);
-      expect(fee).to.equal(ethers.utils.parseEther("0.1"));
+      // Test fee calculation with address
+      const addressFee = await mockRouter.getFee(137, addr1.address);
+      expect(addressFee).to.equal(ethers.utils.parseEther("0.1"));
     });
 
     it("Should validate message data correctly", async function () {
