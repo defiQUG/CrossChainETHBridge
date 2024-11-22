@@ -21,6 +21,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IAny2EVMMessageReceiver__factory>;
     getContractFactory(
+      name: "IRouter",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IRouter__factory>;
+    getContractFactory(
       name: "IRouterClient",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.IRouterClient__factory>;
@@ -28,6 +32,22 @@ declare module "hardhat/types/runtime" {
       name: "Client",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Client__factory>;
+    getContractFactory(
+      name: "ConfirmedOwner",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ConfirmedOwner__factory>;
+    getContractFactory(
+      name: "ConfirmedOwnerWithProposal",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.ConfirmedOwnerWithProposal__factory>;
+    getContractFactory(
+      name: "OwnableInterface",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OwnableInterface__factory>;
+    getContractFactory(
+      name: "OwnerIsCreator",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.OwnerIsCreator__factory>;
     getContractFactory(
       name: "IERC165",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -57,10 +77,6 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.CrossChainMessenger__factory>;
     getContractFactory(
-      name: "IWETH",
-      signerOrOptions?: ethers.Signer | FactoryOptions
-    ): Promise<Contracts.IWETH__factory>;
-    getContractFactory(
       name: "MockRouter",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockRouter__factory>;
@@ -80,6 +96,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.IAny2EVMMessageReceiver>;
     getContractAt(
+      name: "IRouter",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IRouter>;
+    getContractAt(
       name: "IRouterClient",
       address: string,
       signer?: ethers.Signer
@@ -89,6 +110,26 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.Client>;
+    getContractAt(
+      name: "ConfirmedOwner",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ConfirmedOwner>;
+    getContractAt(
+      name: "ConfirmedOwnerWithProposal",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.ConfirmedOwnerWithProposal>;
+    getContractAt(
+      name: "OwnableInterface",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OwnableInterface>;
+    getContractAt(
+      name: "OwnerIsCreator",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.OwnerIsCreator>;
     getContractAt(
       name: "IERC165",
       address: string,
@@ -124,11 +165,6 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.CrossChainMessenger>;
-    getContractAt(
-      name: "IWETH",
-      address: string,
-      signer?: ethers.Signer
-    ): Promise<Contracts.IWETH>;
     getContractAt(
       name: "MockRouter",
       address: string,
