@@ -351,13 +351,17 @@ describe("CrossChainMessenger", function () {
       const storedMessenger = await attacker.messenger();
       console.log("Stored messenger address in attacker:", storedMessenger);
 
-      // Fund the attacker contract
+      // Fund the attacker contract and mock router
       const fundingAmount = ethers.utils.parseEther("3.0");
       await owner.sendTransaction({
         to: attacker.address,
         value: fundingAmount
       });
-      console.log("Attacker funded with:", ethers.utils.formatEther(fundingAmount), "ETH");
+      await owner.sendTransaction({
+        to: mockRouter.address,
+        value: fundingAmount
+      });
+      console.log("Attacker and router funded with:", ethers.utils.formatEther(fundingAmount), "ETH");
 
       // Set minimum bridge fee
       const minFee = ethers.utils.parseEther("0.001");
