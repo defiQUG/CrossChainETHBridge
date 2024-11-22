@@ -30,6 +30,7 @@ import type {
 export interface RateLimiterInterface extends utils.Interface {
   functions: {
     "RATE_PERIOD()": FunctionFragment;
+    "acceptOwnership()": FunctionFragment;
     "emergencyPause()": FunctionFragment;
     "emergencyUnpause()": FunctionFragment;
     "getCurrentPeriod()": FunctionFragment;
@@ -37,8 +38,6 @@ export interface RateLimiterInterface extends utils.Interface {
     "messageCountByPeriod(uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "paused()": FunctionFragment;
-    "processMessage()": FunctionFragment;
-    "renounceOwnership()": FunctionFragment;
     "setMaxMessagesPerPeriod(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
   };
@@ -46,6 +45,7 @@ export interface RateLimiterInterface extends utils.Interface {
   getFunction(
     nameOrSignatureOrTopic:
       | "RATE_PERIOD"
+      | "acceptOwnership"
       | "emergencyPause"
       | "emergencyUnpause"
       | "getCurrentPeriod"
@@ -53,14 +53,16 @@ export interface RateLimiterInterface extends utils.Interface {
       | "messageCountByPeriod"
       | "owner"
       | "paused"
-      | "processMessage"
-      | "renounceOwnership"
       | "setMaxMessagesPerPeriod"
       | "transferOwnership"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "RATE_PERIOD",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "acceptOwnership",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -86,14 +88,6 @@ export interface RateLimiterInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "paused", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "processMessage",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "renounceOwnership",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
     functionFragment: "setMaxMessagesPerPeriod",
     values: [PromiseOrValue<BigNumberish>]
   ): string;
@@ -104,6 +98,10 @@ export interface RateLimiterInterface extends utils.Interface {
 
   decodeFunctionResult(
     functionFragment: "RATE_PERIOD",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "acceptOwnership",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -129,14 +127,6 @@ export interface RateLimiterInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "paused", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "processMessage",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "renounceOwnership",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
     functionFragment: "setMaxMessagesPerPeriod",
     data: BytesLike
   ): Result;
@@ -147,6 +137,7 @@ export interface RateLimiterInterface extends utils.Interface {
 
   events: {
     "MessageProcessed(uint256)": EventFragment;
+    "OwnershipTransferRequested(address,address)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
     "RateLimitUpdated(uint256)": EventFragment;
@@ -154,6 +145,7 @@ export interface RateLimiterInterface extends utils.Interface {
   };
 
   getEvent(nameOrSignatureOrTopic: "MessageProcessed"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "OwnershipTransferRequested"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "RateLimitUpdated"): EventFragment;
@@ -171,9 +163,21 @@ export type MessageProcessedEvent = TypedEvent<
 export type MessageProcessedEventFilter =
   TypedEventFilter<MessageProcessedEvent>;
 
+export interface OwnershipTransferRequestedEventObject {
+  from: string;
+  to: string;
+}
+export type OwnershipTransferRequestedEvent = TypedEvent<
+  [string, string],
+  OwnershipTransferRequestedEventObject
+>;
+
+export type OwnershipTransferRequestedEventFilter =
+  TypedEventFilter<OwnershipTransferRequestedEvent>;
+
 export interface OwnershipTransferredEventObject {
-  previousOwner: string;
-  newOwner: string;
+  from: string;
+  to: string;
 }
 export type OwnershipTransferredEvent = TypedEvent<
   [string, string],
@@ -237,6 +241,10 @@ export interface RateLimiter extends BaseContract {
   functions: {
     RATE_PERIOD(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    acceptOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     emergencyPause(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
@@ -258,26 +266,22 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<[boolean]>;
 
-    processMessage(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     transferOwnership(
-      newOwner: PromiseOrValue<string>,
+      to: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
 
   RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
+
+  acceptOwnership(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   emergencyPause(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -300,26 +304,20 @@ export interface RateLimiter extends BaseContract {
 
   paused(overrides?: CallOverrides): Promise<boolean>;
 
-  processMessage(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
-  renounceOwnership(
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   setMaxMessagesPerPeriod(
     _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   transferOwnership(
-    newOwner: PromiseOrValue<string>,
+    to: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   callStatic: {
     RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
+
+    acceptOwnership(overrides?: CallOverrides): Promise<void>;
 
     emergencyPause(overrides?: CallOverrides): Promise<void>;
 
@@ -338,17 +336,13 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<boolean>;
 
-    processMessage(overrides?: CallOverrides): Promise<boolean>;
-
-    renounceOwnership(overrides?: CallOverrides): Promise<void>;
-
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     transferOwnership(
-      newOwner: PromiseOrValue<string>,
+      to: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -357,13 +351,22 @@ export interface RateLimiter extends BaseContract {
     "MessageProcessed(uint256)"(period?: null): MessageProcessedEventFilter;
     MessageProcessed(period?: null): MessageProcessedEventFilter;
 
+    "OwnershipTransferRequested(address,address)"(
+      from?: PromiseOrValue<string> | null,
+      to?: PromiseOrValue<string> | null
+    ): OwnershipTransferRequestedEventFilter;
+    OwnershipTransferRequested(
+      from?: PromiseOrValue<string> | null,
+      to?: PromiseOrValue<string> | null
+    ): OwnershipTransferRequestedEventFilter;
+
     "OwnershipTransferred(address,address)"(
-      previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null
+      from?: PromiseOrValue<string> | null,
+      to?: PromiseOrValue<string> | null
     ): OwnershipTransferredEventFilter;
     OwnershipTransferred(
-      previousOwner?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null
+      from?: PromiseOrValue<string> | null,
+      to?: PromiseOrValue<string> | null
     ): OwnershipTransferredEventFilter;
 
     "Paused(address)"(account?: null): PausedEventFilter;
@@ -378,6 +381,10 @@ export interface RateLimiter extends BaseContract {
 
   estimateGas: {
     RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
+
+    acceptOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
 
     emergencyPause(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -400,27 +407,23 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<BigNumber>;
 
-    processMessage(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<BigNumber>;
-
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     transferOwnership(
-      newOwner: PromiseOrValue<string>,
+      to: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
 
   populateTransaction: {
     RATE_PERIOD(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    acceptOwnership(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     emergencyPause(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -445,21 +448,13 @@ export interface RateLimiter extends BaseContract {
 
     paused(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    processMessage(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
-    renounceOwnership(
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<PopulatedTransaction>;
-
     setMaxMessagesPerPeriod(
       _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     transferOwnership(
-      newOwner: PromiseOrValue<string>,
+      to: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };

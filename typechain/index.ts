@@ -24,8 +24,6 @@ export type { OwnableInterface } from "./@chainlink/contracts-ccip/src/v0.8/inte
 export { OwnableInterface__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/interfaces/OwnableInterface__factory";
 export type { OwnerIsCreator } from "./@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator";
 export { OwnerIsCreator__factory } from "./factories/@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator__factory";
-export type { Ownable } from "./@openzeppelin/contracts/access/Ownable";
-export { Ownable__factory } from "./factories/@openzeppelin/contracts/access/Ownable__factory";
 export type { Pausable } from "./@openzeppelin/contracts/security/Pausable";
 export { Pausable__factory } from "./factories/@openzeppelin/contracts/security/Pausable__factory";
 export type { ERC20 } from "./@openzeppelin/contracts/token/ERC20/ERC20";

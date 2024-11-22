@@ -64,20 +64,25 @@ export declare namespace Client {
 
 export interface CrossChainMessengerInterface extends utils.Interface {
   functions: {
-    "MAX_MESSAGES_PER_HOUR()": FunctionFragment;
     "POLYGON_CHAIN_SELECTOR()": FunctionFragment;
+    "RATE_PERIOD()": FunctionFragment;
     "acceptOwnership()": FunctionFragment;
     "bridgeFee()": FunctionFragment;
     "ccipReceive((bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
+    "emergencyPause()": FunctionFragment;
+    "emergencyUnpause()": FunctionFragment;
     "emergencyWithdraw(address)": FunctionFragment;
     "getBridgeFee()": FunctionFragment;
+    "getCurrentPeriod()": FunctionFragment;
     "getRouter()": FunctionFragment;
-    "messageCounter()": FunctionFragment;
+    "maxMessagesPerPeriod()": FunctionFragment;
+    "messageCountByPeriod(uint256)": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
     "paused()": FunctionFragment;
     "router()": FunctionFragment;
     "sendToPolygon(address)": FunctionFragment;
+    "setMaxMessagesPerPeriod(uint256)": FunctionFragment;
     "transferOwnership(address)": FunctionFragment;
     "unpause()": FunctionFragment;
     "updateBridgeFee(uint256)": FunctionFragment;
@@ -86,20 +91,25 @@ export interface CrossChainMessengerInterface extends utils.Interface {
 
   getFunction(
     nameOrSignatureOrTopic:
-      | "MAX_MESSAGES_PER_HOUR"
       | "POLYGON_CHAIN_SELECTOR"
+      | "RATE_PERIOD"
       | "acceptOwnership"
       | "bridgeFee"
       | "ccipReceive"
+      | "emergencyPause"
+      | "emergencyUnpause"
       | "emergencyWithdraw"
       | "getBridgeFee"
+      | "getCurrentPeriod"
       | "getRouter"
-      | "messageCounter"
+      | "maxMessagesPerPeriod"
+      | "messageCountByPeriod"
       | "owner"
       | "pause"
       | "paused"
       | "router"
       | "sendToPolygon"
+      | "setMaxMessagesPerPeriod"
       | "transferOwnership"
       | "unpause"
       | "updateBridgeFee"
@@ -107,11 +117,11 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   ): FunctionFragment;
 
   encodeFunctionData(
-    functionFragment: "MAX_MESSAGES_PER_HOUR",
+    functionFragment: "POLYGON_CHAIN_SELECTOR",
     values?: undefined
   ): string;
   encodeFunctionData(
-    functionFragment: "POLYGON_CHAIN_SELECTOR",
+    functionFragment: "RATE_PERIOD",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -124,6 +134,14 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     values: [Client.Any2EVMMessageStruct]
   ): string;
   encodeFunctionData(
+    functionFragment: "emergencyPause",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "emergencyUnpause",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "emergencyWithdraw",
     values: [PromiseOrValue<string>]
   ): string;
@@ -131,10 +149,18 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     functionFragment: "getBridgeFee",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "getCurrentPeriod",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "messageCounter",
+    functionFragment: "maxMessagesPerPeriod",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "messageCountByPeriod",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "pause", values?: undefined): string;
@@ -143,6 +169,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "sendToPolygon",
     values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setMaxMessagesPerPeriod",
+    values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "transferOwnership",
@@ -156,11 +186,11 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   encodeFunctionData(functionFragment: "weth", values?: undefined): string;
 
   decodeFunctionResult(
-    functionFragment: "MAX_MESSAGES_PER_HOUR",
+    functionFragment: "POLYGON_CHAIN_SELECTOR",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
-    functionFragment: "POLYGON_CHAIN_SELECTOR",
+    functionFragment: "RATE_PERIOD",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -173,6 +203,14 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "emergencyPause",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "emergencyUnpause",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "emergencyWithdraw",
     data: BytesLike
   ): Result;
@@ -180,9 +218,17 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     functionFragment: "getBridgeFee",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getCurrentPeriod",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "messageCounter",
+    functionFragment: "maxMessagesPerPeriod",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "messageCountByPeriod",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
@@ -191,6 +237,10 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   decodeFunctionResult(functionFragment: "router", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "sendToPolygon",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setMaxMessagesPerPeriod",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -207,21 +257,25 @@ export interface CrossChainMessengerInterface extends utils.Interface {
   events: {
     "BridgeFeeUpdated(uint256)": EventFragment;
     "EmergencyWithdraw(address,uint256)": EventFragment;
+    "MessageProcessed(uint256)": EventFragment;
     "MessageReceived(bytes32,address,address,uint256)": EventFragment;
     "MessageSent(bytes32,address,address,uint256)": EventFragment;
     "OwnershipTransferRequested(address,address)": EventFragment;
     "OwnershipTransferred(address,address)": EventFragment;
     "Paused(address)": EventFragment;
+    "RateLimitUpdated(uint256)": EventFragment;
     "Unpaused(address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "BridgeFeeUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "EmergencyWithdraw"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "MessageProcessed"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "MessageReceived"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "MessageSent"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferRequested"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Paused"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "RateLimitUpdated"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "Unpaused"): EventFragment;
 }
 
@@ -247,6 +301,17 @@ export type EmergencyWithdrawEvent = TypedEvent<
 
 export type EmergencyWithdrawEventFilter =
   TypedEventFilter<EmergencyWithdrawEvent>;
+
+export interface MessageProcessedEventObject {
+  period: BigNumber;
+}
+export type MessageProcessedEvent = TypedEvent<
+  [BigNumber],
+  MessageProcessedEventObject
+>;
+
+export type MessageProcessedEventFilter =
+  TypedEventFilter<MessageProcessedEvent>;
 
 export interface MessageReceivedEventObject {
   messageId: string;
@@ -305,6 +370,17 @@ export type PausedEvent = TypedEvent<[string], PausedEventObject>;
 
 export type PausedEventFilter = TypedEventFilter<PausedEvent>;
 
+export interface RateLimitUpdatedEventObject {
+  newLimit: BigNumber;
+}
+export type RateLimitUpdatedEvent = TypedEvent<
+  [BigNumber],
+  RateLimitUpdatedEventObject
+>;
+
+export type RateLimitUpdatedEventFilter =
+  TypedEventFilter<RateLimitUpdatedEvent>;
+
 export interface UnpausedEventObject {
   account: string;
 }
@@ -339,9 +415,9 @@ export interface CrossChainMessenger extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
-    MAX_MESSAGES_PER_HOUR(overrides?: CallOverrides): Promise<[BigNumber]>;
-
     POLYGON_CHAIN_SELECTOR(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    RATE_PERIOD(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     acceptOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -354,6 +430,14 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    emergencyPause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    emergencyUnpause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     emergencyWithdraw(
       _recipient: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -361,9 +445,16 @@ export interface CrossChainMessenger extends BaseContract {
 
     getBridgeFee(overrides?: CallOverrides): Promise<[BigNumber]>;
 
+    getCurrentPeriod(overrides?: CallOverrides): Promise<[BigNumber]>;
+
     getRouter(overrides?: CallOverrides): Promise<[string]>;
 
-    messageCounter(overrides?: CallOverrides): Promise<[BigNumber]>;
+    maxMessagesPerPeriod(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    messageCountByPeriod(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
 
@@ -378,6 +469,11 @@ export interface CrossChainMessenger extends BaseContract {
     sendToPolygon(
       _recipient: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    setMaxMessagesPerPeriod(
+      _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     transferOwnership(
@@ -397,9 +493,9 @@ export interface CrossChainMessenger extends BaseContract {
     weth(overrides?: CallOverrides): Promise<[string]>;
   };
 
-  MAX_MESSAGES_PER_HOUR(overrides?: CallOverrides): Promise<BigNumber>;
-
   POLYGON_CHAIN_SELECTOR(overrides?: CallOverrides): Promise<BigNumber>;
+
+  RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
 
   acceptOwnership(
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -412,6 +508,14 @@ export interface CrossChainMessenger extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  emergencyPause(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  emergencyUnpause(
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   emergencyWithdraw(
     _recipient: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -419,9 +523,16 @@ export interface CrossChainMessenger extends BaseContract {
 
   getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
 
+  getCurrentPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
   getRouter(overrides?: CallOverrides): Promise<string>;
 
-  messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
+  maxMessagesPerPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
+  messageCountByPeriod(
+    arg0: PromiseOrValue<BigNumberish>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
 
@@ -436,6 +547,11 @@ export interface CrossChainMessenger extends BaseContract {
   sendToPolygon(
     _recipient: PromiseOrValue<string>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  setMaxMessagesPerPeriod(
+    _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   transferOwnership(
@@ -455,9 +571,9 @@ export interface CrossChainMessenger extends BaseContract {
   weth(overrides?: CallOverrides): Promise<string>;
 
   callStatic: {
-    MAX_MESSAGES_PER_HOUR(overrides?: CallOverrides): Promise<BigNumber>;
-
     POLYGON_CHAIN_SELECTOR(overrides?: CallOverrides): Promise<BigNumber>;
+
+    RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
 
     acceptOwnership(overrides?: CallOverrides): Promise<void>;
 
@@ -468,6 +584,10 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    emergencyPause(overrides?: CallOverrides): Promise<void>;
+
+    emergencyUnpause(overrides?: CallOverrides): Promise<void>;
+
     emergencyWithdraw(
       _recipient: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -475,9 +595,16 @@ export interface CrossChainMessenger extends BaseContract {
 
     getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
 
+    getCurrentPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
     getRouter(overrides?: CallOverrides): Promise<string>;
 
-    messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
+    maxMessagesPerPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
+    messageCountByPeriod(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<string>;
 
@@ -489,6 +616,11 @@ export interface CrossChainMessenger extends BaseContract {
 
     sendToPolygon(
       _recipient: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    setMaxMessagesPerPeriod(
+      _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -519,6 +651,9 @@ export interface CrossChainMessenger extends BaseContract {
       recipient?: PromiseOrValue<string> | null,
       amount?: null
     ): EmergencyWithdrawEventFilter;
+
+    "MessageProcessed(uint256)"(period?: null): MessageProcessedEventFilter;
+    MessageProcessed(period?: null): MessageProcessedEventFilter;
 
     "MessageReceived(bytes32,address,address,uint256)"(
       messageId?: PromiseOrValue<BytesLike> | null,
@@ -567,14 +702,17 @@ export interface CrossChainMessenger extends BaseContract {
     "Paused(address)"(account?: null): PausedEventFilter;
     Paused(account?: null): PausedEventFilter;
 
+    "RateLimitUpdated(uint256)"(newLimit?: null): RateLimitUpdatedEventFilter;
+    RateLimitUpdated(newLimit?: null): RateLimitUpdatedEventFilter;
+
     "Unpaused(address)"(account?: null): UnpausedEventFilter;
     Unpaused(account?: null): UnpausedEventFilter;
   };
 
   estimateGas: {
-    MAX_MESSAGES_PER_HOUR(overrides?: CallOverrides): Promise<BigNumber>;
-
     POLYGON_CHAIN_SELECTOR(overrides?: CallOverrides): Promise<BigNumber>;
+
+    RATE_PERIOD(overrides?: CallOverrides): Promise<BigNumber>;
 
     acceptOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -587,6 +725,14 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    emergencyPause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    emergencyUnpause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     emergencyWithdraw(
       _recipient: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -594,9 +740,16 @@ export interface CrossChainMessenger extends BaseContract {
 
     getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
 
+    getCurrentPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
     getRouter(overrides?: CallOverrides): Promise<BigNumber>;
 
-    messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
+    maxMessagesPerPeriod(overrides?: CallOverrides): Promise<BigNumber>;
+
+    messageCountByPeriod(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -611,6 +764,11 @@ export interface CrossChainMessenger extends BaseContract {
     sendToPolygon(
       _recipient: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    setMaxMessagesPerPeriod(
+      _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     transferOwnership(
@@ -631,13 +789,11 @@ export interface CrossChainMessenger extends BaseContract {
   };
 
   populateTransaction: {
-    MAX_MESSAGES_PER_HOUR(
-      overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
     POLYGON_CHAIN_SELECTOR(
       overrides?: CallOverrides
     ): Promise<PopulatedTransaction>;
+
+    RATE_PERIOD(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     acceptOwnership(
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -650,6 +806,14 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    emergencyPause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    emergencyUnpause(
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     emergencyWithdraw(
       _recipient: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -657,9 +821,18 @@ export interface CrossChainMessenger extends BaseContract {
 
     getBridgeFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    getCurrentPeriod(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     getRouter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    messageCounter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+    maxMessagesPerPeriod(
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    messageCountByPeriod(
+      arg0: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
 
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
@@ -674,6 +847,11 @@ export interface CrossChainMessenger extends BaseContract {
     sendToPolygon(
       _recipient: PromiseOrValue<string>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    setMaxMessagesPerPeriod(
+      _maxMessagesPerPeriod: PromiseOrValue<BigNumberish>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     transferOwnership(
