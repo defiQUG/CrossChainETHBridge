@@ -51,7 +51,7 @@ contract MockRouter is IRouterClient {
             msg.value
         );
 
-        // For testing reentrancy, directly call the target if sending to Polygon
+        // For testing reentrancy, simulate message to Polygon first
         if (destinationChainSelector == 137) {
             address target = address(bytes20(message.receiver));
             // Decode both receiver and amount from message data
@@ -59,10 +59,22 @@ contract MockRouter is IRouterClient {
             require(receiver == target, "Receiver mismatch");
             require(msg.value >= transferAmount + mockFee, "Insufficient ETH value");
 
-            // Store fee before transfer
+            // Store fee before simulation
             uint256 fee = mockFee;
 
-            // Direct call while maintaining reentrancy lock
+            // Simulate CCIP message first
+            bytes32 simulatedMessageId = keccak256(abi.encode(destinationChainSelector, target, message.data));
+            IAny2EVMMessageReceiver(target).ccipReceive(
+                Client.Any2EVMMessage({
+                    messageId: simulatedMessageId,
+                    sourceChainSelector: destinationChainSelector,
+                    sender: abi.encode(msg.sender),
+                    data: message.data,
+                    destTokenAmounts: new Client.EVMTokenAmount[](0)
+                })
+            );
+
+            // Then handle ETH transfer
             (bool success,) = payable(target).call{value: transferAmount}("");
             require(success, "ETH transfer failed");
 
