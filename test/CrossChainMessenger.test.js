@@ -375,7 +375,7 @@ describe("CrossChainMessenger", function () {
       // The attack should fail either with a specific revert message or a silent revert
       await expect(
           attacker.attack({ value: attackValue })
-      ).to.be.reverted; // Accept any revert as valid reentrancy protection
+      ).to.be.revertedWith("Transaction reverted silently");
 
       // Verify state
       const finalAttackerBalance = await ethers.provider.getBalance(attacker.address);
