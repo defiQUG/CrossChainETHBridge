@@ -18,7 +18,7 @@ describe("Gas Optimization Tests", function() {
 
     // Deploy MockWETH
     const MockWETH = await ethers.getContractFactory("MockWETH");
-    mockWeth = await MockWETH.deploy();
+    mockWeth = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWeth.deployed();
 
     // Deploy CrossChainMessenger with router, WETH addresses, and maxMessagesPerPeriod
