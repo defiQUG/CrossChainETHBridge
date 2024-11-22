@@ -7,36 +7,27 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 
 contract MockRouter is IRouterClient {
     event MessageSent(
-        bytes32 messageId,
         uint64 destinationChainSelector,
         address receiver,
-        bytes message,
-        address feeToken,
-        uint256 fees
+        uint256 amount
     );
 
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable returns (bytes32) {
-        bytes32 messageId = keccak256(
-            abi.encode(
-                destinationChainSelector,
-                message.receiver,
-                message.data
-            )
-        );
+        require(destinationChainSelector == 137, "Invalid chain selector");
+
+        address receiver = address(bytes20(message.receiver));
+        uint256 amount = abi.decode(message.data, (uint256));
 
         emit MessageSent(
-            messageId,
             destinationChainSelector,
-            address(bytes20(message.receiver)), // Fix: Convert bytes to address
-            message.data,
-            address(0),
-            msg.value
+            receiver,
+            amount
         );
 
-        return messageId;
+        return keccak256(abi.encodePacked(block.timestamp, msg.sender, receiver, amount));
     }
 
     function getFee(
@@ -47,7 +38,7 @@ contract MockRouter is IRouterClient {
     }
 
     function isChainSupported(uint64 chainSelector) external pure returns (bool supported) {
-        return true;
+        return chainSelector == 137;
     }
 
     // Implement missing interface function
@@ -61,14 +52,16 @@ contract MockRouter is IRouterClient {
         address target,
         bytes32 messageId,
         address sender,
-        bytes memory data
+        uint256 amount
     ) external {
+        bytes memory data = abi.encode(amount);
+
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
 
         IAny2EVMMessageReceiver(target).ccipReceive(
             Client.Any2EVMMessage({
                 messageId: messageId,
-                sourceChainSelector: 1,
+                sourceChainSelector: 138,
                 sender: abi.encode(sender),
                 data: data,
                 destTokenAmounts: destTokenAmounts
@@ -83,4 +76,6 @@ contract MockRouter is IRouterClient {
     ) external {
         IAny2EVMMessageReceiver(target).ccipReceive(message);
     }
+
+    receive() external payable {}
 }

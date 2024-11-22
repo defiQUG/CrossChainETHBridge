@@ -34,15 +34,14 @@ describe("CrossChainMessenger", function() {
   describe("Message Sending", function() {
     it("Should send message to Polygon", async function() {
       const amount = ethers.utils.parseEther("1");
+      const transferAmount = amount.sub(ethers.utils.parseEther("0.1")); // Subtract bridge fee
+
       await expect(crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount }))
         .to.emit(mockRouter, "MessageSent")
         .withArgs(
-          ethers.constants.HashZero,
           POLYGON_CHAIN_SELECTOR,
           user.address,
-          ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user.address, amount]),
-          ethers.constants.AddressZero,
-          amount
+          transferAmount
         );
     });
   });

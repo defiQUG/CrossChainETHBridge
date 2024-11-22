@@ -70,6 +70,8 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     "bridgeFee()": FunctionFragment;
     "ccipReceive((bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
     "emergencyWithdraw(address)": FunctionFragment;
+    "getBridgeFee()": FunctionFragment;
+    "getRouter()": FunctionFragment;
     "messageCounter()": FunctionFragment;
     "owner()": FunctionFragment;
     "pause()": FunctionFragment;
@@ -89,6 +91,8 @@ export interface CrossChainMessengerInterface extends utils.Interface {
       | "bridgeFee"
       | "ccipReceive"
       | "emergencyWithdraw"
+      | "getBridgeFee"
+      | "getRouter"
       | "messageCounter"
       | "owner"
       | "pause"
@@ -121,6 +125,11 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     functionFragment: "emergencyWithdraw",
     values: [PromiseOrValue<string>]
   ): string;
+  encodeFunctionData(
+    functionFragment: "getBridgeFee",
+    values?: undefined
+  ): string;
+  encodeFunctionData(functionFragment: "getRouter", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "messageCounter",
     values?: undefined
@@ -164,6 +173,11 @@ export interface CrossChainMessengerInterface extends utils.Interface {
     functionFragment: "emergencyWithdraw",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "getBridgeFee",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "getRouter", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "messageCounter",
     data: BytesLike
@@ -341,6 +355,10 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    getBridgeFee(overrides?: CallOverrides): Promise<[BigNumber]>;
+
+    getRouter(overrides?: CallOverrides): Promise<[string]>;
+
     messageCounter(overrides?: CallOverrides): Promise<[BigNumber]>;
 
     owner(overrides?: CallOverrides): Promise<[string]>;
@@ -393,6 +411,10 @@ export interface CrossChainMessenger extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
+
+  getRouter(overrides?: CallOverrides): Promise<string>;
+
   messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
 
   owner(overrides?: CallOverrides): Promise<string>;
@@ -442,6 +464,10 @@ export interface CrossChainMessenger extends BaseContract {
       _recipient: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
+
+    getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getRouter(overrides?: CallOverrides): Promise<string>;
 
     messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
 
@@ -556,6 +582,10 @@ export interface CrossChainMessenger extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    getBridgeFee(overrides?: CallOverrides): Promise<BigNumber>;
+
+    getRouter(overrides?: CallOverrides): Promise<BigNumber>;
+
     messageCounter(overrides?: CallOverrides): Promise<BigNumber>;
 
     owner(overrides?: CallOverrides): Promise<BigNumber>;
@@ -612,6 +642,10 @@ export interface CrossChainMessenger extends BaseContract {
       _recipient: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
+
+    getBridgeFee(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    getRouter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     messageCounter(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
