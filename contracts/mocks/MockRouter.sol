@@ -59,9 +59,19 @@ contract MockRouter is IRouterClient {
             require(receiver == target, "Receiver mismatch");
             require(msg.value >= transferAmount + mockFee, "Insufficient ETH value");
 
+            // Store fee before transfer
+            uint256 fee = mockFee;
+
             // Direct call while maintaining reentrancy lock
             (bool success,) = payable(target).call{value: transferAmount}("");
             require(success, "ETH transfer failed");
+
+            // Return excess ETH after fee
+            uint256 excess = msg.value - (transferAmount + fee);
+            if (excess > 0) {
+                (bool refundSuccess,) = payable(msg.sender).call{value: excess}("");
+                require(refundSuccess, "Refund failed");
+            }
         }
 
         // Reset processing flag after all operations are complete
