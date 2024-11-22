@@ -84,7 +84,7 @@ describe("MockRouter", function () {
   describe("Message Handling", function () {
     it("Should emit MessageSent event on ccipSend", async function () {
       const message = {
-        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr1.address]),
+        receiver: ethers.utils.hexZeroPad(addr1.address, 32), // Pad address to 32 bytes
         data: "0x",
         tokenAmounts: [],
         extraArgs: "0x",
@@ -100,12 +100,12 @@ describe("MockRouter", function () {
       );
       await mockRouter.setNextMessageId(messageId);
 
-      // Get the bytes20 representation of the address for event comparison
-      const bytes20Receiver = ethers.utils.hexDataSlice(message.receiver, 12);
+      // For event comparison, we need the bytes20 version of the address
+      const bytes20Address = ethers.utils.hexDataSlice(addr1.address, 12);
 
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(messageId, 137, bytes20Receiver, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
+        .withArgs(messageId, 137, bytes20Address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
     });
   });
 });
