@@ -3,8 +3,9 @@ pragma solidity 0.8.19;
 
 import "../CrossChainMessenger.sol";
 import "./MockRouter.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 
-contract ReentrancyAttacker {
+contract ReentrancyAttacker is IAny2EVMMessageReceiver {
     CrossChainMessenger public messenger;
     MockRouter public router;
     uint256 public attackCount;
@@ -13,6 +14,7 @@ contract ReentrancyAttacker {
 
     event AttackAttempted(uint256 value, uint256 count);
     event FallbackCalled(uint256 value);
+    event MessageReceived(bytes32 messageId);
 
     constructor(address payable _messenger, address payable _router) payable {
         require(_messenger != address(0), "Invalid messenger address");
@@ -24,6 +26,10 @@ contract ReentrancyAttacker {
 
     receive() external payable {
         emit FallbackCalled(msg.value);
+    }
+
+    function ccipReceive(Client.Any2EVMMessage memory message) external override {
+        emit MessageReceived(message.messageId);
 
         if (attackCount < 2) {
             attackCount++;
