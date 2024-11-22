@@ -50,7 +50,9 @@ contract MockRouter is IRouterClient {
         // For testing reentrancy, directly call the target if sending to Polygon
         if (destinationChainSelector == 137) {
             address target = address(bytes20(message.receiver));
-            uint256 transferAmount = abi.decode(message.data, (uint256));
+            // Decode both receiver and amount from message data
+            (address receiver, uint256 transferAmount) = abi.decode(message.data, (address, uint256));
+            require(receiver == target, "Receiver mismatch");
 
             // Direct call while maintaining reentrancy lock
             (bool success,) = target.call{value: transferAmount}("");
