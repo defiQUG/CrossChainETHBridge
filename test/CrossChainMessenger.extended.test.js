@@ -37,14 +37,14 @@ describe("CrossChainMessenger Extended Tests", function() {
   describe("Fee Management", function() {
     it("Should update bridge fee correctly", async function() {
       const newFee = ethers.utils.parseEther("0.01");
-      await messenger.setBridgeFee(newFee);
-      expect(await messenger.bridgeFee()).to.equal(newFee);
+      await messenger.updateBridgeFee(newFee);
+      expect(await messenger.getBridgeFee()).to.equal(newFee);
     });
 
     it("Should revert fee update from non-owner", async function() {
       const newFee = ethers.utils.parseEther("0.01");
       await expect(
-        messenger.connect(user).setBridgeFee(newFee)
+        messenger.connect(user).updateBridgeFee(newFee)
       ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
@@ -85,7 +85,7 @@ describe("CrossChainMessenger Extended Tests", function() {
       ).to.be.revertedWith("Amount must be greater than 0");
     });
 
-    it("Should emit MessageProcessed event", async function() {
+    it("Should emit MessageReceived event", async function() {
       const amount = ethers.utils.parseEther("1.0");
       await expect(
         router.simulateMessageReceived(
@@ -94,8 +94,8 @@ describe("CrossChainMessenger Extended Tests", function() {
           user.address,
           amount
         )
-      ).to.emit(messenger, "MessageProcessed")
-        .withArgs(mockMessageId, user.address, amount);
+      ).to.emit(messenger, "MessageReceived")
+        .withArgs(mockMessageId, router.address, user.address, amount);
     });
   });
 
