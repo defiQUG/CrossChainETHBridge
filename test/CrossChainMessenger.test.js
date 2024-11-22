@@ -8,6 +8,9 @@ describe("CrossChainMessenger", function () {
   let addr1;
   let addr2;
   let mockRouter;
+  let mockWETH;
+  const BRIDGE_FEE = ethers.utils.parseEther("0.001"); // 0.1%
+  const MAX_FEE = ethers.utils.parseEther("0.01"); // 1%
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
@@ -16,6 +19,11 @@ describe("CrossChainMessenger", function () {
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
     await mockRouter.deployed();
+
+    // Deploy mock WETH contract
+    const MockWETH = await ethers.getContractFactory("MockWETH");
+    mockWETH = await MockWETH.deploy();
+    await mockWETH.deployed();
 
     // Deploy the messenger contract
     CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
@@ -37,11 +45,9 @@ describe("CrossChainMessenger", function () {
   describe("ETH Bridging", function () {
     const receiverAddress = addr1.address;
     const sendAmount = ethers.utils.parseEther("1.0");
-    const mockFee = ethers.utils.parseEther("0.1");
 
     beforeEach(async function () {
-      // Mock the router's getFee function to return our mock fee
-      await mockRouter.setFee(mockFee);
+      await mockRouter.setFee(BRIDGE_FEE);
     });
 
     it("Should send ETH to Polygon successfully", async function () {
@@ -52,19 +58,20 @@ describe("CrossChainMessenger", function () {
       await expect(tx)
         .to.emit(messenger, "MessageSent")
         .withArgs(
-          ethers.BigNumber.from(0), // messageId from mock
+          ethers.constants.HashZero,
           owner.address,
-          sendAmount.sub(mockFee)
+          sendAmount.sub(BRIDGE_FEE),
+          BRIDGE_FEE
         );
     });
 
-    it("Should fail when sending with insufficient ETH", async function () {
-      const insufficientAmount = mockFee.div(2);
+    it("Should fail when sending with insufficient amount", async function () {
+      const insufficientAmount = BRIDGE_FEE.div(2);
       await expect(
         messenger.sendToPolygon(receiverAddress, {
           value: insufficientAmount
         })
-      ).to.be.revertedWith("Insufficient ETH for fees");
+      ).to.be.revertedWith("Insufficient amount");
     });
 
     it("Should handle CCIP message receipt correctly", async function () {
@@ -102,6 +109,79 @@ describe("CrossChainMessenger", function () {
       await expect(
         messenger.connect(mockRouter)._ccipReceive(message)
       ).to.be.revertedWith("Message from invalid chain");
+    });
+  });
+
+  describe("Fee Management", function () {
+    it("Should have correct initial fee", async function () {
+      expect(await messenger.bridgeFee()).to.equal(BRIDGE_FEE);
+    });
+
+    it("Should allow owner to update fee", async function () {
+      const newFee = ethers.utils.parseEther("0.002");
+      await expect(messenger.updateBridgeFee(newFee))
+        .to.emit(messenger, "BridgeFeeUpdated")
+        .withArgs(newFee);
+      expect(await messenger.bridgeFee()).to.equal(newFee);
+    });
+
+    it("Should prevent non-owner from updating fee", async function () {
+      const newFee = ethers.utils.parseEther("0.002");
+      await expect(
+        messenger.connect(addr1).updateBridgeFee(newFee)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should prevent setting fee above maximum", async function () {
+      const tooHighFee = MAX_FEE.add(1);
+      await expect(
+        messenger.updateBridgeFee(tooHighFee)
+      ).to.be.revertedWith("Fee exceeds maximum");
+    });
+  });
+
+  describe("Emergency Functions", function () {
+    it("Should allow owner to pause", async function () {
+      await messenger.pause();
+      expect(await messenger.paused()).to.be.true;
+    });
+
+    it("Should allow owner to unpause", async function () {
+      await messenger.pause();
+      await messenger.unpause();
+      expect(await messenger.paused()).to.be.false;
+    });
+
+    it("Should prevent non-owner from pausing", async function () {
+      await expect(
+        messenger.connect(addr1).pause()
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should prevent bridging when paused", async function () {
+      await messenger.pause();
+      await expect(
+        messenger.sendToPolygon(addr1.address, { value: ethers.utils.parseEther("1.0") })
+      ).to.be.revertedWith("Pausable: paused");
+    });
+
+    it("Should allow owner to recover ETH", async function () {
+      const amount = ethers.utils.parseEther("1.0");
+      await owner.sendTransaction({
+        to: messenger.address,
+        value: amount
+      });
+
+      const initialBalance = await owner.getBalance();
+      await expect(messenger.recoverFunds(ethers.constants.AddressZero))
+        .to.emit(messenger, "FundsRecovered")
+        .withArgs(ethers.constants.AddressZero, amount);
+
+      const finalBalance = await owner.getBalance();
+      expect(finalBalance.sub(initialBalance)).to.be.closeTo(
+        amount,
+        ethers.utils.parseEther("0.001") // Account for gas
+      );
     });
   });
 
