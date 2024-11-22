@@ -4,9 +4,7 @@ pragma solidity 0.8.19;
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "./RateLimiter.sol";
 
 interface IWETH {
@@ -15,7 +13,7 @@ interface IWETH {
     function transfer(address to, uint256 value) external returns (bool);
 }
 
-contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter {
+contract CrossChainMessenger is ReentrancyGuard, RateLimiter {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable router;
@@ -34,7 +32,6 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
         router = IRouterClient(_router);
         weth = IWETH(_weth);
         bridgeFee = 0.1 ether;
-        _transferOwnership(msg.sender);
     }
 
     function getRouter() external view returns (address) {
