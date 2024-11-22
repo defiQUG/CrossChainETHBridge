@@ -95,15 +95,8 @@ describe("CrossChainMessenger", function () {
         [receiverAddress, amount]
       );
 
-      const message = {
-        messageId: ethers.utils.id("testMessage"),
-        sourceChainSelector: sourceChain,
-        sender: ethers.utils.defaultAbiCoder.encode(["address"], [mockRouter.address]),
-        data: encodedData,
-        destTokenAmounts: []
-      };
-
-      await mockRouter.setNextMessageId(message.messageId);
+      const messageId = ethers.utils.id("testMessage");
+      await mockRouter.setNextMessageId(messageId);
 
       await expect(
         mockRouter.simulateMessageReceived(
@@ -114,7 +107,7 @@ describe("CrossChainMessenger", function () {
         )
       ).to.emit(messenger, "MessageReceived")
         .withArgs(
-          message.messageId,
+          messageId,
           receiverAddress,
           amount
         );
