@@ -9,6 +9,7 @@ contract ReentrancyAttacker {
     uint256 public constant ATTACK_VALUE = 1 ether;
 
     event AttackAttempted(uint256 value, uint256 count);
+    event ReentrancyCallFailed(string reason);
 
     constructor(address payable _messenger) {
         require(_messenger != address(0), "Invalid messenger address");
@@ -19,7 +20,12 @@ contract ReentrancyAttacker {
         require(msg.value >= ATTACK_VALUE, "Need at least 1 ETH");
         attackCount = 0;
         // Initial call to trigger reentrancy
-        messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
+        try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+            emit AttackAttempted(ATTACK_VALUE, 0);
+        } catch Error(string memory reason) {
+            emit ReentrancyCallFailed(reason);
+            revert(reason);
+        }
     }
 
     // Fallback function that attempts reentry
@@ -28,10 +34,7 @@ contract ReentrancyAttacker {
             attackCount++;
             emit AttackAttempted(address(this).balance, attackCount);
             // Try to reenter during the first message processing
-            (bool success,) = address(messenger).call{value: ATTACK_VALUE}(
-                abi.encodeWithSignature("sendToPolygon(address)", address(this))
-            );
-            require(success, "Reentrant call failed");
+            messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
         }
     }
 

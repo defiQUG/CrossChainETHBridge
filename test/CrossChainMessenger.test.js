@@ -339,11 +339,17 @@ describe("CrossChainMessenger", function () {
         mockWETH.address
       );
       await testMessenger.deployed();
+      console.log("Test messenger deployed at:", testMessenger.address);
 
       // Deploy the attacker contract
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
+      console.log("Attacker contract deployed at:", attacker.address);
+
+      // Verify the messenger address stored in attacker contract
+      const storedMessenger = await attacker.messenger();
+      console.log("Stored messenger address in attacker:", storedMessenger);
 
       // Fund the attacker contract
       const fundingAmount = ethers.utils.parseEther("3.0");
