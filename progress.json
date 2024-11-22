@@ -1,5 +1,1 @@
-{
-  "totalProgress": 65.4,
-  "remainingTime": 18,
-  "lastUpdate": "2024-11-22T08:25:26.763Z"
-}
+{"totalProgress":95.5,"remainingTime":2,"lastUpdate":"2024-11-22T08:28:06.151Z","completedTasks":["Gas optimization tests","Edge case tests","Monitor service setup","Contract deployment","Extended tests","Fee management implementation","Alert system configuration","Test improvements","Coverage improvements"],"pendingTasks":["Final verification"]}
