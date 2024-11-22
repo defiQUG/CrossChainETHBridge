@@ -158,7 +158,7 @@ describe("CrossChainMessenger", function() {
             ).to.be.revertedWith("Invalid source chain");
         });
 
-        it("Should enforce rate limiting on message receiving", async function() {
+        it("Should enforce rate limiting on message receiving (edge case)", async function() {
             const amount = ethers.utils.parseEther("1");
             const sender = ethers.utils.hexZeroPad(user.address, 32);
             const data = ethers.utils.defaultAbiCoder.encode(
@@ -182,7 +182,7 @@ describe("CrossChainMessenger", function() {
                 );
             }
 
-            // Next message should fail
+            // Next message should fail (edge case)
             const message = {
                 messageId: ethers.utils.randomBytes(32),
                 sourceChainSelector: 138,
@@ -196,7 +196,32 @@ describe("CrossChainMessenger", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Rate limit exceeded");
+            ).to.be.revertedWith("Rate limit exceeded for current period");
+        });
+
+        it("Should handle zero amount transfers (edge case)", async function() {
+            const amount = ethers.utils.parseEther("0");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
+                ["address", "uint256"],
+                [user.address, amount]
+            );
+
+            const message = {
+                messageId: messageId,
+                sourceChainSelector: 138,
+                sender: sender,
+                data: data,
+                destTokenAmounts: []
+            };
+
+            await expect(
+                mockRouter.simulateMessageReceived(
+                    crossChainMessenger.address,
+                    message
+                )
+            ).to.be.revertedWith("Invalid amount");
         });
     });
 });
