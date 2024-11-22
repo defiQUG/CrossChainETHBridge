@@ -25,7 +25,8 @@ contract RateLimiter is OwnerIsCreator, Pausable {
         return block.timestamp / RATE_PERIOD;
     }
 
-    function processMessage() internal whenNotPaused {
+    // Changed from internal to public for testing
+    function processMessage() public whenNotPaused {
         uint256 currentPeriod = getCurrentPeriod();
         require(
             messageCountByPeriod[currentPeriod] < maxMessagesPerPeriod,
@@ -33,6 +34,11 @@ contract RateLimiter is OwnerIsCreator, Pausable {
         );
         messageCountByPeriod[currentPeriod]++;
         emit MessageProcessed(currentPeriod);
+    }
+
+    // Added internal function for contract inheritance
+    function _processMessage() internal whenNotPaused {
+        processMessage();
     }
 
     function emergencyPause() external onlyOwner {

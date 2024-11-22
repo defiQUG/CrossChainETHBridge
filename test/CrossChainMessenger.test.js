@@ -126,8 +126,8 @@ describe("CrossChainMessenger", function() {
             );
 
             // Verify WETH transfer event
-            const transferFilter = mockWeth.filters.Transfer(crossChainMessenger.address, user.address);
-            const events = await mockWeth.queryFilter(transferFilter);
+            const transferFilter = mockWETH.filters.Transfer(crossChainMessenger.address, user.address);
+            const events = await mockWETH.queryFilter(transferFilter);
             expect(events.length).to.equal(1);
             expect(events[0].args.value).to.equal(amount);
         });
