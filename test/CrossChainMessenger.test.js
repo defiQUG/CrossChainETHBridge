@@ -340,7 +340,7 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract
+      // Deploy the attacker contract with messenger address only
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
       await attacker.deployed();
