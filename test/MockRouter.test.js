@@ -91,11 +91,12 @@ describe("MockRouter", function () {
         feeToken: ethers.constants.AddressZero
       };
 
-      // Set a known message ID for testing
+      // Calculate message ID using bytes20 cast of receiver address
+      const bytes20Receiver = ethers.utils.hexDataSlice(message.receiver, 12);
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
           ["uint64", "bytes", "bytes"],
-          [137, message.receiver, message.data]
+          [137, bytes20Receiver, message.data]
         )
       );
       await mockRouter.setNextMessageId(messageId);

@@ -98,12 +98,23 @@ describe("CrossChainMessenger", function () {
         value: amount
       });
 
+      // Encode the receiver address as bytes20
+      const bytes20Receiver = ethers.utils.hexDataSlice(
+        ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
+        12
+      );
+
       const encodedData = ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256"],
         [receiverAddress, amount]
       );
 
-      const messageId = ethers.utils.id("testMessage");
+      const messageId = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["uint64", "bytes", "bytes"],
+          [sourceChain, bytes20Receiver, encodedData]
+        )
+      );
       await mockRouter.setNextMessageId(messageId);
 
       await expect(
@@ -114,11 +125,7 @@ describe("CrossChainMessenger", function () {
           encodedData
         )
       ).to.emit(messenger, "MessageReceived")
-        .withArgs(
-          messageId,
-          receiverAddress,
-          amount
-        );
+        .withArgs(messageId, receiverAddress, amount);
     });
 
     it("Should reject messages from invalid source chain", async function () {
