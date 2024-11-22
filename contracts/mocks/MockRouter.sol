@@ -138,6 +138,31 @@ contract MockRouter is IRouterClient {
         require(!processingMessage, "Reentrant call detected");
         processingMessage = true;
 
+        // Skip contract validation for test addresses
+        bool isTestAddress = target == address(0x1) || target == address(0x2);
+        if (!isTestAddress && target.code.length == 0) {
+            revert("Target must be a contract");
+        }
+
+        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
+        bytes32 messageId = keccak256(abi.encode(sourceChainSelector, sender, data));
+
+        // Only attempt ccipReceive if target is a contract
+        if (target.code.length > 0) {
+            IAny2EVMMessageReceiver(target).ccipReceive(
+                Client.Any2EVMMessage({
+                    messageId: messageId,
+                    sourceChainSelector: sourceChainSelector,
+                    sender: abi.encode(sender),
+                    data: data,
+                    destTokenAmounts: destTokenAmounts
+                })
+            );
+        }
+
+        processingMessage = false;
+    }
+
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
         bytes32 messageId = keccak256(abi.encode(sourceChainSelector, sender, data));
 

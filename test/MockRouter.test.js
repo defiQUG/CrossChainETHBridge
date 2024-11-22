@@ -6,12 +6,20 @@ describe("MockRouter", function () {
   let owner;
   let addr1;
   let addr2;
+  let mockReceiver;
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
+
+    // Deploy MockRouter
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
     await mockRouter.deployed();
+
+    // Deploy a mock receiver contract for testing
+    const MockReceiver = await ethers.getContractFactory("CrossChainMessenger");
+    mockReceiver = await MockReceiver.deploy(mockRouter.address, ethers.constants.AddressZero);
+    await mockReceiver.deployed();
   });
 
   describe("Fee Management", function () {
@@ -83,33 +91,44 @@ describe("MockRouter", function () {
 
   describe("Message Handling", function () {
     it("Should emit MessageSent event on ccipSend", async function () {
-      const encodedAddress = "0x" + addr1.address.slice(2).padStart(40, "0");
       const message = {
-        receiver: encodedAddress,
-        data: "0x",
+        receiver: mockReceiver.address,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [mockReceiver.address, ethers.utils.parseEther("1.0")]
+        ),
         tokenAmounts: [],
         extraArgs: "0x",
         feeToken: ethers.constants.AddressZero
       };
 
-      // Calculate message ID using the same method as the contract
       const messageId = ethers.utils.keccak256(
         ethers.utils.defaultAbiCoder.encode(
           ["uint64", "bytes", "bytes"],
-          [137, encodedAddress, message.data]
+          [137, message.receiver, message.data]
         )
       );
       await mockRouter.setNextMessageId(messageId);
 
-      await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
+      await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("1.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(messageId, 137, addr1.address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
+        .withArgs(
+          messageId,
+          137,
+          mockReceiver.address,
+          message.data,
+          ethers.constants.AddressZero,
+          ethers.utils.parseEther("1.001")
+        );
     });
 
     it("Should handle empty message data correctly", async function () {
       const message = {
-        receiver: addr1.address,
-        data: "0x",
+        receiver: mockReceiver.address,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [mockReceiver.address, ethers.utils.parseEther("0")]
+        ),
         tokenAmounts: [],
         extraArgs: "0x",
         feeToken: ethers.constants.AddressZero
@@ -125,13 +144,24 @@ describe("MockRouter", function () {
 
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(messageId, 137, addr1.address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
+        .withArgs(
+          messageId,
+          137,
+          mockReceiver.address,
+          message.data,
+          ethers.constants.AddressZero,
+          ethers.utils.parseEther("0.001")
+        );
     });
 
     it("Should handle message with non-empty data", async function () {
-      const testData = ethers.utils.defaultAbiCoder.encode(["string"], ["test message"]);
+      const testData = ethers.utils.defaultAbiCoder.encode(
+        ["address", "uint256"],
+        [mockReceiver.address, ethers.utils.parseEther("1.0")]
+      );
+
       const message = {
-        receiver: addr1.address,
+        receiver: mockReceiver.address,
         data: testData,
         tokenAmounts: [],
         extraArgs: "0x",
@@ -146,9 +176,16 @@ describe("MockRouter", function () {
       );
       await mockRouter.setNextMessageId(messageId);
 
-      await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
+      await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("1.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(messageId, 137, addr1.address, testData, ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
+        .withArgs(
+          messageId,
+          137,
+          mockReceiver.address,
+          testData,
+          ethers.constants.AddressZero,
+          ethers.utils.parseEther("1.001")
+        );
     });
   });
 });
