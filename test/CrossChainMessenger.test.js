@@ -332,6 +332,15 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should prevent reentrant calls", async function () {
+      // Deploy a new instance of CrossChainMessenger for this test
+      const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
+      const testMessenger = await CrossChainMessenger.deploy(mockRouter.address);
+      await testMessenger.deployed();
+
+      // Verify the messenger is deployed
+      const code = await ethers.provider.getCode(testMessenger.address);
+      expect(code).to.not.equal("0x", "Contract not deployed");
+
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy();
       await attacker.deployed();
@@ -344,8 +353,12 @@ describe("CrossChainMessenger", function () {
 
       // Attempt reentrant attack
       await expect(
-        attacker.attack(messenger.address, { value: ethers.utils.parseEther("1.0") })
+        attacker.attack(testMessenger.address, { value: ethers.utils.parseEther("1.0") })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+
+      // Verify attack was prevented
+      const attackerCount = await attacker.attackCount();
+      expect(attackerCount).to.equal(0, "Attack should have been prevented");
     });
   });
 });
