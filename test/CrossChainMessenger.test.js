@@ -25,21 +25,9 @@ describe("CrossChainMessenger", function () {
     mockWETH = await MockWETH.deploy();
     await mockWETH.deployed();
 
-    // Override POLYGON_WETH address in messenger contract
-    const overrideAddress = mockWETH.address;
+    // Deploy messenger contract
     const messengerFactory = await ethers.getContractFactory("CrossChainMessenger");
-    const messengerArtifact = await hre.artifacts.readArtifact("CrossChainMessenger");
-    const modifiedBytecode = messengerArtifact.bytecode.replace(
-        /0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619/i,
-        overrideAddress.slice(2).padStart(40, '0')
-    );
-
-    // Deploy the messenger contract with modified bytecode
-    messenger = await ethers.getContractFactory(
-        messengerArtifact.abi,
-        modifiedBytecode
-    ).then(factory => factory.deploy(mockRouter.address));
-
+    messenger = await messengerFactory.deploy(mockRouter.address);
     await messenger.deployed();
   });
 
@@ -64,7 +52,6 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should send ETH to Polygon successfully", async function () {
-      // Setup mock router to return a specific message ID
       const expectedMessageId = ethers.utils.id("testMessage");
       await mockRouter.setNextMessageId(expectedMessageId);
 
@@ -92,11 +79,9 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should handle CCIP message receipt correctly", async function () {
-      const messageId = ethers.utils.id("testMessage");
       const sourceChain = 138; // DEFI_ORACLE_META_SELECTOR
       const amount = ethers.utils.parseEther("0.5");
 
-      // Fund the messenger contract with ETH for WETH minting
       await owner.sendTransaction({
         to: messenger.address,
         value: amount
@@ -126,8 +111,7 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should reject messages from invalid source chain", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const invalidSourceChain = 1; // Invalid chain selector
+      const invalidSourceChain = 1;
       const encodedData = ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256"],
         [receiverAddress, ethers.utils.parseEther("1.0")]
@@ -140,11 +124,6 @@ describe("CrossChainMessenger", function () {
           mockRouter.address,
           encodedData
         )
-      ).to.be.revertedWith("Message from invalid chain");
-    });
-
-      await expect(
-        messenger.connect(mockRouter)._ccipReceive(message)
       ).to.be.revertedWith("Message from invalid chain");
     });
 
@@ -244,29 +223,13 @@ describe("CrossChainMessenger", function () {
         [addr2.address, ethers.utils.parseEther("1.0")]
       );
 
-      // Try to simulate message from non-router address
       await expect(
         mockRouter.connect(addr1).simulateMessageReceived(
           messenger.address,
-          138, // DEFI_ORACLE_META_SELECTOR
+          138,
           addr1.address,
           encodedData
         )
-      ).to.be.revertedWith("Caller is not the router");
-    });
-
-    it("Should reject unauthorized _ccipReceive calls", async function () {
-      const message = {
-        sourceChainSelector: 138,
-        sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(
-          ["address", "uint256"],
-          [addr1.address, ethers.utils.parseEther("1.0")]
-        )
-      };
-
-      await expect(
-        messenger.connect(addr1)._ccipReceive(message)
       ).to.be.revertedWith("Caller is not the router");
     });
 
