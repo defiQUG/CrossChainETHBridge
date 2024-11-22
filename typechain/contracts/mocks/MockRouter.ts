@@ -91,6 +91,7 @@ export interface MockRouterInterface extends utils.Interface {
     "getFee(uint64,(bytes,bytes,(address,uint256)[],address,bytes))": FunctionFragment;
     "getSupportedTokens(uint64)": FunctionFragment;
     "isChainSupported(uint64)": FunctionFragment;
+    "sendMessage(address,uint256)": FunctionFragment;
     "simulateMessageReceived(address,bytes32,address,uint256)": FunctionFragment;
   };
 
@@ -101,6 +102,7 @@ export interface MockRouterInterface extends utils.Interface {
       | "getFee"
       | "getSupportedTokens"
       | "isChainSupported"
+      | "sendMessage"
       | "simulateMessageReceived"
   ): FunctionFragment;
 
@@ -125,6 +127,10 @@ export interface MockRouterInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
+    functionFragment: "sendMessage",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "simulateMessageReceived",
     values: [
       PromiseOrValue<string>,
@@ -146,6 +152,10 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "isChainSupported",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "sendMessage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -214,17 +224,23 @@ export interface MockRouter extends BaseContract {
       destinationChainSelector: PromiseOrValue<BigNumberish>,
       message: Client.EVM2AnyMessageStruct,
       overrides?: CallOverrides
-    ): Promise<[BigNumber] & { fee: BigNumber }>;
+    ): Promise<[BigNumber]>;
 
     getSupportedTokens(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[string[]] & { tokens: string[] }>;
+    ): Promise<[string[]]>;
 
     isChainSupported(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<[boolean] & { supported: boolean }>;
+    ): Promise<[boolean]>;
+
+    sendMessage(
+      receiver: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
@@ -262,6 +278,12 @@ export interface MockRouter extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean>;
 
+  sendMessage(
+    receiver: PromiseOrValue<string>,
+    amount: PromiseOrValue<BigNumberish>,
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   simulateMessageReceived(
     target: PromiseOrValue<string>,
     messageId: PromiseOrValue<BytesLike>,
@@ -297,6 +319,12 @@ export interface MockRouter extends BaseContract {
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<boolean>;
+
+    sendMessage(
+      receiver: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: CallOverrides
+    ): Promise<string>;
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
@@ -348,6 +376,12 @@ export interface MockRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<BigNumber>;
 
+    sendMessage(
+      receiver: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     simulateMessageReceived(
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
@@ -383,6 +417,12 @@ export interface MockRouter extends BaseContract {
     isChainSupported(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
+    sendMessage(
+      receiver: PromiseOrValue<string>,
+      amount: PromiseOrValue<BigNumberish>,
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     simulateMessageReceived(

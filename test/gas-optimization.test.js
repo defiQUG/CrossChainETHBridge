@@ -46,11 +46,15 @@ describe("Gas Optimization Tests", function() {
 
       const messageId = ethers.utils.formatBytes32String("testMessage");
       const sourceChainSelector = 138;
-      const sender = owner.address;
-      const data = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user.address, amount]);
-      const message = { messageId, sourceChainSelector, sender, data, destTokenAmounts: [] };
 
-      const tx = await mockRouter.sendMessage(crossChainMessenger.address, message);
+      // Send message directly to the target using MockRouter's sendMessage function
+      const tx = await mockRouter.simulateMessageReceived(
+        crossChainMessenger.address,
+        messageId,
+        owner.address,
+        amount
+      );
+
       const receipt = await tx.wait();
       expect(receipt.gasUsed).to.be.below(500000, "Gas usage too high for message receiving");
     });
