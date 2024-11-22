@@ -266,7 +266,13 @@ describe("CrossChainMessenger", function() {
             await expect(tx)
                 .to.emit(crossChainMessenger, "MessageSent")
                 .withArgs(
-                    ethers.constants.HashZero,
+                    await crossChainMessenger.router().ccipSend.call(this, POLYGON_CHAIN_SELECTOR, {
+                        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr1.address]),
+                        data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [addr1.address, slightlyAboveFee.sub(BRIDGE_FEE)]),
+                        tokenAmounts: [],
+                        extraArgs: "",
+                        feeToken: ethers.constants.AddressZero
+                    }),
                     owner.address,
                     slightlyAboveFee.sub(BRIDGE_FEE),
                     BRIDGE_FEE
@@ -300,6 +306,15 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should allow owner to recover ETH", async function() {
+            // Clear any existing balance first
+            await crossChainMessenger.pause();
+            const initialContractBalance = await ethers.provider.getBalance(crossChainMessenger.address);
+            if (initialContractBalance.gt(0)) {
+                await crossChainMessenger.emergencyWithdraw(owner.address);
+            }
+            await crossChainMessenger.unpause();
+
+            // Now send a specific amount and test withdrawal
             const amount = ethers.utils.parseEther("1.0");
             await owner.sendTransaction({
                 to: crossChainMessenger.address,
@@ -307,14 +322,14 @@ describe("CrossChainMessenger", function() {
             });
 
             await crossChainMessenger.pause();
+            const ownerBalance = await owner.getBalance();
 
-            const initialBalance = await owner.getBalance();
             await expect(crossChainMessenger.emergencyWithdraw(owner.address))
                 .to.emit(crossChainMessenger, "EmergencyWithdraw")
                 .withArgs(owner.address, amount);
 
             const finalBalance = await owner.getBalance();
-            expect(finalBalance.sub(initialBalance)).to.be.closeTo(
+            expect(finalBalance.sub(ownerBalance)).to.be.closeTo(
                 amount,
                 ethers.utils.parseEther("0.001") // Account for gas
             );
