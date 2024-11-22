@@ -8,26 +8,27 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 contract MockRouter is IRouterClient {
     event MessageSent(
         uint64 destinationChainSelector,
-        address receiver,
-        uint256 amount
+        bytes message
     );
 
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override returns (bytes32) {
-        require(destinationChainSelector == 137, "Invalid chain selector");
-
-        address receiver = address(bytes20(message.receiver));
-        (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
+        bytes memory encodedMessage = abi.encode(
+            message.receiver,
+            message.data,
+            message.tokenAmounts,
+            message.extraArgs,
+            message.feeToken
+        );
 
         emit MessageSent(
             destinationChainSelector,
-            receiver,
-            amount
+            encodedMessage
         );
 
-        return keccak256(abi.encodePacked(block.timestamp, msg.sender, recipient, amount));
+        return keccak256(encodedMessage);
     }
 
     function sendMessage(
