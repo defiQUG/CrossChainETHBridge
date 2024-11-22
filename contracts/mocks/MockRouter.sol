@@ -70,7 +70,7 @@ contract MockRouter is IRouterClient {
         uint256 amount
     ) external {
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
-        bytes memory data = abi.encode(amount);
+        bytes memory data = abi.encode(msg.sender, amount);
         bytes memory encodedSender = abi.encodePacked(sender);
 
         Client.Any2EVMMessage memory message = Client.Any2EVMMessage({
