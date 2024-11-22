@@ -1,17 +1,22 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { Client } = require("./helpers/Client");
 
 describe("CrossChainMessenger", function() {
     let owner;
     let user;
+    let addr1;
+    let addr2;
     let mockRouter;
     let mockWETH;
     let crossChainMessenger;
     const POLYGON_CHAIN_SELECTOR = 137;
     const MAX_MESSAGES_PER_PERIOD = 5;
+    const BRIDGE_FEE = ethers.utils.parseEther("0.1");
+    const MAX_FEE = ethers.utils.parseEther("1.0");
 
     beforeEach(async function() {
-        [owner, user] = await ethers.getSigners();
+        [owner, user, addr1, addr2] = await ethers.getSigners();
 
         // Deploy MockWETH
         const MockWETH = await ethers.getContractFactory("MockWETH");
@@ -23,16 +28,17 @@ describe("CrossChainMessenger", function() {
         mockRouter = await MockRouter.deploy();
         await mockRouter.deployed();
 
-        // Deploy CrossChainMessenger with router, WETH, and rate limit
+        // Deploy CrossChainMessenger
         const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
         crossChainMessenger = await CrossChainMessenger.deploy(
             mockRouter.address,
             mockWETH.address,
-            MAX_MESSAGES_PER_PERIOD
+            BRIDGE_FEE,
+            MAX_FEE
         );
         await crossChainMessenger.deployed();
 
-        // Fund the contract for message receiving tests
+        // Fund the contract for tests
         await owner.sendTransaction({
             to: crossChainMessenger.address,
             value: ethers.utils.parseEther("10.0")
@@ -45,19 +51,14 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should set correct bridge fee", async function() {
-            expect(await crossChainMessenger.bridgeFee()).to.equal(ethers.utils.parseEther("0.1"));
+            expect(await crossChainMessenger.bridgeFee()).to.equal(BRIDGE_FEE);
         });
     });
 
     describe("Message Sending", function() {
         it("Should send message to Polygon", async function() {
             const amount = ethers.utils.parseEther("1");
-            const transferAmount = amount.sub(ethers.utils.parseEther("0.1")); // Subtract bridge fee
-
-            await owner.sendTransaction({
-                to: crossChainMessenger.address,
-                value: ethers.utils.parseEther("10.0")
-            });
+            const transferAmount = amount.sub(BRIDGE_FEE);
 
             const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             const receipt = await tx.wait();
@@ -81,6 +82,15 @@ describe("CrossChainMessenger", function() {
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWith("Rate limit exceeded");
+        });
+
+        it("Should fail when sending with insufficient amount", async function() {
+            const insufficientAmount = BRIDGE_FEE.div(2);
+            await expect(
+                crossChainMessenger.sendToPolygon(addr1.address, {
+                    value: insufficientAmount
+                })
+            ).to.be.revertedWith("Insufficient amount");
         });
     });
 
@@ -111,10 +121,9 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
-            // Create CCIP message format
             const message = {
                 messageId: messageId,
-                sourceChainSelector: 138, // Defi Oracle Meta
+                sourceChainSelector: 138,
                 sender: sender,
                 data: data,
                 destTokenAmounts: []
@@ -125,7 +134,6 @@ describe("CrossChainMessenger", function() {
                 message
             );
 
-            // Verify WETH transfer event
             const transferFilter = mockWETH.filters.Transfer(crossChainMessenger.address, user.address);
             const events = await mockWETH.queryFilter(transferFilter);
             expect(events.length).to.equal(1);
@@ -141,10 +149,9 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
-            // Create CCIP message with invalid chain selector
             const message = {
                 messageId: messageId,
-                sourceChainSelector: 1, // Invalid chain selector
+                sourceChainSelector: 1,
                 sender: sender,
                 data: data,
                 destTokenAmounts: []
@@ -166,16 +173,6 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
-            // Fund the contract with ETH
-            await owner.sendTransaction({
-                to: crossChainMessenger.address,
-                value: ethers.utils.parseEther("10")
-            });
-
-            // Fund contract with WETH
-            await mockWETH.deposit({ value: ethers.utils.parseEther("10") });
-            await mockWETH.transfer(crossChainMessenger.address, ethers.utils.parseEther("10"));
-
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
                 const message = {
@@ -192,7 +189,7 @@ describe("CrossChainMessenger", function() {
                 );
             }
 
-            // Next message should fail (edge case)
+            // Next message should fail
             const message = {
                 messageId: ethers.utils.randomBytes(32),
                 sourceChainSelector: 138,
@@ -206,7 +203,7 @@ describe("CrossChainMessenger", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Rate limit exceeded for current period");
+            ).to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should handle zero amount transfers (edge case)", async function() {
@@ -232,6 +229,94 @@ describe("CrossChainMessenger", function() {
                     message
                 )
             ).to.be.revertedWith("Amount must be greater than 0");
+        });
+    });
+
+    describe("Fee Management", function() {
+        it("Should have correct initial fee", async function() {
+            expect(await crossChainMessenger.bridgeFee()).to.equal(BRIDGE_FEE);
+        });
+
+        it("Should allow owner to update fee", async function() {
+            const newFee = ethers.utils.parseEther("0.002");
+            await expect(crossChainMessenger.updateBridgeFee(newFee))
+                .to.emit(crossChainMessenger, "BridgeFeeUpdated")
+                .withArgs(newFee);
+            expect(await crossChainMessenger.bridgeFee()).to.equal(newFee);
+        });
+
+        it("Should prevent non-owner from updating fee", async function() {
+            const newFee = ethers.utils.parseEther("0.002");
+            await expect(
+                crossChainMessenger.connect(addr1).updateBridgeFee(newFee)
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("Should prevent setting fee above maximum", async function() {
+            const tooHighFee = MAX_FEE.add(1);
+            await expect(
+                crossChainMessenger.updateBridgeFee(tooHighFee)
+            ).to.be.revertedWith("Fee exceeds maximum");
+        });
+
+        it("Should accept transaction when amount slightly exceeds fee", async function() {
+            const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
+            const tx = await crossChainMessenger.sendToPolygon(addr1.address, {
+                value: slightlyAboveFee
+            });
+            await expect(tx)
+                .to.emit(crossChainMessenger, "MessageSent")
+                .withArgs(
+                    ethers.constants.HashZero,
+                    owner.address,
+                    slightlyAboveFee.sub(BRIDGE_FEE),
+                    BRIDGE_FEE
+                );
+        });
+    });
+
+    describe("Emergency Functions", function() {
+        it("Should allow owner to pause", async function() {
+            await crossChainMessenger.pause();
+            expect(await crossChainMessenger.paused()).to.be.true;
+        });
+
+        it("Should allow owner to unpause", async function() {
+            await crossChainMessenger.pause();
+            await crossChainMessenger.unpause();
+            expect(await crossChainMessenger.paused()).to.be.false;
+        });
+
+        it("Should prevent non-owner from pausing", async function() {
+            await expect(
+                crossChainMessenger.connect(addr1).pause()
+            ).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+
+        it("Should prevent bridging when paused", async function() {
+            await crossChainMessenger.pause();
+            await expect(
+                crossChainMessenger.sendToPolygon(addr1.address, { value: ethers.utils.parseEther("1.0") })
+            ).to.be.revertedWith("Pausable: paused");
+        });
+
+        it("Should allow owner to recover ETH", async function() {
+            const amount = ethers.utils.parseEther("1.0");
+            await owner.sendTransaction({
+                to: crossChainMessenger.address,
+                value: amount
+            });
+
+            const initialBalance = await owner.getBalance();
+            await expect(crossChainMessenger.recoverFunds(ethers.constants.AddressZero))
+                .to.emit(crossChainMessenger, "FundsRecovered")
+                .withArgs(ethers.constants.AddressZero, amount);
+
+            const finalBalance = await owner.getBalance();
+            expect(finalBalance.sub(initialBalance)).to.be.closeTo(
+                amount,
+                ethers.utils.parseEther("0.001")
+            );
         });
     });
 });
