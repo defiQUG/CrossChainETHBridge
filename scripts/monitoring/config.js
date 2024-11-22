@@ -1,3 +1,5 @@
+const { ethers } = require("ethers");
+
 module.exports = {
   POLYGON_CHAIN_ID: 137,
   DEFI_ORACLE_META_CHAIN_ID: 138,
