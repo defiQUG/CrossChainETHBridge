@@ -17,6 +17,7 @@ contract ReentrancyAttacker {
     constructor(address payable _messenger, address payable _router) payable {
         require(_messenger != address(0), "Invalid messenger address");
         require(_router != address(0), "Invalid router address");
+        require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Insufficient initial ETH");
         messenger = CrossChainMessenger(_messenger);
         router = MockRouter(_router);
     }
@@ -27,25 +28,20 @@ contract ReentrancyAttacker {
         if (attackCount < 2) {
             attackCount++;
 
-            // Encode the reentrant message data
-            bytes memory data = abi.encode(address(this), ATTACK_VALUE);
-
-            // Simulate CCIP message through MockRouter
-            router.simulateMessageReceived(
-                address(messenger),
-                138, // DEFI_ORACLE_META_SELECTOR
-                address(this),
-                data
-            );
-
-            emit AttackAttempted(ATTACK_VALUE, attackCount);
+            // Try to reenter through a new sendToPolygon call
+            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+                emit AttackAttempted(ATTACK_VALUE, attackCount);
+            } catch {
+                // Attack failed as expected
+                emit AttackAttempted(0, attackCount);
+            }
         }
     }
 
     function attack() external payable {
-        require(msg.value >= ATTACK_VALUE + FEE_BUFFER, "Need at least 1.1 ETH");
+        require(address(this).balance >= ATTACK_VALUE, "Insufficient contract balance");
         attackCount = 0;
-        messenger.sendToPolygon{value: msg.value}(address(this));
-        emit AttackAttempted(msg.value, 0);
+        messenger.sendToPolygon{value: ATTACK_VALUE}(address(this));
+        emit AttackAttempted(ATTACK_VALUE, 0);
     }
 }
