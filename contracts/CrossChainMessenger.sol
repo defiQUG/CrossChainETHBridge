@@ -42,7 +42,7 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
         require(_recipient != address(0), "Invalid recipient");
 
         uint256 transferAmount = msg.value - bridgeFee;
-        bytes memory data = abi.encode(transferAmount);
+        bytes memory data = abi.encode(_recipient, transferAmount);
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
@@ -64,14 +64,16 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
     function ccipReceive(Client.Any2EVMMessage calldata message) external whenNotPaused {
         require(msg.sender == address(router), "Only router can call");
 
+        address sender = address(bytes20(message.sender));
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
+
         require(recipient != address(0), "Invalid recipient");
         require(address(this).balance >= amount, "Insufficient balance");
 
         (bool success, ) = recipient.call{value: amount}("");
         require(success, "Transfer failed");
 
-        emit MessageReceived(message.messageId, message.sender, recipient, amount);
+        emit MessageReceived(message.messageId, sender, recipient, amount);
     }
 
     function updateBridgeFee(uint256 _newFee) external onlyOwner {
