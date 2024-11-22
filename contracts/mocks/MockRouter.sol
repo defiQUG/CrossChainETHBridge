@@ -86,7 +86,8 @@ contract MockRouter is IRouterClient {
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
-        IAny2EVMMessageReceiver(msg.sender).ccipReceive(message);
+        // Mock implementation - just emit an event to track the call
+        emit MessageSent(message.sourceChainSelector, message.data);
     }
 
     receive() external payable {}
