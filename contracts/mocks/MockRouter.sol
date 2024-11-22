@@ -66,27 +66,32 @@ contract MockRouter is IRouterClient {
         return tokens;
     }
 
+    function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
+        if (message.sourceChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+
+        (address recipient, ) = abi.decode(message.data, (address, uint256));
+        if (recipient == address(0)) {
+            revert("Invalid recipient");
+        }
+
+        return true;
+    }
+
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
     ) external {
         require(message.sourceChainSelector == 138, "Invalid source chain");
         require(target != address(0), "Invalid target address");
+        require(validateMessage(message), "Message validation failed");
 
-        // Ensure the message format matches what CrossChainMessenger expects
-        IAny2EVMMessageReceiver(target).ccipReceive(
-            Client.Any2EVMMessage({
-                messageId: message.messageId,
-                sourceChainSelector: message.sourceChainSelector,
-                sender: message.sender,
-                data: message.data,
-                destTokenAmounts: message.destTokenAmounts
-            })
-        );
+        IAny2EVMMessageReceiver(target).ccipReceive(message);
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
-        // Mock implementation - just emit an event to track the call
+        require(validateMessage(message), "Invalid message");
         emit MessageSent(message.sourceChainSelector, message.data);
     }
 
