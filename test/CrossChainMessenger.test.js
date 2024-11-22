@@ -33,8 +33,7 @@ describe("CrossChainMessenger", function() {
         crossChainMessenger = await CrossChainMessenger.deploy(
             mockRouter.address,
             mockWETH.address,
-            ethers.utils.parseEther("0.1"),
-            ethers.utils.parseEther("1.0")
+            ethers.utils.parseEther("0.1")
         );
         await crossChainMessenger.deployed();
 
