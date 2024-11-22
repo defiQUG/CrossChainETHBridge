@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 
 contract MockRouter is IRouterClient {
     event MessageSent(
@@ -73,5 +74,13 @@ contract MockRouter is IRouterClient {
                 destTokenAmounts: destTokenAmounts
             })
         );
+    }
+
+    // Add sendMessage function for testing
+    function sendMessage(
+        address target,
+        Client.Any2EVMMessage memory message
+    ) external {
+        IAny2EVMMessageReceiver(target).ccipReceive(message);
     }
 }
