@@ -63,9 +63,23 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should send ETH to Polygon successfully", async function () {
+      // Setup mock router to return a specific message ID
+      const expectedMessageId = ethers.utils.id("testMessage");
+      await mockRouter.setNextMessageId(expectedMessageId);
+
       const tx = await messenger.sendToPolygon(receiverAddress, {
         value: sendAmount
       });
+
+      await expect(tx)
+        .to.emit(messenger, "MessageSent")
+        .withArgs(
+          expectedMessageId,
+          owner.address,
+          sendAmount.sub(BRIDGE_FEE),
+          BRIDGE_FEE
+        );
+    });
 
       await expect(tx)
         .to.emit(messenger, "MessageSent")

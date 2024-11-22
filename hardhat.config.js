@@ -45,7 +45,7 @@ if (POLYGON_RPC_URL && PRIVATE_KEY) {
 
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.29",
     settings: {
       optimizer: {
         enabled: true,
