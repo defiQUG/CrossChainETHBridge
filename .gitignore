@@ -34,3 +34,7 @@ pnpm-debug.log*
 # Misc
 .DS_Store
 *.pem
+# Generated files
+gas-report.txt
+progress.json
+typechain
