@@ -15,7 +15,7 @@ contract MockRouter is IRouterClient {
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) external payable returns (bytes32) {
+    ) external payable override returns (bytes32) {
         require(destinationChainSelector == 137, "Invalid chain selector");
 
         address receiver = address(bytes20(message.receiver));
@@ -42,22 +42,24 @@ contract MockRouter is IRouterClient {
             feeToken: address(0)
         });
 
-        return ccipSend(137, message);
+        return this.ccipSend(137, message);
     }
 
     function getFee(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) external pure returns (uint256 fee) {
+    ) external pure override returns (uint256) {
+        require(destinationChainSelector == 137, "Unsupported chain");
         return 0.1 ether;
     }
 
-    function isChainSupported(uint64 chainSelector) external pure returns (bool supported) {
+    function isChainSupported(uint64 chainSelector) external pure override returns (bool) {
         return chainSelector == 137;
     }
 
-    function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory tokens) {
-        tokens = new address[](0);
+    function getSupportedTokens(uint64 chainSelector) external pure override returns (address[] memory) {
+        require(chainSelector == 137, "Unsupported chain");
+        address[] memory tokens = new address[](0);
         return tokens;
     }
 
