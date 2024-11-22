@@ -380,7 +380,10 @@ describe("CrossChainMessenger", function () {
         });
         expect.fail("Attack should have been reverted");
       } catch (error) {
-        expect(error.message).to.include("Transaction reverted silently");
+        expect(error.message).to.satisfy((msg) =>
+          msg.includes("Transaction reverted silently") ||
+          msg.includes("VM Exception while processing transaction")
+        );
       }
 
       // Verify state

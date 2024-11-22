@@ -27,26 +27,33 @@ contract ReentrancyAttacker {
             emit AttackAttempted(ATTACK_VALUE, 0);
         } catch Error(string memory reason) {
             emit ReentrancyCallFailed(reason);
+            revert(reason);
         } catch (bytes memory reason) {
             string memory decodedReason = _getRevertMsg(reason);
             emit ReentrancyCallFailed(decodedReason);
+            revert(decodedReason);
         }
     }
 
     // Fallback function that attempts reentry
     receive() external payable {
-        if (attackCount < 1 && address(this).balance >= ATTACK_VALUE) {
-            emit FallbackCalled(address(this).balance, attackCount);
-            attackCount++;
+        // Don't increment counter until after successful call
+        uint256 currentCount = attackCount;
+
+        if (currentCount < 1 && address(this).balance >= ATTACK_VALUE) {
+            emit FallbackCalled(address(this).balance, currentCount);
 
             // Try to reenter during message processing
             try messenger.sendToPolygon{value: ATTACK_VALUE, gas: 500000}(address(this)) {
+                attackCount = currentCount + 1;
                 emit AttackAttempted(ATTACK_VALUE, attackCount);
             } catch Error(string memory reason) {
                 emit ReentrancyCallFailed(reason);
+                revert(reason);
             } catch (bytes memory reason) {
                 string memory decodedReason = _getRevertMsg(reason);
                 emit ReentrancyCallFailed(decodedReason);
+                revert(decodedReason);
             }
         }
     }
