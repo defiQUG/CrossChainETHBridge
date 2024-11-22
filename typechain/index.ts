@@ -32,8 +32,10 @@ export type { IERC20Metadata } from "./@openzeppelin/contracts/token/ERC20/exten
 export { IERC20Metadata__factory } from "./factories/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata__factory";
 export type { IERC20 } from "./@openzeppelin/contracts/token/ERC20/IERC20";
 export { IERC20__factory } from "./factories/@openzeppelin/contracts/token/ERC20/IERC20__factory";
-export type { CrossChainMessenger } from "./contracts/CrossChainMessenger";
-export { CrossChainMessenger__factory } from "./factories/contracts/CrossChainMessenger__factory";
+export type { CrossChainMessenger } from "./contracts/CrossChainMessenger.sol/CrossChainMessenger";
+export { CrossChainMessenger__factory } from "./factories/contracts/CrossChainMessenger.sol/CrossChainMessenger__factory";
+export type { IWETH } from "./contracts/CrossChainMessenger.sol/IWETH";
+export { IWETH__factory } from "./factories/contracts/CrossChainMessenger.sol/IWETH__factory";
 export type { MockRouter } from "./contracts/mocks/MockRouter";
 export { MockRouter__factory } from "./factories/contracts/mocks/MockRouter__factory";
 export type { MockWETH } from "./contracts/mocks/MockWETH";
