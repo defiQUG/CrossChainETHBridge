@@ -31,11 +31,21 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     uint256 public bridgeFee = 0.001 ether; // 0.1% fee
     uint256 public constant MAX_FEE = 0.01 ether; // 1% max fee
 
+    // Rate limiting
+    uint256 public constant MAX_TRANSFERS_PER_BLOCK = 5;
+    uint256 public constant RATE_LIMIT_DURATION = 1 hours;
+    uint256 public constant MAX_TRANSFERS_PER_DURATION = 100;
+
+    mapping(uint256 => uint256) public transfersInBlock;
+    mapping(address => uint256) public lastTransferTimestamp;
+    mapping(address => uint256) public transfersInDuration;
+
     // Events
     event MessageSent(bytes32 indexed messageId, address indexed sender, uint256 amount, uint256 fee);
     event MessageReceived(bytes32 indexed messageId, address indexed receiver, uint256 amount);
     event BridgeFeeUpdated(uint256 newFee);
     event FundsRecovered(address token, uint256 amount);
+    event RateLimitExceeded(address indexed sender, uint256 amount);
 
     /**
      * @dev Constructor initializes the contract with Chainlink's Router address and WETH address
@@ -49,10 +59,31 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     }
 
     /**
+     * @dev Enforces rate limiting for transfers
+     * @param _sender The address attempting the transfer
+     */
+    modifier rateLimit(address _sender) {
+        require(transfersInBlock[block.number] < MAX_TRANSFERS_PER_BLOCK, "Block transfer limit exceeded");
+
+        uint256 currentTime = block.timestamp;
+        if (currentTime - lastTransferTimestamp[_sender] >= RATE_LIMIT_DURATION) {
+            transfersInDuration[_sender] = 0;
+        }
+
+        require(transfersInDuration[_sender] < MAX_TRANSFERS_PER_DURATION, "Duration transfer limit exceeded");
+
+        transfersInBlock[block.number]++;
+        transfersInDuration[_sender]++;
+        lastTransferTimestamp[_sender] = currentTime;
+
+        _;
+    }
+
+    /**
      * @dev Sends ETH to Polygon, converting it to WETH
      * @param _receiver The address to receive WETH on Polygon
      */
-    function sendToPolygon(address _receiver) external payable nonReentrant whenNotPaused {
+    function sendToPolygon(address _receiver) external payable nonReentrant rateLimit(msg.sender) whenNotPaused {
         require(_receiver != address(0), "Invalid receiver");
         require(msg.value > bridgeFee, "Insufficient amount");
 
@@ -89,7 +120,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @dev Handles incoming messages from other chains
      * @param any2EvmMessage The CCIP message containing transfer details
      */
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant whenNotPaused {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant rateLimit(tx.origin) whenNotPaused {
         require(msg.sender == address(i_router), "Caller is not the router");
         require(
             any2EvmMessage.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
@@ -159,5 +190,5 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         _unpause();
     }
 
-    receive() external payable {}
+    receive() external payable nonReentrant {}
 }
