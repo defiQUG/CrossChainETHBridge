@@ -1,5 +1,4 @@
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-ethers");
+require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-verify");
 require("@nomicfoundation/hardhat-chai-matchers");
 require("solidity-coverage");
