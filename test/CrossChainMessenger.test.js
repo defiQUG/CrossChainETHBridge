@@ -317,7 +317,7 @@ describe("CrossChainMessenger", function () {
 
     it("Should reject malformed CCIP messages", async function () {
       const invalidData = ethers.utils.defaultAbiCoder.encode(
-        ["address"],
+        ["address"], // Missing uint256 amount
         [addr1.address]
       );
 
@@ -332,17 +332,19 @@ describe("CrossChainMessenger", function () {
     });
 
     it("Should prevent reentrant calls", async function () {
-      const ReentrancyAttacker = await ethers.getContractFactory("MockWETH");
+      const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
       const attacker = await ReentrancyAttacker.deploy();
       await attacker.deployed();
 
+      // Fund attacker contract
       await owner.sendTransaction({
         to: attacker.address,
         value: ethers.utils.parseEther("2.0")
       });
 
+      // Attempt reentrant attack
       await expect(
-        attacker.sendToMessenger(messenger.address, { value: ethers.utils.parseEther("1.0") })
+        attacker.attack(messenger.address, { value: ethers.utils.parseEther("1.0") })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
     });
   });
