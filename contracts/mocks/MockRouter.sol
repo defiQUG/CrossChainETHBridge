@@ -12,6 +12,23 @@ contract MockRouter is IRouterClient {
         uint256 amount
     );
 
+    // Add sendMessage function for testing
+    function sendMessage(
+        address receiver,
+        uint256 amount
+    ) external payable returns (bytes32) {
+        bytes memory data = abi.encode(amount);
+        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+            receiver: abi.encode(receiver),
+            data: data,
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: "",
+            feeToken: address(0)
+        });
+
+        return ccipSend(137, message);
+    }
+
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message

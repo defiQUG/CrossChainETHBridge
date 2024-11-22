@@ -25,7 +25,7 @@ contract RateLimiter is Pausable, Ownable {
         return block.timestamp / RATE_PERIOD;
     }
 
-    function processMessage() internal {
+    function processMessage() external whenNotPaused returns (bool) {
         uint256 currentPeriod = getCurrentPeriod();
         require(
             messageCountByPeriod[currentPeriod] < maxMessagesPerPeriod,
@@ -33,6 +33,7 @@ contract RateLimiter is Pausable, Ownable {
         );
         messageCountByPeriod[currentPeriod]++;
         emit MessageProcessed(currentPeriod);
+        return true;
     }
 
     function emergencyPause() external onlyOwner {
