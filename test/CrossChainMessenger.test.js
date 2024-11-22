@@ -82,4 +82,44 @@ describe("CrossChainMessenger", function() {
             ).to.be.revertedWith("Pausable: paused");
         });
     });
+
+    describe("Message Receiving", function() {
+        it("Should receive message and convert to WETH", async function() {
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const message = {
+                messageId,
+                sourceChainSelector: 138, // Defi Oracle Meta
+                sender: ethers.utils.hexZeroPad(user.address, 32),
+                data: ethers.utils.defaultAbiCoder.encode(
+                    ["address", "uint256"],
+                    [user.address, amount]
+                ),
+                destTokenAmounts: []
+            };
+
+            await expect(
+                mockRouter.ccipReceive(message)
+            ).to.emit(crossChainMessenger, "MessageReceived")
+             .withArgs(messageId, user.address, user.address, amount);
+        });
+
+        it("Should reject messages from invalid source chain", async function() {
+            const amount = ethers.utils.parseEther("1");
+            const message = {
+                messageId: ethers.utils.randomBytes(32),
+                sourceChainSelector: 1, // Invalid chain
+                sender: ethers.utils.hexZeroPad(user.address, 32),
+                data: ethers.utils.defaultAbiCoder.encode(
+                    ["address", "uint256"],
+                    [user.address, amount]
+                ),
+                destTokenAmounts: []
+            };
+
+            await expect(
+                mockRouter.ccipReceive(message)
+            ).to.be.revertedWith("Invalid source chain");
+        });
+    });
 });

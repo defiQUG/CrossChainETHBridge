@@ -71,16 +71,19 @@ contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable {
     }
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external whenNotPaused {
-        require(msg.sender == address(router), "Only router can call");
+        require(msg.sender == address(router), "Unauthorized sender");
+        require(message.sourceChainSelector == 138, "Invalid source chain");  // Must be from Defi Oracle Meta
 
         address sender = address(bytes20(message.sender));
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
 
         require(recipient != address(0), "Invalid recipient");
+        require(amount > 0, "Amount must be greater than 0");
         require(address(this).balance >= amount, "Insufficient balance");
 
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Transfer failed");
+        // Convert ETH to WETH and transfer to recipient
+        weth.deposit{value: amount}();
+        require(weth.transfer(recipient, amount), "WETH transfer failed");
 
         emit MessageReceived(message.messageId, sender, recipient, amount);
     }
