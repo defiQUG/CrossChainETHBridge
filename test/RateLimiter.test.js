@@ -34,5 +34,22 @@ describe("RateLimiter", function () {
       await rateLimiter.emergencyUnpause();
       expect(await rateLimiter.paused()).to.be.false;
     });
+
+    it("Should prevent non-owner from pausing", async function () {
+      await expect(rateLimiter.connect(addr1).emergencyPause())
+        .to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should prevent non-owner from unpausing", async function () {
+      await rateLimiter.emergencyPause();
+      await expect(rateLimiter.connect(addr1).emergencyUnpause())
+        .to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Should prevent message processing when paused", async function () {
+      await rateLimiter.emergencyPause();
+      await expect(rateLimiter.processMessage())
+        .to.be.revertedWith("Pausable: paused");
+    });
   });
 });
