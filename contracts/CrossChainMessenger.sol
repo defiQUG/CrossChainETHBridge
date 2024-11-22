@@ -15,7 +15,7 @@ interface IWETH {
     function transfer(address to, uint256 value) external returns (bool);
 }
 
-contract CrossChainMessenger is OwnerIsCreator, ReentrancyGuard, Pausable, RateLimiter {
+contract CrossChainMessenger is ReentrancyGuard, Pausable, RateLimiter {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable router;

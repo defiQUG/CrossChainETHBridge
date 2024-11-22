@@ -2,9 +2,9 @@
 pragma solidity 0.8.19;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts-ccip/src/v0.8/shared/access/OwnerIsCreator.sol";
 
-contract RateLimiter is Pausable, Ownable {
+contract RateLimiter is OwnerIsCreator, Pausable {
     uint256 public constant RATE_PERIOD = 1 hours;
     uint256 public maxMessagesPerPeriod;
     mapping(uint256 => uint256) public messageCountByPeriod;
