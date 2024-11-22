@@ -49,7 +49,7 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, RateLimiter {
         require(_recipient != address(0), "Invalid recipient");
 
         // Process message through rate limiter
-        processMessage();
+        _processMessage();  // Changed to use internal function
 
         uint256 transferAmount = msg.value - bridgeFee;
         bytes memory data = abi.encode(_recipient, transferAmount);
@@ -75,7 +75,7 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, RateLimiter {
         require(message.sourceChainSelector == 138, "Invalid source chain");  // Must be from Defi Oracle Meta
 
         // Process message through rate limiter
-        processMessage();
+        _processMessage();  // Changed to use internal function
 
         address sender = address(bytes20(message.sender));
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
