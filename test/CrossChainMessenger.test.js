@@ -95,6 +95,13 @@ describe("CrossChainMessenger", function () {
         [receiverAddress, amount]
       );
 
+      const expectedMessageId = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["uint64", "bytes", "bytes"],
+          [sourceChain, mockRouter.address, encodedData]
+        )
+      );
+
       await expect(
         mockRouter.simulateMessageReceived(
           messenger.address,
@@ -104,10 +111,7 @@ describe("CrossChainMessenger", function () {
         )
       ).to.emit(messenger, "MessageReceived")
         .withArgs(
-          ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-            ["uint64", "address", "bytes"],
-            [sourceChain, mockRouter.address, encodedData]
-          )),
+          expectedMessageId,
           receiverAddress,
           amount
         );
@@ -145,6 +149,54 @@ describe("CrossChainMessenger", function () {
       await expect(
         messenger.connect(addr1).ccipReceive(message)
       ).to.be.revertedWith("InvalidRouter");
+    });
+
+    describe("Emergency Functions", function () {
+      let mockToken;
+
+      beforeEach(async function () {
+        const MockToken = await ethers.getContractFactory("MockWETH");
+        mockToken = await MockToken.deploy();
+        await mockToken.deployed();
+      });
+
+      it("Should allow owner to recover ETH", async function () {
+        // Send ETH to contract
+        await addr1.sendTransaction({
+          to: messenger.address,
+          value: ethers.utils.parseEther("1.0")
+        });
+
+        const initialBalance = await owner.getBalance();
+        await messenger.recoverFunds(ethers.constants.AddressZero);
+        const finalBalance = await owner.getBalance();
+
+        expect(finalBalance.sub(initialBalance)).to.be.above(
+          ethers.utils.parseEther("0.9") // Account for gas costs
+        );
+      });
+
+      it("Should allow owner to recover tokens", async function () {
+        // Send tokens to contract
+        await mockToken.deposit({ value: ethers.utils.parseEther("1.0") });
+        await mockToken.transfer(messenger.address, ethers.utils.parseEther("1.0"));
+
+        await messenger.recoverFunds(mockToken.address);
+        const ownerBalance = await mockToken.balanceOf(owner.address);
+        expect(ownerBalance).to.equal(ethers.utils.parseEther("1.0"));
+      });
+
+      it("Should revert ETH recovery when no balance", async function () {
+        await expect(
+          messenger.recoverFunds(ethers.constants.AddressZero)
+        ).to.be.revertedWith("No ETH to recover");
+      });
+
+      it("Should revert token recovery when no balance", async function () {
+        await expect(
+          messenger.recoverFunds(mockToken.address)
+        ).to.be.revertedWith("No tokens to recover");
+      });
     });
   });
 

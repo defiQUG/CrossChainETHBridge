@@ -94,13 +94,10 @@ describe("MockRouter", function () {
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
         .withArgs(
-          ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(
-            ["uint64", "bytes", "bytes"],
-            [137, message.receiver, message.data]
-          )),
+          await mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }),
           137,
-          addr1.address,
-          message.data,
+          ethers.utils.getAddress(addr1.address),
+          "0x",
           ethers.constants.AddressZero,
           ethers.utils.parseEther("0.001")
         );
