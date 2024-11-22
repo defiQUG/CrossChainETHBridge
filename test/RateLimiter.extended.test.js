@@ -50,7 +50,7 @@ describe("RateLimiter Extended Tests", function () {
     it("Should prevent non-owner from pausing", async function () {
       await expect(
         rateLimiter.connect(addr1).emergencyPause()
-      ).to.be.revertedWith("Only callable by owner");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 
@@ -72,7 +72,7 @@ describe("RateLimiter Extended Tests", function () {
     it("Should prevent non-owner from updating rate limit", async function () {
       await expect(
         rateLimiter.connect(addr1).setMaxMessagesPerPeriod(10)
-      ).to.be.revertedWith("Only callable by owner");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
   });
 });

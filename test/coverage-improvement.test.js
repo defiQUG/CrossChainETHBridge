@@ -81,7 +81,7 @@ describe("Coverage Improvement Tests", function () {
       await messenger.emergencyPause();
       await expect(
         messenger.emergencyWithdraw(ethers.constants.AddressZero)
-      ).to.be.revertedWith("Invalid recipient");
+      ).to.be.revertedWith("CrossChainMessenger: zero recipient address");
     });
   });
 
