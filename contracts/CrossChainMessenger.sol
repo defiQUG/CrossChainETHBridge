@@ -29,8 +29,8 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
     event EmergencyWithdraw(address indexed recipient, uint256 amount);
 
     constructor(address _router, address _weth, uint256 _maxMessagesPerPeriod) RateLimiter(_maxMessagesPerPeriod) {
-        require(_router != address(0), "Invalid router address");
-        require(_weth != address(0), "Invalid WETH address");
+        require(_router != address(0), "CrossChainMessenger: zero router address");
+        require(_weth != address(0), "CrossChainMessenger: zero WETH address");
         router = IRouterClient(_router);
         weth = IWETH(_weth);
         bridgeFee = 0.1 ether;
@@ -46,8 +46,8 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
     }
 
     function sendToPolygon(address _recipient) external payable nonReentrant whenNotPaused {
-        require(msg.value > bridgeFee, "Insufficient amount");
-        require(_recipient != address(0), "Invalid recipient");
+        require(msg.value > bridgeFee, "CrossChainMessenger: insufficient payment");
+        require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
 
         // Process message through rate limiter
         _processMessage();  // Changed to use internal function
@@ -72,8 +72,8 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
     }
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external whenNotPaused {
-        require(msg.sender == address(router), "Unauthorized sender");
-        require(message.sourceChainSelector == 138, "Invalid source chain");  // Must be from Defi Oracle Meta
+        require(msg.sender == address(router), "CrossChainMessenger: caller is not router");
+        require(message.sourceChainSelector == 138, "CrossChainMessenger: invalid source chain");  // Must be from Defi Oracle Meta
 
         // Process message through rate limiter
         _processMessage();  // Changed to use internal function
@@ -81,18 +81,19 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
         address sender = address(bytes20(message.sender));
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
 
-        require(recipient != address(0), "Invalid recipient");
-        require(amount > 0, "Amount must be greater than 0");
-        require(address(this).balance >= amount, "Insufficient balance");
+        require(recipient != address(0), "CrossChainMessenger: zero recipient address");
+        require(amount > 0, "CrossChainMessenger: zero amount");
+        require(address(this).balance >= amount, "CrossChainMessenger: insufficient balance");
 
         // Convert ETH to WETH and transfer to recipient
         weth.deposit{value: amount}();
-        require(weth.transfer(recipient, amount), "WETH transfer failed");
+        require(weth.transfer(recipient, amount), "CrossChainMessenger: WETH transfer failed");
 
         emit MessageReceived(message.messageId, sender, recipient, amount);
     }
 
     function setBridgeFee(uint256 _newFee) external onlyOwner {
+        require(_newFee <= 1 ether, "CrossChainMessenger: fee exceeds maximum");
         bridgeFee = _newFee;
         emit BridgeFeeUpdated(_newFee);
     }
@@ -106,10 +107,10 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, Ownable, RateLimiter 
     }
 
     function emergencyWithdraw(address payable _recipient) external onlyOwner whenPaused {
-        require(_recipient != address(0), "Invalid recipient");
+        require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
         uint256 balance = address(this).balance;
         (bool success, ) = _recipient.call{value: balance}("");
-        require(success, "Transfer failed");
+        require(success, "CrossChainMessenger: transfer failed");
         emit EmergencyWithdraw(_recipient, balance);
     }
 
