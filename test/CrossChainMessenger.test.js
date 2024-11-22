@@ -89,7 +89,7 @@ describe("CrossChainMessenger", function() {
                 crossChainMessenger.sendToPolygon(addr1.address, {
                     value: insufficientAmount
                 })
-            ).to.be.revertedWith("Insufficient amount");
+            ).to.be.revertedWith("CrossChainMessenger: insufficient payment");
         });
     });
 
@@ -227,7 +227,7 @@ describe("CrossChainMessenger", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Amount must be greater than 0");
+            ).to.be.revertedWith("CrossChainMessenger: zero amount");
         });
     });
 
@@ -255,7 +255,7 @@ describe("CrossChainMessenger", function() {
             const maxFee = ethers.utils.parseEther("1.0");
             await expect(
                 crossChainMessenger.setBridgeFee(maxFee.add(1))
-            ).to.be.revertedWith("Fee exceeds maximum");
+            ).to.be.revertedWith("CrossChainMessenger: fee exceeds maximum");
         });
 
         it("Should accept transaction when amount slightly exceeds fee", async function() {

@@ -38,14 +38,18 @@ describe("MockRouter Coverage Tests", function() {
   describe("Message Reception", function() {
     it("Should handle fee calculations correctly", async function() {
       const message = {
-        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
-        data: ethers.utils.defaultAbiCoder.encode(["uint256"], [ethers.utils.parseEther("1.0")]),
+        receiver: addr2.address,
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [addr2.address, ethers.utils.parseEther("1.0")]
+        ),
         tokenAmounts: [],
         extraArgs: "0x",
         feeToken: ethers.constants.AddressZero
       };
 
-      const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
+      const encodedMessage = Client.encodeEVM2AnyMessage(message, 0);
+      const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, encodedMessage);
       expect(fee).to.equal(ethers.utils.parseEther("0.1"));
     });
 
