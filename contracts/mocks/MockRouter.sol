@@ -33,6 +33,7 @@ contract MockRouter is IRouterClient {
             ? keccak256(abi.encode(destinationChainSelector, message.receiver, message.data))
             : nextMessageId;
 
+        // Emit message sent event
         emit MessageSent(
             messageId,
             destinationChainSelector,
@@ -41,6 +42,16 @@ contract MockRouter is IRouterClient {
             address(0),
             msg.value
         );
+
+        // Immediately simulate message received to test reentrancy
+        if (destinationChainSelector == 137) { // If sending to Polygon
+            this.simulateMessageReceived(
+                address(bytes20(message.receiver)),
+                138, // Source chain (Defi Oracle Meta)
+                msg.sender,
+                message.data
+            );
+        }
 
         return messageId;
     }
