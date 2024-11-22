@@ -25,10 +25,13 @@ describe("CrossChainMessenger", function () {
     mockWETH = await MockWETH.deploy();
     await mockWETH.deployed();
 
-    // Deploy messenger contract
-    const messengerFactory = await ethers.getContractFactory("CrossChainMessenger");
-    messenger = await messengerFactory.deploy(mockRouter.address);
+    // Deploy the messenger contract with mock contracts
+    const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
+    messenger = await CrossChainMessenger.deploy(mockRouter.address, mockWETH.address);
     await messenger.deployed();
+
+    // Set initial fee in mock router
+    await mockRouter.setFee(BRIDGE_FEE);
   });
 
   describe("Deployment", function () {

@@ -24,8 +24,8 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     uint64 public constant DEFI_ORACLE_META_SELECTOR = 138;
     uint64 public constant POLYGON_SELECTOR = 137;
 
-    // WETH contract on Polygon
-    address payable public constant POLYGON_WETH = payable(0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619);
+    // WETH contract
+    address payable public immutable WETH_ADDRESS;
 
     // Fee configuration
     uint256 public bridgeFee = 0.001 ether; // 0.1% fee
@@ -38,11 +38,14 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     event FundsRecovered(address token, uint256 amount);
 
     /**
-     * @dev Constructor initializes the contract with Chainlink's Router address
+     * @dev Constructor initializes the contract with Chainlink's Router address and WETH address
      * @param _router The address of Chainlink's CCIP Router contract
+     * @param _weth The address of the WETH contract
      */
-    constructor(address _router) CCIPReceiver(_router) {
+    constructor(address _router, address payable _weth) CCIPReceiver(_router) {
         require(_router != address(0), "Invalid router address");
+        require(_weth != address(0), "Invalid WETH address");
+        WETH_ADDRESS = _weth;
     }
 
     /**
@@ -100,9 +103,9 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         require(amount > 0, "Invalid amount");
 
         // Mint WETH to receiver
-        IWETH(POLYGON_WETH).deposit{value: amount}();
+        IWETH(WETH_ADDRESS).deposit{value: amount}();
         require(
-            IWETH(POLYGON_WETH).transfer(receiver, amount),
+            IWETH(WETH_ADDRESS).transfer(receiver, amount),
             "WETH transfer failed"
         );
 
