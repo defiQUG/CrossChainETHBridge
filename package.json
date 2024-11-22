@@ -27,6 +27,7 @@
     "hardhat": "2.12.7",
     "hardhat-gas-reporter": "^1.0.10",
     "solidity-coverage": "^0.8.13",
+    "stacktrace-parser": "^0.1.10",
     "typechain": "8.1.1"
   },
   "dependencies": {

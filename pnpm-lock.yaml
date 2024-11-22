@@ -66,6 +66,9 @@ importers:
       solidity-coverage:
         specifier: ^0.8.13
         version: 0.8.13(hardhat@2.12.7(bufferutil@4.0.8)(ts-node@10.9.2(@types/node@22.9.1)(typescript@5.6.3))(typescript@5.6.3)(utf-8-validate@5.0.10))
+      stacktrace-parser:
+        specifier: ^0.1.10
+        version: 0.1.10
       typechain:
         specifier: 8.1.1
         version: 8.1.1(typescript@5.6.3)
