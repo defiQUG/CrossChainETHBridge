@@ -4,9 +4,11 @@ const { ethers } = require("hardhat");
 describe("CrossChainMessenger", function() {
     let crossChainMessenger;
     let mockRouter;
+    let mockWeth;
     let owner;
     let user;
     const POLYGON_CHAIN_SELECTOR = 137;
+    const MAX_MESSAGES_PER_PERIOD = 100;
 
     beforeEach(async function() {
         [owner, user] = await ethers.getSigners();
@@ -18,12 +20,16 @@ describe("CrossChainMessenger", function() {
 
         // Deploy MockWETH
         const MockWETH = await ethers.getContractFactory("MockWETH");
-        const mockWeth = await MockWETH.deploy();
+        mockWeth = await MockWETH.deploy();
         await mockWeth.deployed();
 
-        // Deploy CrossChainMessenger with both router and WETH addresses
+        // Deploy CrossChainMessenger with router, WETH, and rate limit
         const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-        crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address, mockWeth.address);
+        crossChainMessenger = await CrossChainMessenger.deploy(
+            mockRouter.address,
+            mockWeth.address,
+            MAX_MESSAGES_PER_PERIOD
+        );
         await crossChainMessenger.deployed();
 
         // Fund the contract for message receiving tests
@@ -48,7 +54,6 @@ describe("CrossChainMessenger", function() {
             const amount = ethers.utils.parseEther("1");
             const transferAmount = amount.sub(ethers.utils.parseEther("0.1")); // Subtract bridge fee
 
-            // Fund the contract for message receiving
             await owner.sendTransaction({
                 to: crossChainMessenger.address,
                 value: ethers.utils.parseEther("10.0")
@@ -57,12 +62,25 @@ describe("CrossChainMessenger", function() {
             const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             const receipt = await tx.wait();
 
-            // Verify the MessageSent event was emitted with any valid message ID (not checking exact value)
             const event = receipt.events.find(e => e.event === 'MessageSent');
             expect(event).to.not.be.undefined;
             expect(event.args.sender).to.equal(user.address);
             expect(event.args.recipient).to.equal(user.address);
             expect(event.args.amount).to.equal(transferAmount);
+        });
+
+        it("Should enforce rate limiting", async function() {
+            const amount = ethers.utils.parseEther("1");
+
+            // Send messages up to the limit
+            for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
+                await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
+            }
+
+            // Next message should fail
+            await expect(
+                crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
+            ).to.be.revertedWith("Rate limit exceeded");
         });
     });
 
@@ -87,6 +105,7 @@ describe("CrossChainMessenger", function() {
         it("Should receive message and convert to WETH", async function() {
             const amount = ethers.utils.parseEther("1");
             const messageId = ethers.utils.randomBytes(32);
+
             const message = {
                 messageId,
                 sourceChainSelector: 138, // Defi Oracle Meta
@@ -98,28 +117,57 @@ describe("CrossChainMessenger", function() {
                 destTokenAmounts: []
             };
 
-            await expect(
-                mockRouter.ccipReceive(message)
-            ).to.emit(crossChainMessenger, "MessageReceived")
-             .withArgs(messageId, user.address, user.address, amount);
+            await mockRouter.simulateMessageReceived(
+                crossChainMessenger.address,
+                messageId,
+                user.address,
+                amount
+            );
+
+            // Verify WETH transfer event
+            const transferFilter = mockWeth.filters.Transfer(crossChainMessenger.address, user.address);
+            const events = await mockWeth.queryFilter(transferFilter);
+            expect(events.length).to.equal(1);
+            expect(events[0].args.value).to.equal(amount);
         });
 
         it("Should reject messages from invalid source chain", async function() {
             const amount = ethers.utils.parseEther("1");
-            const message = {
-                messageId: ethers.utils.randomBytes(32),
-                sourceChainSelector: 1, // Invalid chain
-                sender: ethers.utils.hexZeroPad(user.address, 32),
-                data: ethers.utils.defaultAbiCoder.encode(
-                    ["address", "uint256"],
-                    [user.address, amount]
-                ),
-                destTokenAmounts: []
-            };
+            const messageId = ethers.utils.randomBytes(32);
 
             await expect(
-                mockRouter.ccipReceive(message)
+                mockRouter.simulateMessageReceived(
+                    crossChainMessenger.address,
+                    messageId,
+                    user.address,
+                    amount,
+                    1 // Invalid chain selector
+                )
             ).to.be.revertedWith("Invalid source chain");
+        });
+
+        it("Should enforce rate limiting on message receiving", async function() {
+            const amount = ethers.utils.parseEther("1");
+
+            // Send messages up to the limit
+            for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
+                await mockRouter.simulateMessageReceived(
+                    crossChainMessenger.address,
+                    ethers.utils.randomBytes(32),
+                    user.address,
+                    amount
+                );
+            }
+
+            // Next message should fail
+            await expect(
+                mockRouter.simulateMessageReceived(
+                    crossChainMessenger.address,
+                    ethers.utils.randomBytes(32),
+                    user.address,
+                    amount
+                )
+            ).to.be.revertedWith("Rate limit exceeded");
         });
     });
 });

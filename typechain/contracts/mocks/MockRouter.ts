@@ -39,28 +39,6 @@ export declare namespace Client {
     amount: BigNumber;
   };
 
-  export type EVM2AnyMessageStruct = {
-    receiver: PromiseOrValue<BytesLike>;
-    data: PromiseOrValue<BytesLike>;
-    tokenAmounts: Client.EVMTokenAmountStruct[];
-    feeToken: PromiseOrValue<string>;
-    extraArgs: PromiseOrValue<BytesLike>;
-  };
-
-  export type EVM2AnyMessageStructOutput = [
-    string,
-    string,
-    Client.EVMTokenAmountStructOutput[],
-    string,
-    string
-  ] & {
-    receiver: string;
-    data: string;
-    tokenAmounts: Client.EVMTokenAmountStructOutput[];
-    feeToken: string;
-    extraArgs: string;
-  };
-
   export type Any2EVMMessageStruct = {
     messageId: PromiseOrValue<BytesLike>;
     sourceChainSelector: PromiseOrValue<BigNumberish>;
@@ -82,28 +60,54 @@ export declare namespace Client {
     data: string;
     destTokenAmounts: Client.EVMTokenAmountStructOutput[];
   };
+
+  export type EVM2AnyMessageStruct = {
+    receiver: PromiseOrValue<BytesLike>;
+    data: PromiseOrValue<BytesLike>;
+    tokenAmounts: Client.EVMTokenAmountStruct[];
+    feeToken: PromiseOrValue<string>;
+    extraArgs: PromiseOrValue<BytesLike>;
+  };
+
+  export type EVM2AnyMessageStructOutput = [
+    string,
+    string,
+    Client.EVMTokenAmountStructOutput[],
+    string,
+    string
+  ] & {
+    receiver: string;
+    data: string;
+    tokenAmounts: Client.EVMTokenAmountStructOutput[];
+    feeToken: string;
+    extraArgs: string;
+  };
 }
 
 export interface MockRouterInterface extends utils.Interface {
   functions: {
+    "ccipReceive((bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
     "ccipSend(uint64,(bytes,bytes,(address,uint256)[],address,bytes))": FunctionFragment;
     "getFee(uint64,(bytes,bytes,(address,uint256)[],address,bytes))": FunctionFragment;
     "getSupportedTokens(uint64)": FunctionFragment;
     "isChainSupported(uint64)": FunctionFragment;
-    "sendMessage(address,(bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
     "simulateMessageReceived(address,bytes32,address,uint256)": FunctionFragment;
   };
 
   getFunction(
     nameOrSignatureOrTopic:
+      | "ccipReceive"
       | "ccipSend"
       | "getFee"
       | "getSupportedTokens"
       | "isChainSupported"
-      | "sendMessage"
       | "simulateMessageReceived"
   ): FunctionFragment;
 
+  encodeFunctionData(
+    functionFragment: "ccipReceive",
+    values: [Client.Any2EVMMessageStruct]
+  ): string;
   encodeFunctionData(
     functionFragment: "ccipSend",
     values: [PromiseOrValue<BigNumberish>, Client.EVM2AnyMessageStruct]
@@ -121,10 +125,6 @@ export interface MockRouterInterface extends utils.Interface {
     values: [PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
-    functionFragment: "sendMessage",
-    values: [PromiseOrValue<string>, Client.Any2EVMMessageStruct]
-  ): string;
-  encodeFunctionData(
     functionFragment: "simulateMessageReceived",
     values: [
       PromiseOrValue<string>,
@@ -134,6 +134,10 @@ export interface MockRouterInterface extends utils.Interface {
     ]
   ): string;
 
+  decodeFunctionResult(
+    functionFragment: "ccipReceive",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "ccipSend", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "getFee", data: BytesLike): Result;
   decodeFunctionResult(
@@ -142,10 +146,6 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "isChainSupported",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "sendMessage",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -199,6 +199,11 @@ export interface MockRouter extends BaseContract {
   removeListener: OnEvent<this>;
 
   functions: {
+    ccipReceive(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     ccipSend(
       destinationChainSelector: PromiseOrValue<BigNumberish>,
       message: Client.EVM2AnyMessageStruct,
@@ -221,12 +226,6 @@ export interface MockRouter extends BaseContract {
       overrides?: CallOverrides
     ): Promise<[boolean] & { supported: boolean }>;
 
-    sendMessage(
-      target: PromiseOrValue<string>,
-      message: Client.Any2EVMMessageStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
-    ): Promise<ContractTransaction>;
-
     simulateMessageReceived(
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
@@ -235,6 +234,11 @@ export interface MockRouter extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
+
+  ccipReceive(
+    message: Client.Any2EVMMessageStruct,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   ccipSend(
     destinationChainSelector: PromiseOrValue<BigNumberish>,
@@ -258,12 +262,6 @@ export interface MockRouter extends BaseContract {
     overrides?: CallOverrides
   ): Promise<boolean>;
 
-  sendMessage(
-    target: PromiseOrValue<string>,
-    message: Client.Any2EVMMessageStruct,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   simulateMessageReceived(
     target: PromiseOrValue<string>,
     messageId: PromiseOrValue<BytesLike>,
@@ -273,6 +271,11 @@ export interface MockRouter extends BaseContract {
   ): Promise<ContractTransaction>;
 
   callStatic: {
+    ccipReceive(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
     ccipSend(
       destinationChainSelector: PromiseOrValue<BigNumberish>,
       message: Client.EVM2AnyMessageStruct,
@@ -294,12 +297,6 @@ export interface MockRouter extends BaseContract {
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<boolean>;
-
-    sendMessage(
-      target: PromiseOrValue<string>,
-      message: Client.Any2EVMMessageStruct,
-      overrides?: CallOverrides
-    ): Promise<void>;
 
     simulateMessageReceived(
       target: PromiseOrValue<string>,
@@ -324,6 +321,11 @@ export interface MockRouter extends BaseContract {
   };
 
   estimateGas: {
+    ccipReceive(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     ccipSend(
       destinationChainSelector: PromiseOrValue<BigNumberish>,
       message: Client.EVM2AnyMessageStruct,
@@ -344,12 +346,6 @@ export interface MockRouter extends BaseContract {
     isChainSupported(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<BigNumber>;
-
-    sendMessage(
-      target: PromiseOrValue<string>,
-      message: Client.Any2EVMMessageStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     simulateMessageReceived(
@@ -362,6 +358,11 @@ export interface MockRouter extends BaseContract {
   };
 
   populateTransaction: {
+    ccipReceive(
+      message: Client.Any2EVMMessageStruct,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
     ccipSend(
       destinationChainSelector: PromiseOrValue<BigNumberish>,
       message: Client.EVM2AnyMessageStruct,
@@ -382,12 +383,6 @@ export interface MockRouter extends BaseContract {
     isChainSupported(
       chainSelector: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
-    ): Promise<PopulatedTransaction>;
-
-    sendMessage(
-      target: PromiseOrValue<string>,
-      message: Client.Any2EVMMessageStruct,
-      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     simulateMessageReceived(
