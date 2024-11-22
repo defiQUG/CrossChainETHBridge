@@ -27,41 +27,35 @@ contract ReentrancyAttacker {
         attacking = true;
         attackCount = 0;
 
-        // First call to potentially trigger a refund
+        // First call to trigger the reentrant condition
         try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
             emit AttackAttempted(attackCount, true);
-        } catch {
+        } catch Error(string memory reason) {
+            // Check if the revert was due to reentrancy guard
+            require(
+                keccak256(bytes(reason)) == keccak256(bytes("ReentrancyGuard: reentrant call")),
+                "Unexpected revert reason"
+            );
             emit AttackAttempted(attackCount, false);
             attacking = false;
         }
     }
 
-    // Fallback function that attempts reentry during refund
+    // Fallback function that attempts reentry
     fallback() external payable {
         if (attacking && attackCount < 3) {
             attackCount++;
-
-            // Try to reenter during ETH transfer
-            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
-                emit AttackAttempted(attackCount, true);
-            } catch {
-                emit AttackAttempted(attackCount, false);
-                attacking = false;
-            }
+            // Attempt reentrant call
+            messenger.sendToPolygon{value: address(this).balance}(address(this));
         }
     }
 
+    // Receive function that attempts reentry
     receive() external payable {
         if (attacking && attackCount < 3) {
             attackCount++;
-
-            // Try to reenter during ETH transfer
-            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
-                emit AttackAttempted(attackCount, true);
-            } catch {
-                emit AttackAttempted(attackCount, false);
-                attacking = false;
-            }
+            // Attempt reentrant call
+            messenger.sendToPolygon{value: address(this).balance}(address(this));
         }
     }
 }
