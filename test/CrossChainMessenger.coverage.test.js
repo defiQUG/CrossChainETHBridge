@@ -41,6 +41,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
   describe("Edge Cases and Error Handling", function () {
     it("Should handle zero amount transfers correctly", async function () {
       const recipient = addr1.address;
+      const bridgeFee = await messenger.getBridgeFee();
       await expect(
         messenger.sendToPolygon(recipient, { value: bridgeFee })
       ).to.be.revertedWith("Insufficient amount");
