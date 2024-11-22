@@ -372,14 +372,10 @@ describe("CrossChainMessenger", function () {
       const attackValue = ethers.utils.parseEther("1.0");
       console.log("Attempting attack with:", ethers.utils.formatEther(attackValue), "ETH");
 
-      try {
-        // Call the attack function on the contract instead of sending directly
-        await attacker.attack({ value: attackValue });
-        expect.fail("Attack should have failed");
-      } catch (error) {
-        // Expect revert from reentrancy guard
-        expect(error.message).to.include("revert");
-      }
+      // Use proper Hardhat/Chai matcher for revert checking
+      await expect(
+        attacker.attack({ value: attackValue })
+      ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
       // Verify attack was unsuccessful
       const attackCount = await attacker.attackCount();
