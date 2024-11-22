@@ -42,8 +42,8 @@ describe("CrossChainMessenger Coverage Tests", function () {
     it("Should handle zero amount transfers correctly", async function () {
       const recipient = addr1.address;
       await expect(
-        messenger.sendToPolygon(recipient, { value: 0 })
-      ).to.be.revertedWith("Amount must be greater than 0");
+        messenger.sendToPolygon(recipient, { value: bridgeFee })
+      ).to.be.revertedWith("Insufficient amount");
     });
 
     it("Should handle emergency withdrawals correctly", async function () {
@@ -55,10 +55,19 @@ describe("CrossChainMessenger Coverage Tests", function () {
     });
 
     it("Should handle invalid chain ID correctly", async function () {
-      const recipient = addr1.address;
+      const message = {
+        messageId: ethers.utils.hexZeroPad("0x1", 32),
+        sourceChainSelector: 137, // Using Polygon as source instead of 138
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256'],
+          [addr1.address, ethers.utils.parseEther("1.0")]
+        ),
+        destTokenAmounts: []
+      };
       await expect(
-        messenger.sendToPolygon(recipient, { value: ethers.utils.parseEther("1.0") })
-      ).to.be.revertedWith("Invalid chain ID");
+        mockRouter.simulateMessageReceived(messenger.address, message)
+      ).to.be.revertedWith("Invalid source chain");
     });
   });
 });

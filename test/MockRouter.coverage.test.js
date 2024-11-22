@@ -103,14 +103,12 @@ describe("MockRouter Coverage Tests", function () {
       // Test fee calculation with message object
       const message = {
         receiver: addr1.address,
-        data: "0x",
-        tokenAmounts: [
-          {
-            token: ethers.constants.AddressZero,
-            amount: ethers.utils.parseEther("1.0")
-          }
-        ],
-        extraArgs: "0x",
+        data: ethers.utils.defaultAbiCoder.encode(['uint256'], [ethers.utils.parseEther("1.0")]),
+        tokenAmounts: [{
+          token: ethers.constants.AddressZero,
+          amount: ethers.utils.parseEther("1.0")
+        }],
+        extraArgs: ethers.utils.defaultAbiCoder.encode(['uint256'], [0]),
         feeToken: ethers.constants.AddressZero
       };
 
