@@ -15,7 +15,7 @@ contract ReentrancyAttacker {
         }
     }
 
-    function attack(address _messenger) external payable {
+    function attack(address payable _messenger) external payable {
         require(msg.value >= 1 ether, "Need at least 1 ETH");
         messenger = CrossChainMessenger(_messenger);
         attackCount = 0;
