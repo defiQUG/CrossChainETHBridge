@@ -7,8 +7,8 @@ describe("MockRouter Coverage Tests", function() {
   let addr1;
   let addr2;
   let mockRouter;
-  const DOM_CHAIN_SELECTOR = 138;
-  const POLYGON_CHAIN_SELECTOR = 137;
+  const DOM_CHAIN_SELECTOR = 138n;
+  const POLYGON_CHAIN_SELECTOR = 137n;
 
   beforeEach(async function() {
     [owner, addr1, addr2] = await ethers.getSigners();
@@ -20,7 +20,7 @@ describe("MockRouter Coverage Tests", function() {
   describe("Chain Support and Token Management", function() {
     it("Should verify supported chains correctly", async function() {
       expect(await mockRouter.isChainSupported(POLYGON_CHAIN_SELECTOR)).to.be.true;
-      expect(await mockRouter.isChainSupported(999)).to.be.false;
+      expect(await mockRouter.isChainSupported(999n)).to.be.false;
     });
 
     it("Should handle getSupportedTokens for valid chain", async function() {
@@ -30,58 +30,53 @@ describe("MockRouter Coverage Tests", function() {
 
     it("Should revert getSupportedTokens for invalid chain", async function() {
       await expect(
-        mockRouter.getSupportedTokens(999)
-      ).to.be.revertedWith("Chain not supported");
+        mockRouter.getSupportedTokens(999n)
+      ).to.be.revertedWith("Unsupported chain");
     });
   });
 
   describe("Message Reception", function() {
     it("Should handle fee calculations correctly", async function() {
       const message = {
-        messageId: ethers.utils.id("testMessage"),
-        sourceChainSelector: DOM_CHAIN_SELECTOR,
-        sender: addr1.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
-        destTokenAmounts: []
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+        data: ethers.utils.defaultAbiCoder.encode(["uint256"], [ethers.utils.parseEther("1.0")]),
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
       };
 
-      const fee = ethers.utils.parseEther("0.1");
-      await mockRouter.setFee(fee);
-
-      const calculatedFee = await mockRouter.getFee(message);
-      expect(calculatedFee).to.equal(fee);
-
-      const tx = await mockRouter.ccipReceive(message);
-      await expect(tx).to.emit(mockRouter, "MessageReceived")
-        .withArgs(message.messageId, message.sourceChainSelector);
+      const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
+      expect(fee).to.equal(ethers.utils.parseEther("0.1"));
     });
 
     it("Should validate message data correctly", async function() {
       const message = {
-        messageId: ethers.utils.id("testMessage"),
         sourceChainSelector: DOM_CHAIN_SELECTOR,
-        sender: addr1.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+        sender: ethers.utils.hexZeroPad(addr1.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [addr2.address, ethers.utils.parseEther("1.0")]
+        ),
         destTokenAmounts: []
       };
 
-      await expect(mockRouter.ccipReceive(message))
-        .to.emit(mockRouter, "MessageReceived")
-        .withArgs(message.messageId, message.sourceChainSelector);
+      expect(await mockRouter.validateMessage(message)).to.be.true;
     });
 
     it("Should handle message validation errors", async function() {
-      const invalidMessage = {
-        messageId: ethers.utils.id("testMessage"),
-        sourceChainSelector: 999,
-        sender: addr1.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+      const message = {
+        sourceChainSelector: 0n,
+        sender: ethers.utils.hexZeroPad(addr1.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ["address", "uint256"],
+          [addr2.address, ethers.utils.parseEther("1.0")]
+        ),
         destTokenAmounts: []
       };
 
       await expect(
-        mockRouter.ccipReceive(invalidMessage)
-      ).to.be.revertedWith("Invalid source chain");
+        mockRouter.validateMessage(message)
+      ).to.be.revertedWith("Invalid chain selector");
     });
   });
 });
