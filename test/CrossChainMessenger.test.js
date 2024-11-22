@@ -144,7 +144,7 @@ describe("CrossChainMessenger", function () {
 
       await expect(
         messenger.connect(addr1).ccipReceive(message)
-      ).to.be.revertedWith("Caller is not the router");
+      ).to.be.revertedWith("InvalidRouter");
     });
   });
 
