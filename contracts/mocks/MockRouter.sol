@@ -49,14 +49,17 @@ contract MockRouter is IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external view returns (uint256 fee) {
+        require(destinationChainSelector > 0, "Invalid chain selector");
+        require(message.receiver.length > 0, "Invalid receiver");
         return mockFee;
     }
 
     function isChainSupported(uint64 chainSelector) external pure returns (bool supported) {
-        return true;
+        return chainSelector == 137 || chainSelector == 138;  // Only Polygon and Defi Oracle Meta
     }
 
     function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory tokens) {
+        require(chainSelector == 137 || chainSelector == 138, "Unsupported chain");
         tokens = new address[](0);
         return tokens;
     }
