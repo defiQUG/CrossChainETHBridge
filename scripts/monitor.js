@@ -51,7 +51,7 @@ async function monitorCrossChainMessages(contract, networks) {
 
     // Monitor BridgeCompleted events
     contract.on("BridgeCompleted", async (receiver, amount, event) => {
-        const timestamp = (await event.getBlock()).timestamp;
+        const {timestamp} = await event.getBlock();
 
         logEvent("BridgeCompleted", {
             receiver,
