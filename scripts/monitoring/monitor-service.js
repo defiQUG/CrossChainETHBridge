@@ -36,6 +36,14 @@ class MonitoringService {
             const CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger');
             this.contract = CrossChainMessenger.attach(this.contractAddress);
 
+            // Verify contract deployment
+            const code = await this.provider.getCode(this.contractAddress);
+            if (code === '0x') {
+                logger.warn('Contract not deployed at specified address', {
+                    address: this.contractAddress
+                });
+            }
+
             logger.info('Monitoring service initialized', {
                 contractAddress: this.contractAddress
             });
@@ -120,26 +128,44 @@ class MonitoringService {
 
     async performPeriodicChecks() {
         try {
-            // Check contract status
-            const isPaused = await this.contract.paused();
-            if (isPaused) {
-                logger.warn('Contract is currently paused');
-            }
-
-            // Check gas prices
-            const gasPrice = await this.provider.getGasPrice();
-            if (gasPrice.gt(this.GAS_PRICE_THRESHOLD)) {
-                logger.warn('High gas price detected', {
-                    currentPrice: ethers.utils.formatUnits(gasPrice, 'gwei'),
-                    threshold: ethers.utils.formatUnits(this.GAS_PRICE_THRESHOLD, 'gwei')
+            // Check contract status with error handling
+            try {
+                const isPaused = await this.contract.paused();
+                if (isPaused) {
+                    logger.warn('Contract is currently paused');
+                }
+            } catch (error) {
+                logger.warn('Failed to check contract pause status', {
+                    error: error.message
                 });
             }
 
-            // Check bridge fee
-            const bridgeFee = await this.contract.bridgeFee();
-            logger.info('Current bridge fee', {
-                fee: ethers.utils.formatEther(bridgeFee)
-            });
+            // Check gas prices with error handling
+            try {
+                const gasPrice = await this.provider.getGasPrice();
+                if (gasPrice.gt(this.GAS_PRICE_THRESHOLD)) {
+                    logger.warn('High gas price detected', {
+                        currentPrice: ethers.utils.formatUnits(gasPrice, 'gwei'),
+                        threshold: ethers.utils.formatUnits(this.GAS_PRICE_THRESHOLD, 'gwei')
+                    });
+                }
+            } catch (error) {
+                logger.warn('Failed to check gas price', {
+                    error: error.message
+                });
+            }
+
+            // Check bridge fee with error handling
+            try {
+                const bridgeFee = await this.contract.bridgeFee();
+                logger.info('Current bridge fee', {
+                    fee: ethers.utils.formatEther(bridgeFee)
+                });
+            } catch (error) {
+                logger.warn('Failed to check bridge fee', {
+                    error: error.message
+                });
+            }
 
             // Reset message counter every minute
             this.messageCounter = 0;
