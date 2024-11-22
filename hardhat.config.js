@@ -71,3 +71,4 @@ module.exports = {
     ]
   }
 };
+require('solidity-coverage');
