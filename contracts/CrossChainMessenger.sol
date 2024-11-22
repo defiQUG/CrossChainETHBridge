@@ -89,7 +89,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @dev Handles incoming messages from other chains
      * @param any2EvmMessage The CCIP message containing transfer details
      */
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override whenNotPaused {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant whenNotPaused {
         require(msg.sender == address(i_router), "Caller is not the router");
         require(
             any2EvmMessage.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
