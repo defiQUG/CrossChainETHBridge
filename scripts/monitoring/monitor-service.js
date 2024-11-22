@@ -1,1 +1,25 @@
-const ethers = require('ethers');\nconst config = require('./config');\nconst { setupAlerts } = require('./alerts');\n\nasync function startMonitoring() {\n    try {\n        console.log('Initializing monitoring service...');\n        const polygonProvider = new ethers.providers.JsonRpcProvider(config.networks.polygon.rpc);\n        const defiProvider = new ethers.providers.JsonRpcProvider(config.networks.defiOracle.rpc);\n        const CrossChainMessenger = require('../../artifacts/contracts/CrossChainMessenger.sol/CrossChainMessenger.json');\n        const polygonContract = new ethers.Contract(\n            config.contracts.CrossChainMessenger,\n            CrossChainMessenger.abi,\n            polygonProvider\n        );\n        await setupAlerts(polygonContract);\n        console.log('Monitoring service started successfully');\n    } catch (error) {\n        console.error('Failed to start monitoring service', { error, timestamp: new Date().toISOString() });\n    }\n}\n\nstartMonitoring().catch(console.error);
+const ethers = require('ethers');
+const config = require('./config');
+const { setupAlerts } = require('./alerts');
+
+async function startMonitoring() {
+    try {
+        console.log('Initializing monitoring service...');
+        const polygonProvider = new ethers.providers.JsonRpcProvider(config.networks.polygon.rpc);
+        const defiProvider = new ethers.providers.JsonRpcProvider(config.networks.defiOracle.rpc);
+
+        const CrossChainMessenger = require('../../artifacts/contracts/CrossChainMessenger.sol/CrossChainMessenger.json');
+        const polygonContract = new ethers.Contract(
+            config.contracts.CrossChainMessenger,
+            CrossChainMessenger.abi,
+            polygonProvider
+        );
+
+        await setupAlerts(polygonContract);
+        console.log('Monitoring service started successfully');
+    } catch (error) {
+        console.error('Failed to start monitoring service', { error, timestamp: new Date().toISOString() });
+    }
+}
+
+startMonitoring().catch(console.error);
