@@ -20,6 +20,9 @@ interface IWETH is IERC20 {
  * @dev A contract for bridging ETH between Defi Oracle Meta Mainnet and Polygon PoS using Chainlink's CCIP
  */
 contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable {
+    // State variable to track reentrancy
+    bool private _locked;
+
     // Chain selectors for source and destination chains
     uint64 public constant DEFI_ORACLE_META_SELECTOR = 138;
     uint64 public constant POLYGON_SELECTOR = 137;
@@ -47,6 +50,13 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
     event FundsRecovered(address token, uint256 amount);
     event RateLimitExceeded(address indexed sender, uint256 amount);
 
+    modifier customNonReentrant() {
+        require(!_locked, "ReentrancyGuard: reentrant call");
+        _locked = true;
+        _;
+        _locked = false;
+    }
+
     /**
      * @dev Constructor initializes the contract with Chainlink's Router address and WETH address
      * @param _router The address of Chainlink's CCIP Router contract
@@ -56,6 +66,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         require(_router != address(0), "Invalid router address");
         require(_weth != address(0), "Invalid WETH address");
         WETH_ADDRESS = _weth;
+        _locked = false;
     }
 
     /**
@@ -83,7 +94,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @dev Sends ETH to Polygon, converting it to WETH
      * @param _receiver The address to receive WETH on Polygon
      */
-    function sendToPolygon(address _receiver) external payable nonReentrant rateLimit(msg.sender) whenNotPaused {
+    function sendToPolygon(address _receiver) external payable customNonReentrant rateLimit(msg.sender) whenNotPaused {
         require(_receiver != address(0), "Invalid receiver");
         require(msg.value > bridgeFee, "Insufficient amount");
 
@@ -120,7 +131,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
      * @dev Handles incoming messages from other chains
      * @param any2EvmMessage The CCIP message containing transfer details
      */
-    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant rateLimit(tx.origin) whenNotPaused {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override customNonReentrant rateLimit(tx.origin) whenNotPaused {
         require(msg.sender == address(i_router), "Caller is not the router");
         require(
             any2EvmMessage.sourceChainSelector == DEFI_ORACLE_META_SELECTOR,
