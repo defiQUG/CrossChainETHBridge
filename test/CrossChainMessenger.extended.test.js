@@ -19,6 +19,12 @@ describe("CrossChainMessenger Extended Tests", function() {
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(router.address, weth.address);
     await messenger.deployed();
+
+    // Fund the messenger contract with some ETH for testing
+    await owner.sendTransaction({
+      to: messenger.address,
+      value: ethers.utils.parseEther("10.0")
+    });
   });
 
   describe("Fee Management", function() {
@@ -39,14 +45,41 @@ describe("CrossChainMessenger Extended Tests", function() {
   describe("Message Processing", function() {
     it("Should process received messages correctly", async function() {
       const amount = ethers.utils.parseEther("1.0");
-      await messenger.processMessage(user.address, amount, mockMessageId);
-      // Add verification of message processing
+      const balanceBefore = await ethers.provider.getBalance(user.address);
+
+      await router.simulateMessageReceived(
+        messenger.address,
+        mockMessageId,
+        user.address,
+        amount
+      );
+
+      const balanceAfter = await ethers.provider.getBalance(user.address);
+      expect(balanceAfter.sub(balanceBefore)).to.equal(amount);
     });
 
     it("Should handle zero amount messages", async function() {
       await expect(
-        messenger.processMessage(user.address, 0, mockMessageId)
+        router.simulateMessageReceived(
+          messenger.address,
+          mockMessageId,
+          user.address,
+          0
+        )
       ).to.be.revertedWith("Amount must be greater than 0");
+    });
+
+    it("Should emit MessageProcessed event", async function() {
+      const amount = ethers.utils.parseEther("1.0");
+      await expect(
+        router.simulateMessageReceived(
+          messenger.address,
+          mockMessageId,
+          user.address,
+          amount
+        )
+      ).to.emit(messenger, "MessageProcessed")
+        .withArgs(mockMessageId, user.address, amount);
     });
   });
 
@@ -55,7 +88,12 @@ describe("CrossChainMessenger Extended Tests", function() {
       await messenger.pause();
       const amount = ethers.utils.parseEther("1.0");
       await expect(
-        messenger.processMessage(user.address, amount, mockMessageId)
+        router.simulateMessageReceived(
+          messenger.address,
+          mockMessageId,
+          user.address,
+          amount
+        )
       ).to.be.revertedWith("Pausable: paused");
     });
 
@@ -63,8 +101,17 @@ describe("CrossChainMessenger Extended Tests", function() {
       await messenger.pause();
       await messenger.unpause();
       const amount = ethers.utils.parseEther("1.0");
-      await messenger.processMessage(user.address, amount, mockMessageId);
-      // Add verification of message processing
+      const balanceBefore = await ethers.provider.getBalance(user.address);
+
+      await router.simulateMessageReceived(
+        messenger.address,
+        mockMessageId,
+        user.address,
+        amount
+      );
+
+      const balanceAfter = await ethers.provider.getBalance(user.address);
+      expect(balanceAfter.sub(balanceBefore)).to.equal(amount);
     });
   });
 });
