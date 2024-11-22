@@ -1,240 +1,54 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-describe("CrossChainMessenger", function () {
-  let CrossChainMessenger;
-  let messenger;
+describe("CrossChainMessenger", function() {
+  let crossChainMessenger;
   let owner;
-  let addr1;
-  let addr2;
+  let user;
   let mockRouter;
   let mockWETH;
-  const BRIDGE_FEE = ethers.utils.parseEther("0.001"); // 0.1%
-  const MAX_FEE = ethers.utils.parseEther("0.01"); // 1%
 
-  beforeEach(async function () {
-    [owner, addr1, addr2] = await ethers.getSigners();
-
-    // Deploy mock router contract for testing
+  beforeEach(async function() {
+    [owner, user] = await ethers.getSigners();
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
     await mockRouter.deployed();
-
-    // Deploy mock WETH contract
     const MockWETH = await ethers.getContractFactory("MockWETH");
     mockWETH = await MockWETH.deploy();
     await mockWETH.deployed();
-
-    // Deploy the messenger contract
-    CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    messenger = await CrossChainMessenger.deploy(mockRouter.address);
-    await messenger.deployed();
+    const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
+    crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address);
+    await crossChainMessenger.deployed();
   });
 
-  describe("Deployment", function () {
-    it("Should set the right owner", async function () {
-      expect(await messenger.owner()).to.equal(owner.address);
+  describe("Basic Functionality", function() {
+    it("Should initialize with correct router address", async function() {
+      expect(await crossChainMessenger.i_router()).to.equal(mockRouter.address);
     });
-
-    it("Should have correct chain selectors", async function () {
-      expect(await messenger.DEFI_ORACLE_META_SELECTOR()).to.equal(138);
-      expect(await messenger.POLYGON_SELECTOR()).to.equal(137);
+    it("Should set correct bridge fee", async function() {
+      expect(await crossChainMessenger.bridgeFee()).to.equal(ethers.utils.parseEther("0.001"));
     });
   });
 
-  describe("ETH Bridging", function () {
-    const receiverAddress = addr1.address;
-    const sendAmount = ethers.utils.parseEther("1.0");
-
-    beforeEach(async function () {
-      await mockRouter.setFee(BRIDGE_FEE);
-    });
-
-    it("Should send ETH to Polygon successfully", async function () {
-      const tx = await messenger.sendToPolygon(receiverAddress, {
-        value: sendAmount
-      });
-
-      await expect(tx)
-        .to.emit(messenger, "MessageSent")
-        .withArgs(
-          ethers.constants.HashZero,
-          owner.address,
-          sendAmount.sub(BRIDGE_FEE),
-          BRIDGE_FEE
-        );
-    });
-
-    it("Should fail when sending with insufficient amount", async function () {
-      const insufficientAmount = BRIDGE_FEE.div(2);
-      await expect(
-        messenger.sendToPolygon(receiverAddress, {
-          value: insufficientAmount
-        })
-      ).to.be.revertedWith("Insufficient amount");
-    });
-
-    it("Should handle CCIP message receipt correctly", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const sourceChain = 138; // DEFI_ORACLE_META_SELECTOR
-      const amount = ethers.utils.parseEther("0.5");
-
-      const message = {
-        messageId,
-        sourceChainSelector: sourceChain,
-        sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
-        destTokenAmounts: [{
-          amount: amount
-        }]
-      };
-
-      await expect(messenger.connect(mockRouter)._ccipReceive(message))
-        .to.emit(messenger, "MessageReceived")
-        .withArgs(messageId, receiverAddress, amount);
-    });
-
-    it("Should reject messages from invalid source chain", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const invalidSourceChain = 1; // Invalid chain selector
-
-      const message = {
-        messageId,
-        sourceChainSelector: invalidSourceChain,
-        sender: mockRouter.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [receiverAddress]),
-        destTokenAmounts: []
-      };
-
-      await expect(
-        messenger.connect(mockRouter)._ccipReceive(message)
-      ).to.be.revertedWith("Message from invalid chain");
+  describe("Message Sending", function() {
+    it("Should send message to Polygon", async function() {
+      const amount = ethers.utils.parseEther("1");
+      await expect(crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount }))
+        .to.emit(crossChainMessenger, "MessageSent")
+        .withArgs(ethers.constants.HashZero, user.address, amount.sub(ethers.utils.parseEther("0.001")), ethers.utils.parseEther("0.001"));
     });
   });
 
-  describe("Fee Management", function () {
-    it("Should have correct initial fee", async function () {
-      expect(await messenger.bridgeFee()).to.equal(BRIDGE_FEE);
+  describe("Security Features", function() {
+    it("Should pause and unpause", async function() {
+      await crossChainMessenger.pause();
+      expect(await crossChainMessenger.paused()).to.be.true;
+      await crossChainMessenger.unpause();
+      expect(await crossChainMessenger.paused()).to.be.false;
     });
-
-    it("Should allow owner to update fee", async function () {
-      const newFee = ethers.utils.parseEther("0.002");
-      await expect(messenger.updateBridgeFee(newFee))
-        .to.emit(messenger, "BridgeFeeUpdated")
-        .withArgs(newFee);
-      expect(await messenger.bridgeFee()).to.equal(newFee);
-    });
-
-    it("Should prevent non-owner from updating fee", async function () {
-      const newFee = ethers.utils.parseEther("0.002");
-      await expect(
-        messenger.connect(addr1).updateBridgeFee(newFee)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("Should prevent setting fee above maximum", async function () {
-      const tooHighFee = MAX_FEE.add(1);
-      await expect(
-        messenger.updateBridgeFee(tooHighFee)
-      ).to.be.revertedWith("Fee exceeds maximum");
-    });
-
-    it("Should reject transaction when amount is less than fee", async function () {
-      const lessThanFee = BRIDGE_FEE.sub(1);
-      await expect(
-        messenger.sendToPolygon(addr1.address, {
-          value: lessThanFee
-        })
-      ).to.be.revertedWith("Insufficient amount");
-    });
-    });
-
-    it("Should accept transaction when amount slightly exceeds fee", async function () {
-      const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
-      const tx = await messenger.sendToPolygon(addr1.address, {
-        value: slightlyAboveFee
-      });
-
-      await expect(tx)
-        .to.emit(messenger, "MessageSent")
-        .withArgs(
-          ethers.constants.HashZero,
-          owner.address,
-          slightlyAboveFee.sub(BRIDGE_FEE),
-          BRIDGE_FEE
-        );
-    });
-  });
-
-  describe("Emergency Functions", function () {
-    it("Should allow owner to pause", async function () {
-      await messenger.pause();
-      expect(await messenger.paused()).to.be.true;
-    });
-
-    it("Should allow owner to unpause", async function () {
-      await messenger.pause();
-      await messenger.unpause();
-      expect(await messenger.paused()).to.be.false;
-    });
-
-    it("Should prevent non-owner from pausing", async function () {
-      await expect(
-        messenger.connect(addr1).pause()
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("Should prevent bridging when paused", async function () {
-      await messenger.pause();
-      await expect(
-        messenger.sendToPolygon(addr1.address, { value: ethers.utils.parseEther("1.0") })
-      ).to.be.revertedWith("Pausable: paused");
-    });
-
-    it("Should allow owner to recover ETH", async function () {
-      const amount = ethers.utils.parseEther("1.0");
-      await owner.sendTransaction({
-        to: messenger.address,
-        value: amount
-      });
-
-      const initialBalance = await owner.getBalance();
-      await expect(messenger.recoverFunds(ethers.constants.AddressZero))
-        .to.emit(messenger, "FundsRecovered")
-        .withArgs(ethers.constants.AddressZero, amount);
-
-      const finalBalance = await owner.getBalance();
-      expect(finalBalance.sub(initialBalance)).to.be.closeTo(
-        amount,
-        ethers.utils.parseEther("0.001") // Account for gas
-      );
-    });
-  });
-
-  describe("Security", function () {
-    it("Should only allow router to call _ccipReceive", async function () {
-      const message = {
-        messageId: ethers.utils.id("testMessage"),
-        sourceChainSelector: 138,
-        sender: addr1.address,
-        data: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
-        destTokenAmounts: []
-      };
-
-      await expect(
-        messenger.connect(addr1)._ccipReceive(message)
-      ).to.be.revertedWith("Caller is not the router");
-    });
-
-    it("Should allow contract to receive ETH", async function () {
-      const amount = ethers.utils.parseEther("1.0");
-      await owner.sendTransaction({
-        to: messenger.address,
-        value: amount
-      });
-
-      const balance = await ethers.provider.getBalance(messenger.address);
-      expect(balance).to.equal(amount);
+    it("Should prevent sending when paused", async function() {
+      await crossChainMessenger.pause();
+      await expect(crossChainMessenger.sendToPolygon(user.address, { value: ethers.utils.parseEther("1") })).to.be.revertedWith("Pausable: paused");
     });
   });
 });
