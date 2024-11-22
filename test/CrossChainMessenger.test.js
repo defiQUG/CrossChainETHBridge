@@ -348,15 +348,15 @@ describe("CrossChainMessenger", function () {
       // Fund the attacker contract with enough ETH for both calls
       await owner.sendTransaction({
         to: attacker.address,
-        value: ethers.utils.parseEther("3.0") // Enough for initial + reentrant call + gas
+        value: ethers.utils.parseEther("5.0") // Increased funding for attack
       });
 
       // Set bridge fee to minimum to maximize attack potential
       await testMessenger.updateBridgeFee(ethers.utils.parseEther("0.001"));
 
-      // Attempt the attack
+      // Attempt the attack with sufficient value
       await expect(
-        attacker.attack()
+        attacker.attack({ value: ethers.utils.parseEther("2.0") })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
       // Verify contract state
