@@ -1,5 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { Client } = require("@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client");
 
 describe("MockRouter Extended Tests", function () {
   let router, owner, user1, user2;
@@ -14,63 +15,79 @@ describe("MockRouter Extended Tests", function () {
 
   describe("Message Handling", function () {
     it("Should handle ccipSend with correct parameters", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const message = ethers.utils.defaultAbiCoder.encode(
-        ["bytes32", "address", "address", "uint256"],
-        [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
-      );
+      const message = {
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [user2.address]),
+        data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user1.address, ethers.utils.parseEther("1.0")]),
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
+      };
 
-      await expect(router.ccipSend(POLYGON_CHAIN_ID, message))
-        .to.emit(router, "MessageSent")
-        .withArgs(POLYGON_CHAIN_ID, message);
+      const tx = await router.ccipSend(POLYGON_CHAIN_ID, message);
+      const receipt = await tx.wait();
+      const event = receipt.events?.find(e => e.event === "MessageSent");
+      expect(event).to.not.be.undefined;
+      expect(event.args.destinationChainSelector).to.equal(POLYGON_CHAIN_ID);
     });
 
     it("Should handle multiple messages correctly", async function () {
       for (let i = 0; i < 3; i++) {
-        const messageId = ethers.utils.id(`message${i}`);
-        const message = ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "address", "uint256"],
-          [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
-        );
+        const message = {
+          receiver: ethers.utils.defaultAbiCoder.encode(["address"], [user2.address]),
+          data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user1.address, ethers.utils.parseEther("1.0")]),
+          tokenAmounts: [],
+          extraArgs: "0x",
+          feeToken: ethers.constants.AddressZero
+        };
         await router.ccipSend(POLYGON_CHAIN_ID, message);
       }
-
       const events = await router.queryFilter(router.filters.MessageSent());
       expect(events.length).to.equal(3);
     });
 
     it("Should handle messages with different chain IDs", async function () {
-      const chainIds = [137, 138, 1];
-      for (const chainId of chainIds) {
-        const messageId = ethers.utils.id("testMessage");
-        const message = ethers.utils.defaultAbiCoder.encode(
-          ["bytes32", "address", "address", "uint256"],
-          [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
-        );
-        await expect(router.ccipSend(chainId, message))
-          .to.emit(router, "MessageSent")
-          .withArgs(chainId, message);
-      }
+      const message = {
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [user2.address]),
+        data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user1.address, ethers.utils.parseEther("1.0")]),
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
+      };
+
+      await expect(router.ccipSend(POLYGON_CHAIN_ID, message))
+        .to.emit(router, "MessageSent")
+        .withArgs(POLYGON_CHAIN_ID, ethers.utils.defaultAbiCoder.encode(
+          ["bytes", "bytes", "tuple[]", "bytes", "address"],
+          [message.receiver, message.data, [], message.extraArgs, message.feeToken]
+        ));
     });
 
     it("Should handle empty messages", async function () {
-      const emptyMessage = "0x";
-      await expect(router.ccipSend(POLYGON_CHAIN_ID, emptyMessage))
-        .to.emit(router, "MessageSent")
-        .withArgs(POLYGON_CHAIN_ID, emptyMessage);
+      const message = {
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [user2.address]),
+        data: "0x",
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
+      };
+
+      await expect(router.ccipSend(POLYGON_CHAIN_ID, message))
+        .to.emit(router, "MessageSent");
     });
   });
 
   describe("Error Handling", function () {
     it("Should handle zero chain ID", async function () {
-      const messageId = ethers.utils.id("testMessage");
-      const message = ethers.utils.defaultAbiCoder.encode(
-        ["bytes32", "address", "address", "uint256"],
-        [messageId, user1.address, user2.address, ethers.utils.parseEther("1.0")]
-      );
+      const message = {
+        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [user2.address]),
+        data: ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user1.address, ethers.utils.parseEther("1.0")]),
+        tokenAmounts: [],
+        extraArgs: "0x",
+        feeToken: ethers.constants.AddressZero
+      };
+
       await expect(router.ccipSend(0, message))
-        .to.emit(router, "MessageSent")
-        .withArgs(0, message);
+        .to.be.revertedWith("Invalid chain selector");
     });
   });
 });

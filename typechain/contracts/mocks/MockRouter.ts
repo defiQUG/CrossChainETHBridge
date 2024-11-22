@@ -159,7 +159,7 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
 
   events: {
-    "MessageSent(uint64,address,uint256)": EventFragment;
+    "MessageSent(uint64,bytes)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "MessageSent"): EventFragment;
@@ -167,11 +167,10 @@ export interface MockRouterInterface extends utils.Interface {
 
 export interface MessageSentEventObject {
   destinationChainSelector: BigNumber;
-  receiver: string;
-  amount: BigNumber;
+  message: string;
 }
 export type MessageSentEvent = TypedEvent<
-  [BigNumber, string, BigNumber],
+  [BigNumber, string],
   MessageSentEventObject
 >;
 
@@ -325,15 +324,13 @@ export interface MockRouter extends BaseContract {
   };
 
   filters: {
-    "MessageSent(uint64,address,uint256)"(
+    "MessageSent(uint64,bytes)"(
       destinationChainSelector?: null,
-      receiver?: null,
-      amount?: null
+      message?: null
     ): MessageSentEventFilter;
     MessageSent(
       destinationChainSelector?: null,
-      receiver?: null,
-      amount?: null
+      message?: null
     ): MessageSentEventFilter;
   };
 
