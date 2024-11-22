@@ -1,7 +1,7 @@
 # Branch Setup Documentation
 
 ## Overview
-This repository uses 'main' as its default branch following Git best practices. This document outlines the branch strategy and protection rules.
+This repository uses 'main' as its default branch following Git best practices. This document outlines the branch strategy, protection rules, and implementation process for establishing our main branch through proper PR process.
 
 ## Branch Strategy
 - Default branch: main (to be established)
