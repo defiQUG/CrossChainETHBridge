@@ -340,9 +340,9 @@ describe("CrossChainMessenger", function () {
       );
       await testMessenger.deployed();
 
-      // Deploy the attacker contract with messenger address only
+      // Deploy the attacker contract with both messenger and router addresses
       const ReentrancyAttacker = await ethers.getContractFactory("ReentrancyAttacker");
-      const attacker = await ReentrancyAttacker.deploy(testMessenger.address);
+      const attacker = await ReentrancyAttacker.deploy(testMessenger.address, mockRouter.address);
       await attacker.deployed();
 
       // Fund both contracts
@@ -363,8 +363,7 @@ describe("CrossChainMessenger", function () {
       // Attempt the attack
       await expect(
         attacker.attack({
-          value: ethers.utils.parseEther("1.0"),
-          gasLimit: 1000000 // Increased gas limit for complex operations
+          value: ethers.utils.parseEther("1.0")
         })
       ).to.be.revertedWith("ReentrancyGuard: reentrant call");
 
