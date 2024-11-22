@@ -50,14 +50,14 @@ contract MockRouter is IRouterClient {
         // For testing reentrancy, directly call the target if sending to Polygon
         if (destinationChainSelector == 137) {
             address target = address(bytes20(message.receiver));
-            processingMessage = false;
 
-            // Direct call without complex message simulation
+            // Direct call while maintaining reentrancy lock
             (bool success,) = target.call{value: msg.value}("");
             require(success, "Direct call failed");
-        } else {
-            processingMessage = false;
         }
+
+        // Reset processing flag after all operations are complete
+        processingMessage = false;
 
         return messageId;
     }
