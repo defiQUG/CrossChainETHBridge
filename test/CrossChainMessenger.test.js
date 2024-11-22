@@ -308,5 +308,42 @@ describe("CrossChainMessenger", function () {
       const balance = await ethers.provider.getBalance(messenger.address);
       expect(balance).to.equal(amount);
     });
+
+    it("Should handle zero value transfers correctly", async function () {
+      await expect(
+        messenger.sendToPolygon(addr1.address, { value: 0 })
+      ).to.be.revertedWith("Insufficient amount");
+    });
+
+    it("Should reject malformed CCIP messages", async function () {
+      const invalidData = ethers.utils.defaultAbiCoder.encode(
+        ["address"],
+        [addr1.address]
+      );
+
+      await expect(
+        mockRouter.simulateMessageReceived(
+          messenger.address,
+          138,
+          mockRouter.address,
+          invalidData
+        )
+      ).to.be.reverted;
+    });
+
+    it("Should prevent reentrant calls", async function () {
+      const ReentrancyAttacker = await ethers.getContractFactory("MockWETH");
+      const attacker = await ReentrancyAttacker.deploy();
+      await attacker.deployed();
+
+      await owner.sendTransaction({
+        to: attacker.address,
+        value: ethers.utils.parseEther("2.0")
+      });
+
+      await expect(
+        attacker.sendToMessenger(messenger.address, { value: ethers.utils.parseEther("1.0") })
+      ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+    });
   });
 });
