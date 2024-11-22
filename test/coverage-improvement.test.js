@@ -5,6 +5,7 @@ describe("Coverage Improvement Tests", function () {
   let messenger, router, weth, owner, user1, user2;
   const RATE_PERIOD = 3600; // 1 hour in seconds
   const MAX_MESSAGES = 5;
+  const INITIAL_BALANCE = ethers.utils.parseEther("10.0");
 
   beforeEach(async function () {
     [owner, user1, user2] = await ethers.getSigners();
@@ -20,6 +21,12 @@ describe("Coverage Improvement Tests", function () {
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     messenger = await CrossChainMessenger.deploy(router.address, weth.address, MAX_MESSAGES);
     await messenger.deployed();
+
+    // Fund the contract
+    await owner.sendTransaction({
+      to: messenger.address,
+      value: INITIAL_BALANCE
+    });
   });
 
   describe("MockWETH", function () {
@@ -53,17 +60,21 @@ describe("Coverage Improvement Tests", function () {
 
   describe("Emergency Controls", function () {
     it("Should handle emergency withdraw correctly", async function () {
-      const amount = ethers.utils.parseEther("5.0");
-      await messenger.sendToPolygon(user1.address, { value: amount });
-
+      await messenger.emergencyPause();
       const initialBalance = await ethers.provider.getBalance(user2.address);
       await messenger.emergencyWithdraw(user2.address);
       const finalBalance = await ethers.provider.getBalance(user2.address);
+      expect(finalBalance.sub(initialBalance)).to.equal(INITIAL_BALANCE);
+    });
 
-      expect(finalBalance.sub(initialBalance)).to.equal(amount);
+    it("Should prevent emergency withdraw when not paused", async function () {
+      await expect(
+        messenger.emergencyWithdraw(user2.address)
+      ).to.be.revertedWith("Pausable: not paused");
     });
 
     it("Should prevent emergency withdraw to zero address", async function () {
+      await messenger.emergencyPause();
       await expect(
         messenger.emergencyWithdraw(ethers.constants.AddressZero)
       ).to.be.revertedWith("Invalid recipient");
@@ -74,9 +85,16 @@ describe("Coverage Improvement Tests", function () {
     it("Should handle ccipSend correctly", async function () {
       const amount = ethers.utils.parseEther("1.0");
       await messenger.sendToPolygon(user1.address, { value: amount });
-
       const events = await router.queryFilter(router.filters.MessageSent());
       expect(events.length).to.be.above(0);
+      expect(events[0].args.destinationChainId).to.equal(137);
+    });
+
+    it("Should emit correct events on message send", async function () {
+      const amount = ethers.utils.parseEther("1.0");
+      await expect(messenger.sendToPolygon(user1.address, { value: amount }))
+        .to.emit(router, "MessageSent")
+        .withArgs(137, anyValue); // anyValue for the encoded message
     });
   });
 });
