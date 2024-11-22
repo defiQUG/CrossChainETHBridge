@@ -162,20 +162,4 @@ contract MockRouter is IRouterClient {
 
         processingMessage = false;
     }
-
-        Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
-        bytes32 messageId = keccak256(abi.encode(sourceChainSelector, sender, data));
-
-        IAny2EVMMessageReceiver(target).ccipReceive(
-            Client.Any2EVMMessage({
-                messageId: messageId,
-                sourceChainSelector: sourceChainSelector,
-                sender: abi.encode(sender),
-                data: data,
-                destTokenAmounts: destTokenAmounts
-            })
-        );
-
-        processingMessage = false;
-    }
 }
