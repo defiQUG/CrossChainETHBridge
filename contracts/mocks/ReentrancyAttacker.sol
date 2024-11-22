@@ -23,11 +23,13 @@ contract ReentrancyAttacker {
         attackCount = 0;
 
         // Initial call to trigger reentrancy
-        try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+        try messenger.sendToPolygon{value: ATTACK_VALUE, gas: 500000}(address(this)) {
             emit AttackAttempted(ATTACK_VALUE, 0);
         } catch Error(string memory reason) {
             emit ReentrancyCallFailed(reason);
-            revert(reason);
+        } catch (bytes memory reason) {
+            string memory decodedReason = _getRevertMsg(reason);
+            emit ReentrancyCallFailed(decodedReason);
         }
     }
 
@@ -38,15 +40,13 @@ contract ReentrancyAttacker {
             attackCount++;
 
             // Try to reenter during message processing
-            try messenger.sendToPolygon{value: ATTACK_VALUE}(address(this)) {
+            try messenger.sendToPolygon{value: ATTACK_VALUE, gas: 500000}(address(this)) {
                 emit AttackAttempted(ATTACK_VALUE, attackCount);
             } catch Error(string memory reason) {
                 emit ReentrancyCallFailed(reason);
-                revert(reason);
             } catch (bytes memory reason) {
                 string memory decodedReason = _getRevertMsg(reason);
                 emit ReentrancyCallFailed(decodedReason);
-                revert(decodedReason);
             }
         }
     }
