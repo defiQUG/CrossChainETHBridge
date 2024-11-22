@@ -91,8 +91,10 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
 
         // Prepare message data before any external calls
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(_receiver),
-            data: abi.encode(transferAmount),
+            // Properly encode receiver address as bytes
+            receiver: abi.encodePacked(_receiver),
+            // Encode both receiver and amount together in data field
+            data: abi.encode(_receiver, transferAmount),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
                 Client.EVMExtraArgsV1({
