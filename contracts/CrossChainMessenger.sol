@@ -110,7 +110,7 @@ contract CrossChainMessenger is CCIPReceiver, Ownable, ReentrancyGuard, Pausable
         require(bridgeFee >= ccipFee, "Insufficient fee for CCIP");
 
         // Interactions (after all checks and effects)
-        bytes32 messageId = IRouterClient(i_router).ccipSend{value: ccipFee}(
+        bytes32 messageId = IRouterClient(i_router).ccipSend{value: transferAmount + ccipFee}(
             POLYGON_SELECTOR,
             message
         );
