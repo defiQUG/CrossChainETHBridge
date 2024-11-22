@@ -104,7 +104,7 @@ contract CrossChainMessenger is ReentrancyGuard, Pausable, RateLimiter {
         _unpause();
     }
 
-    function emergencyWithdraw(address payable _recipient) external onlyOwner {
+    function emergencyWithdraw(address payable _recipient) external onlyOwner whenPaused {
         require(_recipient != address(0), "Invalid recipient");
         uint256 balance = address(this).balance;
         (bool success, ) = _recipient.call{value: balance}("");

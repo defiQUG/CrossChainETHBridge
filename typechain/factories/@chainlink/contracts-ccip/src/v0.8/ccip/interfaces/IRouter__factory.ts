@@ -89,6 +89,11 @@ const _abi = [
         name: "retBytes",
         type: "bytes",
       },
+      {
+        internalType: "uint256",
+        name: "gasUsed",
+        type: "uint256",
+      },
     ],
     stateMutability: "nonpayable",
     type: "function",

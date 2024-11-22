@@ -133,7 +133,13 @@ export interface IRouter extends BaseContract {
       gasLimit: PromiseOrValue<BigNumberish>,
       receiver: PromiseOrValue<string>,
       overrides?: CallOverrides
-    ): Promise<[boolean, string] & { success: boolean; retBytes: string }>;
+    ): Promise<
+      [boolean, string, BigNumber] & {
+        success: boolean;
+        retBytes: string;
+        gasUsed: BigNumber;
+      }
+    >;
   };
 
   filters: {};

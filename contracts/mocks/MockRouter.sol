@@ -15,6 +15,8 @@ contract MockRouter is IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override returns (bytes32) {
+        require(destinationChainSelector != 0, "Invalid chain selector");
+
         bytes memory encodedMessage = abi.encode(
             message.receiver,
             message.data,
