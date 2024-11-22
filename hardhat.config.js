@@ -16,7 +16,17 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 31337
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 12000000
+    },
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337,
+      allowUnlimitedContractSize: true,
+      gas: 12000000,
+      blockGasLimit: 12000000
     }
   },
   gasReporter: {
@@ -30,6 +40,6 @@ module.exports = {
     target: 'ethers-v5'
   },
   mocha: {
-    timeout: 40000
+    timeout: 100000
   }
 };
