@@ -95,12 +95,15 @@ describe("CrossChainMessenger", function () {
         [receiverAddress, amount]
       );
 
-      const expectedMessageId = ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["uint64", "bytes", "bytes"],
-          [sourceChain, mockRouter.address, encodedData]
-        )
-      );
+      const message = {
+        messageId: ethers.utils.id("testMessage"),
+        sourceChainSelector: sourceChain,
+        sender: ethers.utils.defaultAbiCoder.encode(["address"], [mockRouter.address]),
+        data: encodedData,
+        destTokenAmounts: []
+      };
+
+      await mockRouter.setNextMessageId(message.messageId);
 
       await expect(
         mockRouter.simulateMessageReceived(
@@ -111,7 +114,7 @@ describe("CrossChainMessenger", function () {
         )
       ).to.emit(messenger, "MessageReceived")
         .withArgs(
-          expectedMessageId,
+          message.messageId,
           receiverAddress,
           amount
         );

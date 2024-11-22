@@ -91,16 +91,16 @@ describe("MockRouter", function () {
         feeToken: ethers.constants.AddressZero
       };
 
+      const expectedMessageId = ethers.utils.keccak256(
+        ethers.utils.defaultAbiCoder.encode(
+          ["uint64", "address", "bytes"],
+          [137, addr1.address, "0x"]
+        )
+      );
+
       await expect(mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }))
         .to.emit(mockRouter, "MessageSent")
-        .withArgs(
-          await mockRouter.ccipSend(137, message, { value: ethers.utils.parseEther("0.001") }),
-          137,
-          ethers.utils.getAddress(addr1.address),
-          "0x",
-          ethers.constants.AddressZero,
-          ethers.utils.parseEther("0.001")
-        );
+        .withArgs(expectedMessageId, 137, addr1.address, "0x", ethers.constants.AddressZero, ethers.utils.parseEther("0.001"));
     });
   });
 });
