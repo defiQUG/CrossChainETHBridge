@@ -41,7 +41,7 @@ describe("MockRouter Coverage Tests", function () {
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
         sourceChainSelector: 138,
-        sender: owner.address,
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
         data: "0x",
         destTokenAmounts: []
       };
@@ -78,11 +78,18 @@ describe("MockRouter Coverage Tests", function () {
 
   describe("Message Reception", function () {
     it("Should handle ccipReceive correctly", async function () {
+      const MockReceiver = await ethers.getContractFactory("MockRouter");
+      const receiver = await MockReceiver.deploy();
+      await receiver.deployed();
+
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
         sourceChainSelector: 138,
-        sender: owner.address,
-        data: "0x",
+        sender: ethers.utils.hexZeroPad(owner.address, 32),
+        data: ethers.utils.defaultAbiCoder.encode(
+          ['address', 'uint256'],
+          [owner.address, ethers.utils.parseEther("1.0")]
+        ),
         destTokenAmounts: []
       };
 

@@ -46,8 +46,9 @@ describe("MockWETH Extended Tests", function () {
       const withdrawAmount = ethers.utils.parseEther("2.0");
 
       await mockWETH.deposit({ value: depositAmount });
-      await expect(mockWETH.withdraw(withdrawAmount))
-        .to.be.revertedWith("ERC20: burn amount exceeds balance");
+      await expect(
+        mockWETH.withdraw(withdrawAmount)
+      ).to.be.revertedWith("insufficient balance");
     });
   });
 
