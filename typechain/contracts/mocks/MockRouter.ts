@@ -91,7 +91,7 @@ export interface MockRouterInterface extends utils.Interface {
     "getSupportedTokens(uint64)": FunctionFragment;
     "isChainSupported(uint64)": FunctionFragment;
     "sendMessage(address,(bytes32,uint64,bytes,bytes,(address,uint256)[]))": FunctionFragment;
-    "simulateMessageReceived(address,bytes32,address,bytes)": FunctionFragment;
+    "simulateMessageReceived(address,bytes32,address,uint256)": FunctionFragment;
   };
 
   getFunction(
@@ -130,7 +130,7 @@ export interface MockRouterInterface extends utils.Interface {
       PromiseOrValue<string>,
       PromiseOrValue<BytesLike>,
       PromiseOrValue<string>,
-      PromiseOrValue<BytesLike>
+      PromiseOrValue<BigNumberish>
     ]
   ): string;
 
@@ -154,22 +154,19 @@ export interface MockRouterInterface extends utils.Interface {
   ): Result;
 
   events: {
-    "MessageSent(bytes32,uint64,address,bytes,address,uint256)": EventFragment;
+    "MessageSent(uint64,address,uint256)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "MessageSent"): EventFragment;
 }
 
 export interface MessageSentEventObject {
-  messageId: string;
   destinationChainSelector: BigNumber;
   receiver: string;
-  message: string;
-  feeToken: string;
-  fees: BigNumber;
+  amount: BigNumber;
 }
 export type MessageSentEvent = TypedEvent<
-  [string, BigNumber, string, string, string, BigNumber],
+  [BigNumber, string, BigNumber],
   MessageSentEventObject
 >;
 
@@ -234,7 +231,7 @@ export interface MockRouter extends BaseContract {
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
       sender: PromiseOrValue<string>,
-      data: PromiseOrValue<BytesLike>,
+      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
@@ -271,7 +268,7 @@ export interface MockRouter extends BaseContract {
     target: PromiseOrValue<string>,
     messageId: PromiseOrValue<BytesLike>,
     sender: PromiseOrValue<string>,
-    data: PromiseOrValue<BytesLike>,
+    amount: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -308,27 +305,21 @@ export interface MockRouter extends BaseContract {
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
       sender: PromiseOrValue<string>,
-      data: PromiseOrValue<BytesLike>,
+      amount: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
   };
 
   filters: {
-    "MessageSent(bytes32,uint64,address,bytes,address,uint256)"(
-      messageId?: null,
+    "MessageSent(uint64,address,uint256)"(
       destinationChainSelector?: null,
       receiver?: null,
-      message?: null,
-      feeToken?: null,
-      fees?: null
+      amount?: null
     ): MessageSentEventFilter;
     MessageSent(
-      messageId?: null,
       destinationChainSelector?: null,
       receiver?: null,
-      message?: null,
-      feeToken?: null,
-      fees?: null
+      amount?: null
     ): MessageSentEventFilter;
   };
 
@@ -365,7 +356,7 @@ export interface MockRouter extends BaseContract {
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
       sender: PromiseOrValue<string>,
-      data: PromiseOrValue<BytesLike>,
+      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
@@ -403,7 +394,7 @@ export interface MockRouter extends BaseContract {
       target: PromiseOrValue<string>,
       messageId: PromiseOrValue<BytesLike>,
       sender: PromiseOrValue<string>,
-      data: PromiseOrValue<BytesLike>,
+      amount: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };
