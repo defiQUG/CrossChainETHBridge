@@ -11,12 +11,19 @@ describe("CrossChainMessenger", function() {
     beforeEach(async function() {
         [owner, user] = await ethers.getSigners();
 
+        // Deploy MockRouter
         const MockRouter = await ethers.getContractFactory("MockRouter");
         mockRouter = await MockRouter.deploy();
         await mockRouter.deployed();
 
+        // Deploy MockWETH
+        const MockWETH = await ethers.getContractFactory("MockWETH");
+        const mockWeth = await MockWETH.deploy();
+        await mockWeth.deployed();
+
+        // Deploy CrossChainMessenger with both router and WETH addresses
         const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-        crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address);
+        crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address, mockWeth.address);
         await crossChainMessenger.deployed();
 
         // Fund the contract for message receiving tests

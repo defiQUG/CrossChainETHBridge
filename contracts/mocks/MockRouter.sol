@@ -54,15 +54,20 @@ contract MockRouter is IRouterClient {
         address sender,
         uint256 amount
     ) external {
-        bytes memory data = abi.encode(amount);
+        // Properly encode the sender address as bytes
+        bytes memory encodedSender = abi.encodePacked(sender);
 
+        // Create token amounts array (empty for ETH transfers)
         Client.EVMTokenAmount[] memory destTokenAmounts = new Client.EVMTokenAmount[](0);
+
+        // Encode amount as bytes
+        bytes memory data = abi.encode(amount);
 
         IAny2EVMMessageReceiver(target).ccipReceive(
             Client.Any2EVMMessage({
                 messageId: messageId,
-                sourceChainSelector: 138,
-                sender: abi.encode(sender),
+                sourceChainSelector: 138, // Defi Oracle Meta Mainnet
+                sender: encodedSender,
                 data: data,
                 destTokenAmounts: destTokenAmounts
             })
