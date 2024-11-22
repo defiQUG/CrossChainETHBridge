@@ -336,8 +336,7 @@ describe("CrossChainMessenger", function () {
       const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
       const testMessenger = await CrossChainMessenger.deploy(
         mockRouter.address,
-        138, // Defi Oracle Meta chain selector
-        137  // Polygon chain selector
+        mockWETH.address  // Add WETH address as second constructor argument
       );
       await testMessenger.deployed();
 
