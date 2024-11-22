@@ -27,13 +27,21 @@ describe("Gas Optimization Tests", function() {
 
     it("Should optimize gas for message receiving", async function() {
       const amount = ethers.utils.parseEther("1");
+
+      // Fund the contract first
+      await owner.sendTransaction({
+        to: crossChainMessenger.address,
+        value: ethers.utils.parseEther("10.0")
+      });
+
       const messageId = ethers.utils.formatBytes32String("testMessage");
       const sourceChainSelector = 138;
       const sender = owner.address;
       const data = ethers.utils.defaultAbiCoder.encode(["address", "uint256"], [user.address, amount]);
       const message = { messageId, sourceChainSelector, sender, data, destTokenAmounts: [] };
-      await mockRouter.sendMessage(crossChainMessenger.address, message);
-      const receipt = await ethers.provider.getTransactionReceipt(mockRouter.deployTransaction.hash);
+
+      const tx = await mockRouter.sendMessage(crossChainMessenger.address, message);
+      const receipt = await tx.wait();
       expect(receipt.gasUsed).to.be.below(500000, "Gas usage too high for message receiving");
     });
   });
