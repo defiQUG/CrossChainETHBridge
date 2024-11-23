@@ -12,16 +12,25 @@ contract TestRouter is MockRouter, IRouterClient {
     uint256 private extraFee;
     mapping(address => bool) public testSupportedTokens;
     uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
+    bool private _initialized;
 
     // Events for state changes
     event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor() RateLimiter(10, 3600) Pausable() {  // 10 messages per hour
+    constructor() {
+        // Initialization moved to initialize function
+    }
+
+    function initialize(uint256 maxMessages, uint256 periodDuration) external {
+        require(!_initialized, "TestRouter: already initialized");
+        super.initialize(maxMessages, periodDuration);
+
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true; // Defi Oracle Meta
+        _initialized = true;
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
@@ -58,12 +67,7 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        if (block.timestamp >= periodStart + periodDuration) {
-            _resetPeriod();
-        }
-        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
-        currentPeriodMessages++;
-        emit MessageProcessed(msg.sender, block.timestamp);
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -84,12 +88,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        if (block.timestamp >= periodStart + periodDuration) {
-            _resetPeriod();
-        }
-        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
-        currentPeriodMessages++;
-        emit MessageProcessed(msg.sender, block.timestamp);
+        require(processMessage(), "Rate limit exceeded");
 
         // Validate target contract exists
         uint256 size;
