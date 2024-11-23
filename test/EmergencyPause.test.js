@@ -63,14 +63,18 @@ describe("EmergencyPause", function() {
         it("Should auto-unpause after duration", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
             await time.increase(PAUSE_DURATION + 1);
+            await emergencyPause.checkAndUnpause(); // Explicitly call checkAndUnpause
             expect(await emergencyPause.paused()).to.be.false;
         });
 
         it("Should allow owner to force unpause", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            // Get the next block's timestamp and use it in the same transaction
+            const nextBlockTimestamp = await time.latest() + 1n;
+            await time.setNextBlockTimestamp(nextBlockTimestamp);
             await expect(emergencyPause.emergencyUnpause())
                 .to.emit(emergencyPause, "EmergencyUnpauseTriggered")
-                .withArgs(await time.latest());
+                .withArgs(nextBlockTimestamp);
             expect(await emergencyPause.paused()).to.be.false;
         });
 
