@@ -30,11 +30,11 @@ describe("RateLimiter Extended Tests", function () {
 
     describe("Period Management", function () {
         it("Should correctly handle period transitions", async function () {
-            await rateLimiter.processMessage();
+            await rateLimiter.checkAndUpdateRateLimit();
             // Move time forward to next period
             await time.increase(RATE_PERIOD);
             // This should work as it's a new period
-            await expect(rateLimiter.processMessage()).to.not.be.reverted;
+            await expect(rateLimiter.checkAndUpdateRateLimit()).to.not.be.reverted;
             // Verify period usage
             const currentPeriod = await rateLimiter.getCurrentPeriod();
             const usage = await rateLimiter.messageCountByPeriod(currentPeriod);
@@ -42,8 +42,8 @@ describe("RateLimiter Extended Tests", function () {
         });
 
         it("Should handle multiple transactions in same period", async function () {
-            await rateLimiter.processMessage();
-            await rateLimiter.processMessage();
+            await rateLimiter.checkAndUpdateRateLimit();
+            await rateLimiter.checkAndUpdateRateLimit();
             const currentPeriod = await rateLimiter.getCurrentPeriod();
             const usage = await rateLimiter.messageCountByPeriod(currentPeriod);
             expect(usage).to.equal(2);
@@ -53,7 +53,7 @@ describe("RateLimiter Extended Tests", function () {
     describe("Emergency Controls", function () {
         it("Should handle emergency pause correctly", async function () {
             await rateLimiter.emergencyPause();
-            await expect(rateLimiter.processMessage())
+            await expect(rateLimiter.checkAndUpdateRateLimit())
                 .to.be.revertedWith("Pausable: paused");
         });
 
@@ -67,23 +67,23 @@ describe("RateLimiter Extended Tests", function () {
     describe("Rate Limit Validation", function () {
         it("Should enforce hourly rate limit", async function () {
             for (let i = 0; i < MAX_MESSAGES; i++) {
-                await rateLimiter.processMessage();
+                await rateLimiter.checkAndUpdateRateLimit();
             }
-            await expect(rateLimiter.processMessage())
+            await expect(rateLimiter.checkAndUpdateRateLimit())
                 .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should handle rate limit updates", async function () {
-            await rateLimiter.setMaxMessagesPerPeriod(2);
-            await rateLimiter.processMessage();
-            await rateLimiter.processMessage();
-            await expect(rateLimiter.processMessage())
+            await rateLimiter.setRateLimit(2, RATE_PERIOD);
+            await rateLimiter.checkAndUpdateRateLimit();
+            await rateLimiter.checkAndUpdateRateLimit();
+            await expect(rateLimiter.checkAndUpdateRateLimit())
                 .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should prevent non-owner from updating rate limit", async function () {
             await expect(
-                rateLimiter.connect(addr1).setMaxMessagesPerPeriod(10)
+                rateLimiter.connect(addr1).setRateLimit(10, RATE_PERIOD)
             ).to.be.revertedWith("Ownable: caller is not the owner");
         });
     });

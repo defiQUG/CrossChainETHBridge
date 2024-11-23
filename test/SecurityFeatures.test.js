@@ -23,14 +23,14 @@ describe("Security Features Integration Tests", function() {
     describe("Rate Limiting", function() {
         it("Should enforce rate limits correctly", async function() {
             const amount = ethers.parseEther("1.0");
-            await rateLimiter.processMessage();
+            await rateLimiter.checkAndUpdateRateLimit();
 
             // Attempt to exceed rate limit
             for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
                 if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
-                    await rateLimiter.processMessage();
+                    await rateLimiter.checkAndUpdateRateLimit();
                 } else {
-                    await expect(rateLimiter.processMessage())
+                    await expect(rateLimiter.checkAndUpdateRateLimit())
                         .to.be.revertedWith("Rate limit exceeded");
                 }
             }
@@ -39,7 +39,7 @@ describe("Security Features Integration Tests", function() {
         it("Should reset rate limit after period", async function() {
             // Fill up the rate limit
             for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1; i++) {
-                await rateLimiter.processMessage();
+                await rateLimiter.checkAndUpdateRateLimit();
             }
 
             // Wait for rate limit period to pass
@@ -47,7 +47,7 @@ describe("Security Features Integration Tests", function() {
             await ethers.provider.send("evm_mine");
 
             // Should be able to process message again
-            await expect(rateLimiter.processMessage()).to.not.be.reverted;
+            await expect(rateLimiter.checkAndUpdateRateLimit()).to.not.be.reverted;
         });
     });
 
@@ -101,10 +101,10 @@ describe("Security Features Integration Tests", function() {
             // Process messages until rate limit
             for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
                 if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
-                    await rateLimiter.processMessage();
+                    await rateLimiter.checkAndUpdateRateLimit();
                     await emergencyPause.lockValue(amount);
                 } else {
-                    await expect(rateLimiter.processMessage())
+                    await expect(rateLimiter.checkAndUpdateRateLimit())
                         .to.be.revertedWith("Rate limit exceeded");
                 }
             }
