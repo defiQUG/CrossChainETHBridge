@@ -4,14 +4,22 @@ pragma solidity ^0.8.20;
 import "./MockRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
+// Events for new functions
+event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
+event TokenSupportUpdated(address indexed token, bool supported);
+event ExtraFeeUpdated(uint256 newFee);
+
 // Chain selectors for supported networks
 uint64 constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
 uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
+    uint256 private extraFee;
+    mapping(address => bool) private _supportedTokens;
+
     constructor() {
         // Initialize only Polygon as supported chain for testing
-        _supportedChains[137] = true; // Polygon PoS
+        _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
         // Chain ID 138 (Defi Oracle Meta) intentionally not supported initially
     }
 
@@ -154,6 +162,21 @@ contract TestRouter is MockRouter, IRouterClient {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
+    }
+
+    function setSupportedChain(uint64 chainSelector, bool supported) external onlyOwner {
+        _supportedChains[chainSelector] = supported;
+        emit ChainSupportUpdated(chainSelector, supported);
+    }
+
+    function setSupportedTokens(address token, bool supported) external onlyOwner {
+        _supportedTokens[token] = supported;
+        emit TokenSupportUpdated(token, supported);
+    }
+
+    function setExtraFee(uint256 _extraFee) external onlyOwner {
+        extraFee = _extraFee;
+        emit ExtraFeeUpdated(_extraFee);
     }
 
     receive() external payable override {}
