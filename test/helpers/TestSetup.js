@@ -22,9 +22,9 @@ async function deployTestContracts() {
     );
     await emergencyPause.waitForDeployment();
 
-    // Deploy MockRouter
-    const MockRouter = await ethers.getContractFactory('MockRouter');
-    const mockRouter = await MockRouter.deploy();
+    // Deploy TestRouter (concrete implementation of MockRouter)
+    const TestRouter = await ethers.getContractFactory('TestRouter');
+    const mockRouter = await TestRouter.deploy();
     await mockRouter.waitForDeployment();
 
     // Deploy CrossChainMessenger
