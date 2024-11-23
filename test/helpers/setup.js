@@ -5,7 +5,7 @@ const { deployContract } = require("./test-utils");
 const TEST_CONFIG = {
     POLYGON_CHAIN_SELECTOR: 137n,
     DEFI_ORACLE_META_CHAIN_SELECTOR: 138n,
-    BRIDGE_FEE: ethers.parseEther("0.01"),  // Increased from 0.001 to 0.01
+    BRIDGE_FEE: ethers.parseEther("0.001"),  // Aligned with TestRouter default fee
     MAX_FEE: ethers.parseEther("0.1"),
     MAX_MESSAGES_PER_PERIOD: 100,  // Increased from 10 to 100 for better testing
     PAUSE_THRESHOLD: ethers.parseEther("100.0"),  // Increased from 5.0 to 100.0 to match test scenarios
