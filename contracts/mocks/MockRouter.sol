@@ -78,7 +78,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
-    ) external virtual whenNotPaused {
+    ) external virtual whenNotPaused payable {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
         require(processMessage(), "Rate limit exceeded");
@@ -86,8 +86,15 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId);
 
-        (bool success, ) = target.call(message.data);
-        require(success, "Message simulation failed");
+        (bool success, bytes memory result) = target.call{value: msg.value}(message.data);
+        if (!success) {
+            if (result.length > 0) {
+                assembly {
+                    revert(add(32, result), mload(result))
+                }
+            }
+            revert("Message simulation failed");
+        }
     }
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
