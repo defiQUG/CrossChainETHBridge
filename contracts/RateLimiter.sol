@@ -11,7 +11,7 @@ contract RateLimiter is Ownable {
 
     event RateLimitUpdated(uint256 timestamp, uint256 count);
     event PeriodReset(uint256 timestamp);
-    event MaxMessagesUpdated(uint256 oldLimit, uint256 newLimit);
+    event MaxMessagesPerPeriodUpdated(uint256 oldLimit, uint256 newLimit);
     event PeriodLengthUpdated(uint256 oldLength, uint256 newLength);
 
     constructor(uint256 initialMaxMessages, uint256 initialPeriodLength) {
@@ -34,7 +34,7 @@ contract RateLimiter is Ownable {
         require(newLimit > 0, "Max messages must be positive");
         uint256 oldLimit = _maxMessagesPerPeriod;
         _maxMessagesPerPeriod = newLimit;
-        emit MaxMessagesUpdated(oldLimit, newLimit);
+        emit MaxMessagesPerPeriodUpdated(oldLimit, newLimit);
     }
 
     function setPeriodLength(uint256 newLength) public onlyOwner {
