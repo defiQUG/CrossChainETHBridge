@@ -46,7 +46,7 @@ describe("Router Coverage Tests", function () {
         beforeEach(async function () {
             message = {
                 messageId: ethers.randomBytes(32),
-                sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
+                sourceChainSelector: POLYGON_CHAIN_SELECTOR,
                 sender: ethers.hexlify(ethers.randomBytes(20)),
                 receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
@@ -67,7 +67,7 @@ describe("Router Coverage Tests", function () {
         });
 
         it("Should revert simulation with invalid source chain", async function () {
-            const invalidMessage = { ...message, sourceChainSelector: POLYGON_CHAIN_SELECTOR };
+            const invalidMessage = { ...message, sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR };
             await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
                 .to.be.revertedWith("Chain not supported");
         });
@@ -84,7 +84,7 @@ describe("Router Coverage Tests", function () {
         beforeEach(async function () {
             ccipMessage = {
                 messageId: ethers.randomBytes(32),
-                sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
+                sourceChainSelector: POLYGON_CHAIN_SELECTOR,
                 sender: ethers.hexlify(ethers.randomBytes(20)),
                 receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(

@@ -23,8 +23,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
     constructor() RateLimiter(100, 1 hours) {
-        _supportedChains[137] = true; // Polygon PoS
-        _supportedChains[138] = true; // Defi Oracle Meta
+        // Chain support initialization moved to derived contracts
     }
 
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
@@ -92,7 +91,9 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("Chain not supported");
+        }
         uint256 totalFee = _baseFee;
         if (message.data.length > 0) {
             totalFee += _extraFee;

@@ -11,8 +11,8 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 contract TestRouter is MockRouter, IRouterClient {
     constructor() {
         // Initialize only Polygon as supported chain for testing
-        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
-        // DEFI_ORACLE_META_CHAIN_SELECTOR is intentionally not supported initially
+        _supportedChains[137] = true; // Polygon PoS
+        // Chain ID 138 (Defi Oracle Meta) intentionally not supported initially
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
