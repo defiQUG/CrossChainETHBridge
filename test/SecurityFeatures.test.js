@@ -23,14 +23,14 @@ describe("Security Features Integration Tests", function() {
     describe("Rate Limiting", function() {
         it("Should enforce rate limits correctly", async function() {
             const amount = ethers.parseEther("1.0");
-            await rateLimiter.checkAndUpdateRateLimit();
+            await rateLimiter.processMessage();
 
             // Attempt to exceed rate limit
-            for(let i = 0; i < 10; i++) {
-                if(i < 9) {
-                    await rateLimiter.checkAndUpdateRateLimit();
+            for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
+                if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
+                    await rateLimiter.processMessage();
                 } else {
-                    await expect(rateLimiter.checkAndUpdateRateLimit())
+                    await expect(rateLimiter.processMessage())
                         .to.be.revertedWith("Rate limit exceeded");
                 }
             }
@@ -38,68 +38,58 @@ describe("Security Features Integration Tests", function() {
 
         it("Should reset rate limit after period", async function() {
             // Fill up the rate limit
-            for(let i = 0; i < 9; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+            for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1; i++) {
+                await rateLimiter.processMessage();
             }
 
             // Wait for rate limit period to pass
-            await ethers.provider.send("evm_increaseTime", [3600]); // 1 hour
+            await ethers.provider.send("evm_increaseTime", [TEST_CONFIG.PERIOD_DURATION]);
             await ethers.provider.send("evm_mine");
 
             // Should be able to process message again
-            await expect(rateLimiter.checkAndUpdateRateLimit()).to.not.be.reverted;
+            await expect(rateLimiter.processMessage()).to.not.be.reverted;
         });
     });
 
     describe("Emergency Pause", function() {
         it("Should trigger emergency pause when threshold reached", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.parseEther("100.0"); // Match PAUSE_THRESHOLD
 
-            // Process messages until threshold
-            for(let i = 0; i < 5; i++) {
-                await emergencyPause.checkAndPause(amount);
-            }
+            // Get current block timestamp before the transaction
+            const currentBlock = await ethers.provider.getBlock('latest');
+            const expectedTimestamp = currentBlock.timestamp + 1; // Next block timestamp
 
-            // Next message should trigger pause
-            await expect(emergencyPause.checkAndPause(amount))
-                .to.emit(emergencyPause, "SecurityPaused");
+            // Should trigger pause immediately as amount equals threshold
+            await expect(emergencyPause.lockValue(amount))
+                .to.emit(emergencyPause, "EmergencyPauseTriggered")
+                .withArgs(expectedTimestamp, TEST_CONFIG.PAUSE_DURATION);
 
             expect(await emergencyPause.paused()).to.be.true;
         });
 
         it("Should prevent operations when paused", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.parseEther("100.0");
 
             // Trigger pause
-            for(let i = 0; i < 6; i++) {
-                await emergencyPause.checkAndPause(amount);
-            }
+            await emergencyPause.lockValue(amount);
 
-            // Should revert when trying to process message while paused
-            await expect(emergencyPause.checkAndPause(amount))
-                .to.be.revertedWith("Pausable: paused");
+            // Should revert when trying to lock value while paused
+            await expect(emergencyPause.lockValue(ethers.parseEther("1.0")))
+                .to.be.revertedWith("Contract is paused");
         });
 
         it("Should allow unpausing after delay", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.parseEther("100.0");
 
             // Trigger pause
-            for(let i = 0; i < 6; i++) {
-                await emergencyPause.checkAndPause(amount);
-            }
+            await emergencyPause.lockValue(amount);
 
-            // Try to unpause immediately (should fail)
-            await expect(emergencyPause.emergencyUnpause())
-                .to.be.revertedWith("Emergency delay not elapsed");
-
-            // Wait for delay
-            await ethers.provider.send("evm_increaseTime", [86400]); // 24 hours
+            // Wait for pause duration
+            await ethers.provider.send("evm_increaseTime", [TEST_CONFIG.PAUSE_DURATION]);
             await ethers.provider.send("evm_mine");
 
-            // Should be able to unpause
-            await expect(emergencyPause.emergencyUnpause())
-                .to.emit(emergencyPause, "SecurityUnpaused");
-
+            // Should be able to unpause via checkAndUnpause
+            await emergencyPause.checkAndUnpause();
             expect(await emergencyPause.paused()).to.be.false;
         });
     });
@@ -109,17 +99,19 @@ describe("Security Features Integration Tests", function() {
             const amount = ethers.parseEther("1.0");
 
             // Process messages until rate limit
-            for(let i = 0; i < 9; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
-                await emergencyPause.checkAndPause(amount);
+            for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
+                if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
+                    await rateLimiter.processMessage();
+                    await emergencyPause.lockValue(amount);
+                } else {
+                    await expect(rateLimiter.processMessage())
+                        .to.be.revertedWith("Rate limit exceeded");
+                }
             }
 
-            // Rate limit should prevent further processing
-            await expect(rateLimiter.checkAndUpdateRateLimit())
-                .to.be.revertedWith("Rate limit exceeded");
-
-            // Emergency pause should be triggered
-            expect(await emergencyPause.paused()).to.be.true;
+            // Verify total value locked
+            const expectedLocked = amount.mul(TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1);
+            expect(await emergencyPause.totalValueLocked()).to.equal(expectedLocked);
         });
     });
 });
