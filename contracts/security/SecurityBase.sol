@@ -15,7 +15,8 @@ abstract contract SecurityBase is Ownable, Pausable {
     error MessageAlreadyProcessed(bytes32 messageId);
     error InvalidMessageData();
 
-    constructor() Ownable(msg.sender) {
+    constructor() Ownable() Pausable() {
+        _transferOwnership(msg.sender);
         messageCount = 0;
     }
 
