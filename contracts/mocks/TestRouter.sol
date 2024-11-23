@@ -18,9 +18,9 @@ contract TestRouter is MockRouter, IRouterClient {
     event ExtraFeeUpdated(uint256 newFee);
 
     constructor() {
-        // Initialize only Polygon as supported chain for testing
+        // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
-        // Chain ID 138 (Defi Oracle Meta) intentionally not supported initially
+        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true; // Defi Oracle Meta
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
@@ -37,7 +37,7 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        return 100000000000000000; // 0.1 ETH
+        return 10000000000000000; // 0.01 ETH for testing
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
