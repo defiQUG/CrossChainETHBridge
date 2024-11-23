@@ -36,7 +36,13 @@ describe("Gas Optimization Tests", function() {
     describe("Gas Usage Analysis", function() {
         it("Should optimize gas for message sending", async function() {
             const amount = ethers.parseEther("1.0");
-            const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, {
+                receiver: user.address,
+                data: "0x",
+                tokenAmounts: [],
+                extraArgs: "0x"
+            });
+            const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount.add(fee) });
             const receipt = await tx.wait();
             expect(receipt.gasUsed).to.be.below(300000n, "Gas usage too high for message sending");
         });
@@ -50,7 +56,7 @@ describe("Gas Optimization Tests", function() {
 
             const messageId = ethers.hexlify(ethers.randomBytes(32));
             const sourceChainSelector = 138n; // Defi Oracle Meta Chain ID
-            const sender = ethers.zeroPadValue(await owner.getAddress(), 32);
+            const sender = ethers.zeroPadValue(await owner.getAddress(), 20);
             const amount = ethers.parseEther("1.0");
             const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['address', 'uint256'],
