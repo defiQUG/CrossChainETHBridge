@@ -23,8 +23,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
     event MessageSent(uint64 indexed chainSelector, bytes data);
 
     constructor()
-        RateLimiter(100, 1 hours) // 100 messages per hour
-        EmergencyPause(1000) // Emergency pause after 1000 messages
+        RateLimiter(100, 1 hours)  // 100 messages per hour
+        EmergencyPause(1000)       // Emergency pause after 1000 messages
     {
         _supportedChains[137] = true; // Only Polygon PoS is supported
     }

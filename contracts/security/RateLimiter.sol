@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "./SecurityBase.sol";
 
-contract RateLimiter is Ownable, Pausable {
+contract RateLimiter is SecurityBase {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
@@ -86,13 +85,5 @@ contract RateLimiter is Ownable, Pausable {
         require(_maxMessages > 0, "Max messages must be positive");
         maxMessagesPerPeriod = _maxMessages;
         emit RateLimitUpdated(_maxMessages, periodDuration);
-    }
-
-    function emergencyPause() external onlyOwner {
-        _pause();
-    }
-
-    function emergencyUnpause() external onlyOwner {
-        _unpause();
     }
 }
