@@ -13,29 +13,29 @@ const {
     DEFI_ORACLE_META_CHAIN_SELECTOR
 } = TEST_CONFIG;
 
-describe("MockRouter Coverage Tests", function () {
-    let mockRouter, owner, addr1, addr2;
+describe("Router Coverage Tests", function () {
+    let router, owner, addr1, addr2;
 
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
-        const MockRouter = await ethers.getContractFactory("MockRouter");
-        mockRouter = await MockRouter.deploy();
-        await mockRouter.waitForDeployment();
+        const TestRouter = await ethers.getContractFactory("TestRouter");
+        router = await TestRouter.deploy();
+        await router.waitForDeployment();
     });
 
     describe("Chain Support and Token Management", function () {
         it("Should verify supported chains correctly", async function () {
-            expect(await mockRouter.isChainSupported(137)).to.be.true; // Polygon PoS
-            expect(await mockRouter.isChainSupported(138)).to.be.false; // Defi Oracle Meta
+            expect(await router.isChainSupported(POLYGON_CHAIN_SELECTOR)).to.be.true;
+            expect(await router.isChainSupported(999)).to.be.false;
         });
 
         it("Should handle getSupportedTokens for valid chain", async function () {
-            const tokens = await mockRouter.getSupportedTokens(137); // Polygon PoS
+            const tokens = await router.getSupportedTokens(137); // Polygon PoS
             expect(tokens).to.be.an('array').that.is.empty;
         });
 
         it("Should revert getSupportedTokens for invalid chain", async function () {
-            await expect(mockRouter.getSupportedTokens(138)) // Defi Oracle Meta
+            await expect(router.getSupportedTokens(138)) // Defi Oracle Meta
                 .to.be.revertedWith("Unsupported chain");
         });
     });
@@ -48,30 +48,32 @@ describe("MockRouter Coverage Tests", function () {
                 messageId: ethers.randomBytes(32),
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
                 sender: ethers.hexlify(ethers.randomBytes(20)),
+                receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
                     [addr1.address, ethers.parseEther("1.0")]
                 ),
+                tokenAmounts: [],
                 destTokenAmounts: [],
                 extraArgs: "0x"
             };
         });
 
         it("Should handle message simulation correctly", async function () {
-            const MockReceiver = await ethers.getContractFactory("MockRouter");
-            const receiver = await MockReceiver.deploy();
+            const TestReceiver = await ethers.getContractFactory("TestRouter");
+            const receiver = await TestReceiver.deploy();
             await receiver.waitForDeployment();
-            await mockRouter.simulateMessageReceived(receiver.address, message);
+            await router.simulateMessageReceived(receiver.address, message);
         });
 
         it("Should revert simulation with invalid source chain", async function () {
             const invalidMessage = { ...message, sourceChainSelector: POLYGON_CHAIN_SELECTOR };
-            await expect(mockRouter.simulateMessageReceived(addr1.address, invalidMessage))
+            await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
                 .to.be.revertedWith("Invalid source chain");
         });
 
         it("Should revert simulation with zero address target", async function () {
-            await expect(mockRouter.simulateMessageReceived(ethers.ZeroAddress, message))
+            await expect(router.simulateMessageReceived(ethers.ZeroAddress, message))
                 .to.be.revertedWith("Invalid target address");
         });
     });
@@ -90,33 +92,34 @@ describe("MockRouter Coverage Tests", function () {
                     [addr1.address, ethers.parseEther("1.0")]
                 ),
                 tokenAmounts: [],
+                destTokenAmounts: [],
                 extraArgs: "0x",
                 feeToken: ethers.ZeroAddress,
-                feeAmount: ethers.parseEther("0.1")
+                feeAmount: BRIDGE_FEE
             };
         });
 
         it("Should handle ccipReceive correctly", async function () {
-            await mockRouter.ccipReceive(ccipMessage);
+            await router.ccipReceive(ccipMessage);
         });
 
         it("Should handle fee calculations correctly", async function () {
-            const messageFee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, ccipMessage);
+            const messageFee = await router.getFee(POLYGON_CHAIN_SELECTOR, ccipMessage);
             expect(messageFee).to.equal(ethers.parseEther("0.1"));
 
-            await expect(mockRouter.getFee(DEFI_ORACLE_META_CHAIN_SELECTOR, ccipMessage))
+            await expect(router.getFee(DEFI_ORACLE_META_CHAIN_SELECTOR, ccipMessage))
                 .to.be.revertedWith("Unsupported chain");
         });
 
         it("Should validate message data correctly", async function () {
             const invalidMessage = { ...ccipMessage, receiver: ethers.ZeroAddress };
-            await expect(mockRouter.validateMessage(invalidMessage))
+            await expect(router.validateMessage(invalidMessage))
                 .to.be.revertedWith("Invalid recipient");
         });
 
         it("Should handle message validation errors", async function () {
             const invalidMessage = { ...ccipMessage, sourceChainSelector: 0 };
-            await expect(mockRouter.validateMessage(invalidMessage))
+            await expect(router.validateMessage(invalidMessage))
                 .to.be.revertedWith("Invalid chain selector");
         });
     });

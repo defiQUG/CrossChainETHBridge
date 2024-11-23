@@ -5,6 +5,8 @@ import "./MockRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 contract TestRouter is MockRouter, IRouterClient {
+    mapping(uint64 => address[]) private _supportedTokens;
+
     constructor() MockRouter() {
         // Chain setup is handled in MockRouter constructor
     }
@@ -13,15 +15,25 @@ contract TestRouter is MockRouter, IRouterClient {
         return _supportedChains[destChainSelector];
     }
 
+    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
+        require(_supportedChains[chainSelector], "Unsupported chain");
+        return _supportedTokens[chainSelector];
+    }
+
     function getFee(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        return super.getFee(destinationChainSelector, message);
+        require(_supportedChains[destinationChainSelector], "Unsupported chain");
+        return BRIDGE_FEE;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        return message.messageId != bytes32(0) && super.validateMessage(message);
+        require(message.messageId != bytes32(0), "Invalid message ID");
+        require(message.sourceChainSelector != 0, "Invalid chain selector");
+        require(message.sender != address(0), "Invalid sender");
+        require(message.receiver != address(0), "Invalid recipient");
+        return true;
     }
 
     function routeMessage(
@@ -35,9 +47,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
-
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
-
         gasUsed = startGas - gasleft();
 
         if (success && gasForCallExactCheck > 0) {
@@ -45,7 +55,6 @@ contract TestRouter is MockRouter, IRouterClient {
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
-
         return (success, retBytes, gasUsed);
     }
 
@@ -63,12 +72,6 @@ contract TestRouter is MockRouter, IRouterClient {
         (bool success, ) = target.call(message.data);
         require(success, "Message simulation failed");
     }
-
-    function processMessage() public override returns (bool) {
-        return super.processMessage();
-    }
-
-    receive() external payable override {}
 
     function ccipSend(
         uint64 destinationChainSelector,
@@ -95,4 +98,6 @@ contract TestRouter is MockRouter, IRouterClient {
         require(validateMessage(message), "Invalid message");
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
     }
+
+    receive() external payable override {}
 }
