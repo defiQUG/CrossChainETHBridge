@@ -1,5 +1,17 @@
-const { ethers } = require('hardhat'); const { expect } = require('chai'); const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup'); const { deployContract, getContractAt } = require('./helpers/test-utils');
+const { ethers } = require('hardhat');
+const { expect } = require('chai');
+const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
+const { deployContract, getContractAt } = require('./helpers/test-utils');
 
+const {
+    BRIDGE_FEE,
+    MAX_FEE,
+    MAX_MESSAGES_PER_PERIOD,
+    PAUSE_THRESHOLD,
+    PAUSE_DURATION,
+    POLYGON_CHAIN_SELECTOR,
+    DEFI_ORACLE_META_CHAIN_SELECTOR
+} = TEST_CONFIG;
 describe("MockRouter Coverage Tests", function() {
     let owner;
     let addr1;
