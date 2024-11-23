@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { Client } = require("./helpers/Client");
 

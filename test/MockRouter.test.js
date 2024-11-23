@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { Client } = require("./helpers/Client");
@@ -11,6 +12,14 @@ describe("MockRouter Coverage Tests", function() {
     const POLYGON_CHAIN_SELECTOR = 137n;
 
     beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
         [owner, addr1, addr2] = await ethers.getSigners();
         const MockRouter = await ethers.getContractFactory("MockRouter");
         mockRouter = await MockRouter.deploy();

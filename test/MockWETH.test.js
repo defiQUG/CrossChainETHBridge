@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 
@@ -8,6 +9,14 @@ describe("MockWETH", function() {
     const DEPOSIT_AMOUNT = ethers.parseEther("1");
 
     beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
         [owner, user1, user2] = await ethers.getSigners();
         const MockWETH = await ethers.getContractFactory("MockWETH");
         mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
@@ -60,6 +69,14 @@ describe("MockWETH", function() {
 
     describe("Transfer Functionality", function() {
         beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
             await mockWETH.connect(user1).deposit({ value: DEPOSIT_AMOUNT });
         });
 

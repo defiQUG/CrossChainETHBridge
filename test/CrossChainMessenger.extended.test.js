@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
 describe("CrossChainMessenger Extended Tests", function() {
@@ -6,6 +7,14 @@ describe("CrossChainMessenger Extended Tests", function() {
   const NEW_FEE = ethers.parseEther("0.002");
 
   beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
     [owner] = await ethers.getSigners();
 
     const MockRouter = await ethers.getContractFactory("MockRouter");

@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { expect } = require("./setup");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
@@ -10,6 +11,14 @@ describe("Security Features", function() {
   let weth;
 
   beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
     [owner, user] = await ethers.getSigners();
 
     const MockRouter = await ethers.getContractFactory("MockRouter");

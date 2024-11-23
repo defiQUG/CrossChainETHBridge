@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
@@ -9,6 +10,14 @@ describe("RateLimiter", function() {
     const PERIOD_LENGTH = 3600; // 1 hour in seconds
 
     beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
         [owner, user1, user2] = await ethers.getSigners();
         const RateLimiter = await ethers.getContractFactory("RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES_PER_PERIOD, PERIOD_LENGTH);

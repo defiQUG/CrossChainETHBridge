@@ -1,52 +1,27 @@
 const { ethers } = require("hardhat");
 const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 
 describe("CrossChainMessenger", function() {
     let owner, user, addr1, addr2;
     let mockRouter, mockWETH, crossChainMessenger;
-    const POLYGON_CHAIN_SELECTOR = 137;
-    const MAX_MESSAGES_PER_PERIOD = 5;
-    const BRIDGE_FEE = ethers.parseEther("0.1");
-    const MAX_FEE = ethers.parseEther("1.0");
-    const PAUSE_THRESHOLD = ethers.parseEther("5.0");
-    const PAUSE_DURATION = 3600; // 1 hour
 
     beforeEach(async function() {
-        [owner, user, addr1, addr2] = await ethers.getSigners();
-
-        // Deploy contracts
-        const MockWETH = await ethers.getContractFactory("MockWETH");
-        mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.waitForDeployment();
-
-        const MockRouter = await ethers.getContractFactory("MockRouter");
-        mockRouter = await MockRouter.deploy();
-        await mockRouter.waitForDeployment();
-
-        const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-        crossChainMessenger = await CrossChainMessenger.deploy(
-            await mockRouter.getAddress(),
-            await mockWETH.getAddress(),
-            BRIDGE_FEE,
-            MAX_FEE,
-            MAX_MESSAGES_PER_PERIOD,
-            PAUSE_THRESHOLD,
-            PAUSE_DURATION
-        );
-        await crossChainMessenger.waitForDeployment();
-
-        // Fund the contract for tests
-        await owner.sendTransaction({
-            to: await crossChainMessenger.getAddress(),
-            value: ethers.parseEther("10.0")
-        });
+        const contracts = await deployTestContracts();
+        owner = contracts.owner;
+        user = contracts.user;
+        addr1 = contracts.addr1;
+        addr2 = contracts.addr2;
+        mockRouter = contracts.mockRouter;
+        mockWETH = contracts.mockWETH;
+        crossChainMessenger = contracts.crossChainMessenger;
     });
 
     describe("Basic Functionality", function() {
         it("Should initialize with correct parameters", async function() {
             expect(await crossChainMessenger.router()).to.equal(await mockRouter.getAddress());
             expect(await crossChainMessenger.weth()).to.equal(await mockWETH.getAddress());
-            expect(await crossChainMessenger.bridgeFee()).to.equal(BRIDGE_FEE);
+            expect(await crossChainMessenger.bridgeFee()).to.equal(TEST_CONFIG.BRIDGE_FEE);
         });
     });
 

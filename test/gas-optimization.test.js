@@ -1,3 +1,4 @@
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
 describe("Gas Optimization Tests", function() {
@@ -8,6 +9,14 @@ describe("Gas Optimization Tests", function() {
   let mockWeth;
 
   beforeEach(async function() {
+    const contracts = await deployTestContracts();
+    owner = contracts.owner;
+    user = contracts.user;
+    addr1 = contracts.addr1;
+    addr2 = contracts.addr2;
+    mockRouter = contracts.mockRouter;
+    mockWETH = contracts.mockWETH;
+    crossChainMessenger = contracts.crossChainMessenger;
     [owner, user] = await ethers.getSigners();
 
     // Deploy MockRouter
