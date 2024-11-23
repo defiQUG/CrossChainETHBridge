@@ -7,6 +7,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract MockRouter is IRouterClient, Ownable {
+    uint256 private _baseFee;
     uint256 private _extraFee;
     mapping(uint64 => bool) private _supportedChains;
     mapping(uint64 => address[]) private _supportedTokens;
@@ -15,6 +16,7 @@ contract MockRouter is IRouterClient, Ownable {
         uint64 destinationChainSelector,
         bytes message
     );
+    event BaseFeeUpdated(uint256 oldFee, uint256 newFee);
     event ExtraFeeUpdated(uint256 oldFee, uint256 newFee);
     event ChainSupportUpdated(uint64 chainSelector, bool supported);
     event TokenSupportUpdated(uint64 chainSelector, address[] tokens);
@@ -22,6 +24,13 @@ contract MockRouter is IRouterClient, Ownable {
     constructor() {
         _supportedChains[137] = true; // Polygon PoS
         _supportedChains[138] = true; // Defi Oracle Meta
+        _baseFee = 0.01 ether; // Set default base fee
+    }
+
+    function setBaseFee(uint256 newFee) external onlyOwner {
+        uint256 oldFee = _baseFee;
+        _baseFee = newFee;
+        emit BaseFeeUpdated(oldFee, newFee);
     }
 
     function setExtraFee(uint256 newFee) external onlyOwner {
@@ -45,7 +54,8 @@ contract MockRouter is IRouterClient, Ownable {
         Client.EVM2AnyMessage memory message
     ) external payable override returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
+        uint256 requiredFee = getFee(destinationChainSelector, message);
+        require(msg.value >= requiredFee, "Insufficient fee");
 
         bytes memory encodedMessage = abi.encode(
             message.receiver,
@@ -59,6 +69,10 @@ contract MockRouter is IRouterClient, Ownable {
             destinationChainSelector,
             encodedMessage
         );
+
+        if (msg.value > requiredFee) {
+            payable(msg.sender).transfer(msg.value - requiredFee);
+        }
 
         return keccak256(encodedMessage);
     }
@@ -80,10 +94,18 @@ contract MockRouter is IRouterClient, Ownable {
 
     function getFee(
         uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory // message parameter kept for interface compatibility
+        Client.EVM2AnyMessage memory message
     ) public view override returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        return 0.1 ether + _extraFee;
+
+        uint256 totalFee = _baseFee;
+
+        // Add extra fee if message contains token transfers
+        if (message.tokenAmounts.length > 0) {
+            totalFee += _extraFee;
+        }
+
+        return totalFee;
     }
 
     function isChainSupported(uint64 chainSelector) external view override returns (bool) {

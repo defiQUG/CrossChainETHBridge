@@ -38,7 +38,7 @@ contract RateLimiter is Ownable, Pausable {
         return messageCount < maxMessagesPerPeriod;
     }
 
-    function checkAndUpdateRateLimit() external whenNotPaused {
+    function processMessage() external whenNotPaused returns (bool) {
         require(checkRateLimit(), "Rate limit exceeded");
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             messageCount = 0;
@@ -48,6 +48,11 @@ contract RateLimiter is Ownable, Pausable {
         messageCount++;
         messageCountsByPeriod[currentPeriodStart] = messageCount;
         emit MessageProcessed(msg.sender, block.timestamp);
+        return true;
+    }
+
+    function checkAndUpdateRateLimit() external whenNotPaused {
+        require(processMessage(), "Rate limit exceeded");
     }
 
     function getCurrentMessageCount() external view returns (uint256) {
