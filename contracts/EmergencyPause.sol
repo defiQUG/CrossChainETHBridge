@@ -1,36 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract EmergencyPause {
-    bool public paused;
-    uint256 public pauseThreshold;
-    uint256 public pauseDuration;
-    uint256 public lastPauseTime;
-    address public admin;
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-    event Paused(uint256 timestamp);
-    event Unpaused(uint256 timestamp);
-    event PauseThresholdUpdated(uint256 newThreshold);
+contract EmergencyPause is Ownable, Pausable {
+    event EmergencyPaused(address account);
+    event EmergencyUnpaused(address account);
 
-    constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
-        pauseThreshold = _pauseThreshold;
-        pauseDuration = _pauseDuration;
-        admin = msg.sender;
+    constructor() {}
+
+    function pause() external onlyOwner {
+        _pause();
+        emit EmergencyPaused(msg.sender);
     }
 
-    function checkAndPause(uint256 amount) internal {
-        if (amount >= pauseThreshold) {
-            paused = true;
-            lastPauseTime = block.timestamp;
-            emit Paused(block.timestamp);
-        }
+    function unpause() external onlyOwner {
+        _unpause();
+        emit EmergencyUnpaused(msg.sender);
     }
 
-    function checkPauseStatus() public view returns (bool) {
-        if (!paused) return false;
-        if (block.timestamp >= lastPauseTime + pauseDuration) {
-            return false;
-        }
-        return true;
+    function isPaused() external view returns (bool) {
+        return paused();
     }
 }
