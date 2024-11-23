@@ -4,12 +4,16 @@ pragma solidity ^0.8.20;
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "../security/RateLimiter.sol";
+import "../security/EmergencyPause.sol";
 
-contract MockRouter is IRouter, ReentrancyGuard {
+contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
     mapping(uint64 => bool) private _supportedChains;
+    mapping(uint64 => address) private _onRamps;
+    mapping(uint64 => mapping(address => bool)) private _offRamps;
     uint256 private constant _baseFee = 0.1 ether;
     uint256 private constant _extraFee = 0.05 ether;
     mapping(uint64 => address[]) private _supportedTokens;
@@ -18,11 +22,14 @@ contract MockRouter is IRouter, ReentrancyGuard {
     event MessageSimulated(address indexed target, bytes32 messageId);
     event MessageSent(uint64 indexed chainSelector, bytes data);
 
-    constructor() {
+    constructor()
+        RateLimiter(100, 1 hours) // 100 messages per hour
+        EmergencyPause(1000) // Emergency pause after 1000 messages
+    {
         _supportedChains[137] = true; // Only Polygon PoS is supported
     }
 
-    function isChainSupported(uint64 chainSelector) external view override returns (bool) {
+    function isChainSupported(uint64 chainSelector) external view returns (bool) {
         return _supportedChains[chainSelector];
     }
 
@@ -31,10 +38,41 @@ contract MockRouter is IRouter, ReentrancyGuard {
         return _supportedTokens[chainSelector];
     }
 
+    function getOnRamp(uint64 destChainSelector) external view returns (address) {
+        return _onRamps[destChainSelector];
+    }
+
+    function isOffRamp(uint64 sourceChainSelector, address offRamp) external view returns (bool) {
+        return _offRamps[sourceChainSelector][offRamp];
+    }
+
+    function routeMessage(
+        uint64 destinationChainSelector,
+        bytes calldata receiver,
+        bytes calldata message,
+        address feeToken,
+        uint256 feeAmount
+    ) external payable returns (bytes32) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(msg.value >= feeAmount, "Insufficient fee");
+        require(processMessage(), "Rate limit exceeded");
+
+        bytes32 messageId = keccak256(abi.encode(
+            destinationChainSelector,
+            receiver,
+            message,
+            feeToken,
+            feeAmount
+        ));
+
+        emit MessageSent(destinationChainSelector, message);
+        return messageId;
+    }
+
     function getFee(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) public view override returns (uint256) {
+    ) public view returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
         uint256 totalFee = _baseFee;
         if (message.tokenAmounts.length > 0) {
@@ -43,24 +81,13 @@ contract MockRouter is IRouter, ReentrancyGuard {
         return totalFee;
     }
 
-    function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
-        if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
-        }
-        if (message.sender.length == 0) {
-            revert("Invalid sender");
-        }
-        if (message.data.length < 64) {
-            revert("Invalid data");
-        }
-        return true;
-    }
-
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) external payable override returns (bytes32) {
+    ) external payable returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(processMessage(), "Rate limit exceeded");
+
         uint256 requiredFee = getFee(destinationChainSelector, message);
         require(msg.value >= requiredFee, "Insufficient fee");
 
@@ -81,12 +108,26 @@ contract MockRouter is IRouter, ReentrancyGuard {
         return keccak256(encodedMessage);
     }
 
+    function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
+        if (message.sourceChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+        if (message.sender.length == 0) {
+            revert("Invalid sender");
+        }
+        if (message.data.length < 64) {
+            revert("Invalid data");
+        }
+        return true;
+    }
+
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
-    ) external {
+    ) external whenNotPaused {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId);
@@ -97,8 +138,10 @@ contract MockRouter is IRouter, ReentrancyGuard {
 
     function ccipReceive(
         Client.Any2EVMMessage memory message
-    ) external override {
+    ) external whenNotPaused {
         require(validateMessage(message), "Invalid message");
+        require(processMessage(), "Rate limit exceeded");
+
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageReceived(messageId);
     }
