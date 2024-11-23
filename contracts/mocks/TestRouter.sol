@@ -84,7 +84,12 @@ contract TestRouter is MockRouter, IRouterClient {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(super.processMessage(), "Rate limit exceeded");
+        if (block.timestamp >= periodStart + periodDuration) {
+            _resetPeriod();
+        }
+        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
+        currentPeriodMessages++;
+        emit MessageProcessed(msg.sender, block.timestamp);
 
         // Validate target contract exists
         uint256 size;
