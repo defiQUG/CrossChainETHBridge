@@ -20,25 +20,28 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
-        require(_supportedChains[chainSelector], "Unsupported chain");
-        return new address[](0); // Return empty array for valid chains as per test expectations
+        require(_supportedChains[chainSelector], "Chain not supported");
+        return new address[](0);
     }
 
     function getFee(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Unsupported chain");
-        return 100000000000000000; // 0.1 ETH in wei as specified in tests
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        return 100000000000000000; // 0.1 ETH
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        require(message.messageId != bytes32(0), "Invalid message ID");
-        require(message.sourceChainSelector != 0, "Invalid source chain");
-        require(message.sender.length == 20, "Invalid sender length");
-        require(message.data.length > 0, "Empty message data");
-        (address receiver,) = abi.decode(message.data, (address, uint256));
-        require(receiver != address(0), "Invalid recipient");
+        if (message.sourceChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+        if (message.sender.length == 0) {
+            revert("Invalid sender");
+        }
+        if (message.data.length < 4) {
+            revert("Invalid data length");
+        }
         return true;
     }
 
@@ -69,8 +72,8 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused {
         require(target != address(0), "Invalid target address");
-        require(_supportedChains[message.sourceChainSelector], "Invalid source chain");
-        require(validateMessage(message), "Message validation failed");
+        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
+        require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(
