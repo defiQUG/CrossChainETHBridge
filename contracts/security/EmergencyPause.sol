@@ -1,82 +1,75 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./SecurityBase.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract EmergencyPause is SecurityBase {
+contract EmergencyPause is Ownable, Pausable {
     uint256 public pauseThreshold;
-    uint256 public constant EMERGENCY_DELAY = 24 hours;
+    uint256 public pauseDuration;
     uint256 public lastPauseTimestamp;
+    uint256 public lockedValue;
 
-    event PauseThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
-    event EmergencyPauseTriggered(uint256 timestamp);
+    event PauseThresholdUpdated(uint256 newThreshold);
+    event PauseDurationUpdated(uint256 newDuration);
+    event ValueLocked(uint256 amount);
+    event ValueUnlocked(uint256 amount);
 
-    constructor(uint256 _pauseThreshold) {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
+    constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
+        require(_pauseThreshold > 0, "Pause threshold must be greater than 0");
+        require(_pauseDuration > 0, "Pause duration must be greater than 0");
         pauseThreshold = _pauseThreshold;
-    }
-
-    function processMessage() public override whenNotPaused returns (bool) {
-        messageCount++;
-        emit MessageProcessed(msg.sender, block.timestamp);
-
-        if (messageCount >= pauseThreshold) {
-            _triggerEmergencyPause();
-        }
-
-        return true;
-    }
-
-    function _triggerEmergencyPause() internal {
-        lastPauseTimestamp = block.timestamp;
-        _pause();
-        emit EmergencyPauseTriggered(block.timestamp);
+        pauseDuration = _pauseDuration;
+        _transferOwnership(msg.sender);
     }
 
     function setPauseThreshold(uint256 _pauseThreshold) external onlyOwner {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
-        uint256 oldThreshold = pauseThreshold;
+        require(_pauseThreshold > 0, "Pause threshold must be greater than 0");
         pauseThreshold = _pauseThreshold;
-        emit PauseThresholdUpdated(oldThreshold, _pauseThreshold);
+        emit PauseThresholdUpdated(_pauseThreshold);
     }
 
-    function getMessageCount() external view returns (uint256) {
-        return messageCount;
+    function setPauseDuration(uint256 _pauseDuration) external onlyOwner {
+        require(_pauseDuration > 0, "Pause duration must be greater than 0");
+        pauseDuration = _pauseDuration;
+        emit PauseDurationUpdated(_pauseDuration);
     }
 
-    function getRemainingUntilPause() external view returns (uint256) {
-        if (paused()) {
-            return 0;
+    function checkAndPause(uint256 amount) external {
+        if (amount >= pauseThreshold) {
+            _pause();
+            lastPauseTimestamp = block.timestamp;
+            lockedValue += amount;
+            emit ValueLocked(amount);
         }
-        return pauseThreshold > messageCount ? pauseThreshold - messageCount : 0;
     }
 
-    function getTimeUntilUnpause() external view returns (uint256) {
-        if (!paused()) {
-            return 0;
-        }
-        uint256 unpauseTime = lastPauseTimestamp + EMERGENCY_DELAY;
-        return block.timestamp >= unpauseTime ? 0 : unpauseTime - block.timestamp;
-    }
-
-    function emergencyUnpause() external override onlyOwner {
+    function unpauseIfDurationElapsed() external {
+        require(paused(), "Contract is not paused");
         require(
-            block.timestamp >= lastPauseTimestamp + EMERGENCY_DELAY,
-            "Emergency delay not elapsed"
+            block.timestamp >= lastPauseTimestamp + pauseDuration,
+            "Pause duration not elapsed"
         );
-        messageCount = 0;
         _unpause();
-        emit SecurityUnpaused(msg.sender, block.timestamp);
+        emit ValueUnlocked(lockedValue);
+        lockedValue = 0;
     }
 
-    function checkAndPause(uint256 amount) external whenNotPaused returns (bool) {
-        messageCount++;
-        emit MessageProcessed(msg.sender, block.timestamp);
+    function emergencyUnpause() external onlyOwner {
+        require(paused(), "Contract is not paused");
+        _unpause();
+        emit ValueUnlocked(lockedValue);
+        lockedValue = 0;
+    }
 
-        if (messageCount >= pauseThreshold) {
-            _triggerEmergencyPause();
-            return false;
-        }
-        return true;
+    function getLockedValue() external view returns (uint256) {
+        return lockedValue;
+    }
+
+    function getRemainingPauseDuration() external view returns (uint256) {
+        if (!paused()) return 0;
+        uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
+        if (elapsedTime >= pauseDuration) return 0;
+        return pauseDuration - elapsedTime;
     }
 }
