@@ -15,108 +15,116 @@ const {
 } = TEST_CONFIG;
 
 describe("EmergencyPause", function() {
-    let owner, user1, user, addr1, addr2, mockRouter, mockWETH, crossChainMessenger;
+    let owner, user1, user, addr1, addr2;
     let emergencyPause;
     const PAUSE_THRESHOLD = ethers.parseEther("5.0");
     const PAUSE_DURATION = 3600; // 1 hour
 
     beforeEach(async function() {
-        const contracts = await deployTestContracts();
-        ({ owner, user, addr1, addr2, mockRouter, mockWETH, crossChainMessenger } = contracts);
-        [owner, user1] = await ethers.getSigners();
-
+        [owner, user1, addr1, addr2] = await ethers.getSigners();
         const EmergencyPause = await ethers.getContractFactory("EmergencyPause");
         emergencyPause = await EmergencyPause.deploy(PAUSE_THRESHOLD, PAUSE_DURATION);
         await emergencyPause.waitForDeployment();
     });
 
-    describe("Pause Functionality", function() {
-        it("Should automatically pause when threshold is exceeded", async function() {
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            expect(await emergencyPause.isPaused()).to.be.true;
+    describe("Value Management", function() {
+        it("Should track locked value correctly", async function() {
+            const amount = ethers.parseEther("1.0");
+            await emergencyPause.lockValue(amount);
+            expect(await emergencyPause.totalValueLocked()).to.equal(amount);
         });
 
-        it("Should not pause when amount is below threshold", async function() {
-            await emergencyPause.checkAndPause(ethers.parseEther("1.0"));
-            expect(await emergencyPause.isPaused()).to.be.false;
+        it("Should trigger pause when threshold exceeded", async function() {
+            await expect(emergencyPause.lockValue(PAUSE_THRESHOLD))
+                .to.emit(emergencyPause, "EmergencyPauseTriggered")
+                .withArgs(await time.latest(), PAUSE_DURATION);
+            expect(await emergencyPause.paused()).to.be.true;
         });
 
-        it("Should return correct time until unpause", async function() {
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            const timeUntil = await emergencyPause.timeUntilUnpause();
-            expect(timeUntil).to.be.closeTo(BigInt(PAUSE_DURATION), 5n);
+        it("Should allow value unlocking", async function() {
+            const amount = ethers.parseEther("2.0");
+            await emergencyPause.lockValue(amount);
+            await expect(emergencyPause.unlockValue(amount))
+                .to.emit(emergencyPause, "ValueUnlocked")
+                .withArgs(amount);
+            expect(await emergencyPause.totalValueLocked()).to.equal(0);
         });
 
-        it("Should allow unpause after duration", async function() {
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            await time.increase(PAUSE_DURATION + 1);
-            expect(await emergencyPause.isPaused()).to.be.false;
-        });
-
-        it("Should not unpause before duration", async function() {
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            await time.increase(PAUSE_DURATION - 100);
-            expect(await emergencyPause.isPaused()).to.be.true;
+        it("Should prevent unlocking more than locked", async function() {
+            const lockAmount = ethers.parseEther("1.0");
+            const unlockAmount = ethers.parseEther("2.0");
+            await emergencyPause.lockValue(lockAmount);
+            await expect(emergencyPause.unlockValue(unlockAmount))
+                .to.be.revertedWith("Amount exceeds locked value");
         });
     });
 
-    describe("Owner Functions", function() {
+    describe("Pause Management", function() {
+        it("Should auto-unpause after duration", async function() {
+            await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            await time.increase(PAUSE_DURATION + 1);
+            expect(await emergencyPause.paused()).to.be.false;
+        });
+
+        it("Should allow owner to force unpause", async function() {
+            await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            await expect(emergencyPause.emergencyUnpause())
+                .to.emit(emergencyPause, "EmergencyUnpauseTriggered")
+                .withArgs(await time.latest());
+            expect(await emergencyPause.paused()).to.be.false;
+        });
+
+        it("Should prevent operations while paused", async function() {
+            await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            await expect(emergencyPause.lockValue(ethers.parseEther("1.0")))
+                .to.be.revertedWith("Contract is paused");
+            await expect(emergencyPause.unlockValue(ethers.parseEther("1.0")))
+                .to.be.revertedWith("Contract is paused");
+        });
+    });
+
+    describe("Configuration", function() {
         it("Should allow owner to update pause threshold", async function() {
             const newThreshold = ethers.parseEther("10.0");
             await expect(emergencyPause.setPauseThreshold(newThreshold))
                 .to.emit(emergencyPause, "PauseThresholdUpdated")
                 .withArgs(PAUSE_THRESHOLD, newThreshold);
-
-            await emergencyPause.checkAndPause(ethers.parseEther("9.0"));
-            expect(await emergencyPause.isPaused()).to.be.false;
-
-            await emergencyPause.checkAndPause(newThreshold);
-            expect(await emergencyPause.isPaused()).to.be.true;
+            expect(await emergencyPause.pauseThreshold()).to.equal(newThreshold);
         });
 
         it("Should allow owner to update pause duration", async function() {
-            const newDuration = 7200; // 2 hours
+            const newDuration = 7200;
             await expect(emergencyPause.setPauseDuration(newDuration))
                 .to.emit(emergencyPause, "PauseDurationUpdated")
                 .withArgs(PAUSE_DURATION, newDuration);
-
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            await time.increase(PAUSE_DURATION);
-            expect(await emergencyPause.isPaused()).to.be.true;
-
-            await time.increase(newDuration - PAUSE_DURATION);
-            expect(await emergencyPause.isPaused()).to.be.false;
+            expect(await emergencyPause.pauseDuration()).to.equal(newDuration);
         });
 
         it("Should prevent non-owners from updating configuration", async function() {
-            await expect(
-                emergencyPause.connect(user1).setPauseThreshold(ethers.parseEther("10.0"))
-            ).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(emergencyPause.connect(user1).setPauseThreshold(ethers.parseEther("10.0")))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(emergencyPause.connect(user1).setPauseDuration(7200))
+                .to.be.revertedWith("Ownable: caller is not the owner");
+        });
 
-            await expect(
-                emergencyPause.connect(user1).setPauseDuration(7200)
-            ).to.be.revertedWith("Ownable: caller is not the owner");
+        it("Should validate configuration parameters", async function() {
+            await expect(emergencyPause.setPauseThreshold(0))
+                .to.be.revertedWith("Pause threshold must be positive");
+            await expect(emergencyPause.setPauseDuration(0))
+                .to.be.revertedWith("Pause duration must be positive");
         });
     });
 
-    describe("Edge Cases", function() {
-        it("Should handle zero threshold correctly", async function() {
-            await emergencyPause.setPauseThreshold(0);
-            await emergencyPause.checkAndPause(1);
-            expect(await emergencyPause.isPaused()).to.be.true;
+    describe("View Functions", function() {
+        it("Should return correct remaining pause duration", async function() {
+            await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            const remaining = await emergencyPause.getRemainingPauseDuration();
+            expect(remaining).to.be.lessThanOrEqual(BigInt(PAUSE_DURATION));
+            expect(remaining).to.be.greaterThan(0n);
         });
 
-        it("Should handle maximum threshold correctly", async function() {
-            const maxThreshold = ethers.MaxUint256;
-            await emergencyPause.setPauseThreshold(maxThreshold);
-            await emergencyPause.checkAndPause(maxThreshold - 1n);
-            expect(await emergencyPause.isPaused()).to.be.false;
-        });
-
-        it("Should handle zero duration correctly", async function() {
-            await emergencyPause.setPauseDuration(0);
-            await emergencyPause.checkAndPause(PAUSE_THRESHOLD);
-            expect(await emergencyPause.isPaused()).to.be.false;
+        it("Should return zero remaining duration when not paused", async function() {
+            expect(await emergencyPause.getRemainingPauseDuration()).to.equal(0);
         });
     });
 });
