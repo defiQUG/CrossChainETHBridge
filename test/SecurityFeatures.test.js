@@ -23,14 +23,14 @@ describe("Security Features Integration Tests", function() {
     describe("Rate Limiting", function() {
         it("Should enforce rate limits correctly", async function() {
             const amount = ethers.parseEther("1.0");
-            await rateLimiter.checkAndUpdateRateLimit();
+            await rateLimiter.processMessage();
 
             // Attempt to exceed rate limit
             for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
                 if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
-                    await rateLimiter.checkAndUpdateRateLimit();
+                    await rateLimiter.processMessage();
                 } else {
-                    await expect(rateLimiter.checkAndUpdateRateLimit())
+                    await expect(rateLimiter.processMessage())
                         .to.be.revertedWith("Rate limit exceeded");
                 }
             }
@@ -39,7 +39,7 @@ describe("Security Features Integration Tests", function() {
         it("Should reset rate limit after period", async function() {
             // Fill up the rate limit
             for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+                await rateLimiter.processMessage();
             }
 
             // Wait for rate limit period to pass
@@ -47,7 +47,7 @@ describe("Security Features Integration Tests", function() {
             await ethers.provider.send("evm_mine");
 
             // Should be able to process message again
-            await expect(rateLimiter.checkAndUpdateRateLimit()).to.not.be.reverted;
+            await expect(rateLimiter.processMessage()).to.not.be.reverted;
         });
     });
 

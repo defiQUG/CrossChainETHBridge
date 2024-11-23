@@ -31,14 +31,14 @@ describe("RateLimiter Edge Cases", function () {
         it("Should handle messages at period boundaries", async function () {
             // Process messages up to limit
             for (let i = 0; i < MAX_MESSAGES; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+                await rateLimiter.processMessage();
             }
 
             // Advance time to just before period end
             await time.increase(RATE_PERIOD - 2);
 
             // Should still be rate limited
-            await expect(rateLimiter.checkAndUpdateRateLimit())
+            await expect(rateLimiter.processMessage())
                 .to.be.revertedWith("Rate limit exceeded");
 
             // Advance time to just after period end
@@ -52,19 +52,19 @@ describe("RateLimiter Edge Cases", function () {
             // Process messages in multiple consecutive periods
             for (let period = 0; period < 3; period++) {
                 for (let msg = 0; msg < MAX_MESSAGES; msg++) {
-                    await rateLimiter.checkAndUpdateRateLimit();
+                    await rateLimiter.processMessage();
                 }
                 await time.increase(RATE_PERIOD);
             }
             // Verify current period can process messages
-            await expect(rateLimiter.checkAndUpdateRateLimit()).to.not.be.reverted;
+            await expect(rateLimiter.processMessage()).to.not.be.reverted;
         });
     });
 
     describe("Rate Update Edge Cases", function () {
         it("Should handle rate updates during active period", async function () {
             // Process some messages
-            await rateLimiter.checkAndUpdateRateLimit();
+            await rateLimiter.processMessage();
 
             // Update rate limit mid-period
             const newMax = MAX_MESSAGES - 2;
@@ -72,7 +72,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Process up to new limit
             for (let i = 0; i < newMax - 1; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+                await rateLimiter.processMessage();
             }
 
             // Should enforce new limit immediately
@@ -88,7 +88,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Process messages up to final limit
             for (let i = 0; i < 5; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+                await rateLimiter.processMessage();
             }
 
             // Should enforce latest limit
