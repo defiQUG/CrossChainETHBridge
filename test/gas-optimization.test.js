@@ -61,11 +61,13 @@ describe("Gas Optimization Tests", function() {
         });
 
         it("Should optimize gas for message receiving", async function() {
-            // Fund the contract first
+            // Fund the contract and setup WETH
             await owner.sendTransaction({
                 to: await crossChainMessenger.getAddress(),
                 value: ethers.parseEther("10.0")
             });
+            await mockWeth.deposit({ value: ethers.parseEther("5.0") });
+            await mockWeth.transfer(await crossChainMessenger.getAddress(), ethers.parseEther("5.0"));
 
             const amount = ethers.parseEther("1.0");
             const data = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -73,13 +75,13 @@ describe("Gas Optimization Tests", function() {
                 [await user.getAddress(), amount]
             );
 
-            // Create properly formatted message with exact requirements from TestRouter
+            // Create properly formatted message with exact requirements
             const message = {
-                messageId: ethers.keccak256(ethers.randomBytes(32)),
-                sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
-                sender: ethers.getBytes(ethers.zeroPadValue(await owner.getAddress(), 20)),
-                data: data,
-                destTokenAmounts: [],
+                messageId: ethers.keccak256(ethers.randomBytes(32)), // Non-zero message ID
+                sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR, // Chain ID 138
+                sender: ethers.getBytes(ethers.zeroPadValue(await owner.getAddress(), 20)), // Exactly 20 bytes
+                data: data, // Properly encoded recipient and amount
+                destTokenAmounts: [], // No token amounts as required
                 feeToken: ethers.ZeroAddress,
                 extraArgs: "0x"
             };
@@ -98,6 +100,8 @@ describe("Gas Optimization Tests", function() {
                 to: await crossChainMessenger.getAddress(),
                 value: amount
             });
+            await mockWeth.deposit({ value: amount });
+            await mockWeth.transfer(await crossChainMessenger.getAddress(), amount);
 
             // Send second message with proper value
             const tx = await mockRouter.simulateMessageReceived(

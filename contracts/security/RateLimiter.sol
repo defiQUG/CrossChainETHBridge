@@ -8,10 +8,12 @@ contract RateLimiter is Ownable {
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
     uint256 public messageCount;
+    bool public isPaused;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
     event MessageProcessed(uint256 timestamp, uint256 count);
     event PeriodReset(uint256 timestamp);
+    event EmergencyPaused(bool paused);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
         require(_maxMessages > 0, "Max messages must be positive");
@@ -20,6 +22,14 @@ contract RateLimiter is Ownable {
         periodDuration = _periodDuration;
         currentPeriodStart = block.timestamp;
         _transferOwnership(msg.sender);
+    }
+
+    function setRateLimit(uint256 _maxMessages, uint256 _periodDuration) external onlyOwner {
+        require(_maxMessages > 0, "Max messages must be positive");
+        require(_periodDuration > 0, "Period duration must be positive");
+        maxMessagesPerPeriod = _maxMessages;
+        periodDuration = _periodDuration;
+        emit RateLimitUpdated(_maxMessages, _periodDuration);
     }
 
     function setMaxMessagesPerPeriod(uint256 _maxMessages) external onlyOwner {
@@ -34,6 +44,16 @@ contract RateLimiter is Ownable {
         emit RateLimitUpdated(maxMessagesPerPeriod, _periodDuration);
     }
 
+    function emergencyPause() external onlyOwner {
+        isPaused = true;
+        emit EmergencyPaused(true);
+    }
+
+    function emergencyUnpause() external onlyOwner {
+        isPaused = false;
+        emit EmergencyPaused(false);
+    }
+
     function checkPeriodReset() internal {
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             currentPeriodStart = block.timestamp;
@@ -42,7 +62,12 @@ contract RateLimiter is Ownable {
         }
     }
 
+    function processMessage() external returns (bool) {
+        return checkAndUpdateRateLimit();
+    }
+
     function checkAndUpdateRateLimit() public returns (bool) {
+        require(!isPaused, "Contract is paused");
         checkPeriodReset();
         require(messageCount < maxMessagesPerPeriod, "Rate limit exceeded");
 
@@ -68,5 +93,9 @@ contract RateLimiter is Ownable {
             return 0;
         }
         return periodEnd - block.timestamp;
+    }
+
+    function getCurrentPeriod() external view returns (uint256) {
+        return currentPeriodStart;
     }
 }
