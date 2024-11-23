@@ -57,4 +57,15 @@ contract RateLimiter is Ownable {
         }
         return periodEnd - block.timestamp;
     }
+
+    function checkAndUpdateRateLimit() external {
+        if (block.timestamp >= currentPeriodStart + periodDuration) {
+            messageCount = 0;
+            currentPeriodStart = block.timestamp;
+            emit PeriodReset(block.timestamp);
+        }
+        require(messageCount < maxMessagesPerPeriod, "Rate limit exceeded");
+        messageCount++;
+        emit MessageProcessed(msg.sender, block.timestamp);
+    }
 }
