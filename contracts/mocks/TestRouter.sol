@@ -99,16 +99,13 @@ contract TestRouter is MockRouter, IRouterClient {
         }
         require(size > 0, "Target contract does not exist");
 
-        // Decode the depositor address from extraArgs
-        address depositor = abi.decode(message.extraArgs, (address));
-
         // Create message ID and emit event before simulation
         bytes32 messageId = keccak256(abi.encode(
             block.timestamp,
             target,
             message.sourceChainSelector,
             message.data,
-            depositor
+            msg.value
         ));
         emit MessageSimulated(target, messageId, msg.value);
 
@@ -126,6 +123,9 @@ contract TestRouter is MockRouter, IRouterClient {
             }
             revert("Message simulation failed");
         }
+
+        // Verify the call was successful and ETH was transferred
+        require(success, "ETH transfer failed");
 
         // After successful execution, mint WETH to the depositor
         (success, ) = target.call{value: 0}(
