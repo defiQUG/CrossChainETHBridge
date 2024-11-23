@@ -86,14 +86,31 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId);
 
-        (bool success, bytes memory result) = target.call{value: msg.value}(message.data);
-        if (!success) {
-            if (result.length > 0) {
-                assembly {
-                    revert(add(32, result), mload(result))
-                }
+        // Use assembly to preserve msg.sender context during call
+        assembly {
+            // Store original caller
+            let caller := caller()
+
+            // Prepare call data
+            let ptr := mload(0x40)
+            calldatacopy(ptr, 0, calldatasize())
+
+            // Forward the call while preserving msg.sender
+            let success := call(
+                gas(),          // Forward all remaining gas
+                target,         // Target contract
+                callvalue(),    // Forward ETH value
+                add(ptr, 0x04), // Skip function selector
+                sub(calldatasize(), 0x04), // Actual data length
+                0,             // No return data needed
+                0              // No return data size
+            )
+
+            // Revert on failure with message
+            if iszero(success) {
+                returndatacopy(0, 0, returndatasize())
+                revert(0, returndatasize())
             }
-            revert("Message simulation failed");
         }
     }
 

@@ -75,12 +75,19 @@ describe("Router Coverage Tests", function () {
             ]);
             message.data = depositInterface.encodeFunctionData("deposit");
 
+            // Connect as addr1 to simulate the deposit
+            const routerAsAddr1 = router.connect(addr1);
+
             // Simulate message with ETH value
-            await router.simulateMessageReceived(
+            await routerAsAddr1.simulateMessageReceived(
                 receiverAddress,
                 message,
                 { value: depositAmount }
             );
+
+            // Verify the deposit was successful by checking addr1's balance
+            expect(await receiver.balanceOf(addr1.address)).to.equal(depositAmount);
+        });
 
             // Verify the deposit was successful by checking receiver's balance
             expect(await receiver.balanceOf(receiverAddress)).to.equal(depositAmount);
