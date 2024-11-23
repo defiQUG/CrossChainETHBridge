@@ -15,18 +15,16 @@ abstract contract SecurityBase is Ownable, Pausable {
     error MessageAlreadyProcessed(bytes32 messageId);
     error InvalidMessageData();
 
-    constructor() {
-        _disableInitializers();  // Prevent initialization of base contracts after deployment
+    constructor() Ownable(msg.sender) {
+        messageCount = 0;
     }
 
     function emergencyPause() external virtual onlyOwner {
-        require(!paused(), "SecurityBase: already paused");
         _pause();
         emit SecurityPaused(msg.sender, block.timestamp);
     }
 
     function emergencyUnpause() external virtual onlyOwner {
-        require(paused(), "SecurityBase: not paused");
         _unpause();
         emit SecurityUnpaused(msg.sender, block.timestamp);
     }
