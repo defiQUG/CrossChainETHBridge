@@ -3,7 +3,9 @@ require("@nomicfoundation/hardhat-chai-matchers");
 require("solidity-coverage");
 require("hardhat-gas-reporter");
 require("@typechain/hardhat");
+require("@nomicfoundation/hardhat-ethers");
 
+/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     compilers: [
@@ -45,5 +47,8 @@ module.exports = {
   },
   mocha: {
     timeout: 100000
+  },
+  coverage: {
+    provider: "hardhat"
   }
 };
