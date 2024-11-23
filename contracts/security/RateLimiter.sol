@@ -7,7 +7,6 @@ contract RateLimiter is SecurityBase {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
-    uint256 private messageCount;
     mapping(uint256 => uint256) private messageCountsByPeriod;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
