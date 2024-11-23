@@ -4,10 +4,11 @@ pragma solidity ^0.8.20;
 import "./MockRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
+// Chain selectors for supported networks
+uint64 constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
+uint64 constant POLYGON_CHAIN_SELECTOR = 137;
+
 contract TestRouter is MockRouter, IRouterClient {
-    constructor() MockRouter() {
-        // Chain setup is handled in MockRouter constructor
-    }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
         return _supportedChains[destChainSelector];
@@ -15,9 +16,7 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
         require(_supportedChains[chainSelector], "Unsupported chain");
-        if (chainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR) {
-            revert("Unsupported chain");
-        }
+        require(_supportedTokens[chainSelector].length > 0, "No supported tokens");
         return _supportedTokens[chainSelector];
     }
 
