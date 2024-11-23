@@ -1,40 +1,42 @@
-const { ethers } = require("hardhat");
-const { Client } = require("./helpers/Client");
+const { ethers, deployContract, expect, getSigners } = require("./setup");
 
 describe("CrossChainMessenger", function() {
-    let owner;
-    let user;
-    let addr1;
-    let addr2;
-    let mockRouter;
-    let mockWETH;
-    let crossChainMessenger;
+    let owner, user, addr1, addr2;
+    let mockRouter, mockWETH, crossChainMessenger;
     const POLYGON_CHAIN_SELECTOR = 137;
     const MAX_MESSAGES_PER_PERIOD = 5;
     const BRIDGE_FEE = ethers.parseEther("0.1");
     const MAX_FEE = ethers.parseEther("1.0");
 
     beforeEach(async function() {
-        [owner, user, addr1, addr2] = await ethers.getSigners();
+        ({ owner, user1: user, user2: addr1, user3: addr2 } = await getSigners());
 
-        // Deploy MockWETH
-        const MockWETH = await ethers.getContractFactory("MockWETH");
-        mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.deployed();
+        // Deploy contracts
+        mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
+        mockRouter = await deployContract("MockRouter");
+        crossChainMessenger = await deployContract("CrossChainMessenger", [
+            mockRouter.target,
+            mockWETH.target,
+            BRIDGE_FEE,
+            MAX_FEE,
+            MAX_MESSAGES_PER_PERIOD
+        ]);
 
-        // Deploy MockRouter
-        const MockRouter = await ethers.getContractFactory("MockRouter");
-        mockRouter = await MockRouter.deploy();
-        await mockRouter.deployed();
+        // Fund the contract for tests
+        await owner.sendTransaction({
+            to: crossChainMessenger.target,
+            value: ethers.parseEther("10.0")
+        });
+    });
 
-        // Deploy CrossChainMessenger with correct parameters
-        const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-        crossChainMessenger = await CrossChainMessenger.deploy(
-            mockRouter.address,
-            mockWETH.address,
-            5  // maxMessagesPerPeriod
-        );
-        await crossChainMessenger.deployed();
+    describe("Basic Functionality", function() {
+        it("Should initialize with correct router address", async function() {
+            expect(await crossChainMessenger.router()).to.equal(mockRouter.target);
+        });
+
+        it("Should initialize with correct WETH address", async function() {
+            expect(await crossChainMessenger.weth()).to.equal(mockWETH.target);
+        });
 
         // Fund the contract for tests
         await owner.sendTransaction({

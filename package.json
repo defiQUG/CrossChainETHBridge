@@ -11,7 +11,8 @@
   "license": "ISC",
   "devDependencies": {
     "@chainlink/contracts-ccip": "^1.2.1",
-    "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -20,7 +21,7 @@
     "@typechain/hardhat": "^9.0.0",
     "@types/chai": "^4.3.0",
     "@types/node-fetch": "^2.6.12",
-    "chai": "^4.3.7",
+    "chai": "^4.5.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.9.0",
     "hardhat": "^2.19.0",

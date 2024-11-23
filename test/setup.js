@@ -1,15 +1,22 @@
-const chai = require("chai");
-const { waffleChai } = require("@ethereum-waffle/chai");
-const { solidity } = require("ethereum-waffle");
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
 
-// Initialize utilities from hardhat's ethers instance
-const parseEther = (value) => ethers.parseUnits(value.toString(), 18);
+async function deployContract(contractName, args = []) {
+  const Factory = await ethers.getContractFactory(contractName);
+  const contract = await Factory.deploy(...args);
+  return contract;
+}
 
-chai.use(waffleChai);
-chai.use(solidity);
+async function getSigners() {
+  const [owner, user1, user2, user3] = await ethers.getSigners();
+  return { owner, user1, user2, user3 };
+}
 
 module.exports = {
-  expect: chai.expect,
-  parseEther
+  expect,
+  loadFixture,
+  deployContract,
+  getSigners,
+  ethers
 };
