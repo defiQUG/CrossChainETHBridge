@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "./SecurityBase.sol";
 
@@ -7,11 +7,9 @@ contract RateLimiter is SecurityBase {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
-    uint256 public messageCount;
     mapping(uint256 => uint256) private messageCountsByPeriod;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
-    event MessageProcessed(address indexed sender, uint256 timestamp);
     event PeriodReset(uint256 timestamp);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
@@ -37,7 +35,7 @@ contract RateLimiter is SecurityBase {
         return messageCount < maxMessagesPerPeriod;
     }
 
-    function processMessage() public whenNotPaused returns (bool) {
+    function processMessage() public override whenNotPaused returns (bool) {
         require(checkRateLimit(), "Rate limit exceeded");
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             messageCount = 0;

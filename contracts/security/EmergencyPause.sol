@@ -5,12 +5,10 @@ import "./SecurityBase.sol";
 
 contract EmergencyPause is SecurityBase {
     uint256 public pauseThreshold;
-    uint256 public messageCount;
     uint256 public constant EMERGENCY_DELAY = 24 hours;
     uint256 public lastPauseTimestamp;
 
     event PauseThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
-    event MessageProcessed(address indexed sender, uint256 timestamp);
     event EmergencyPauseTriggered(uint256 timestamp);
 
     constructor(uint256 _pauseThreshold) {
@@ -18,7 +16,7 @@ contract EmergencyPause is SecurityBase {
         pauseThreshold = _pauseThreshold;
     }
 
-    function processMessage() external whenNotPaused returns (bool) {
+    function processMessage() public override whenNotPaused returns (bool) {
         messageCount++;
         emit MessageProcessed(msg.sender, block.timestamp);
 
