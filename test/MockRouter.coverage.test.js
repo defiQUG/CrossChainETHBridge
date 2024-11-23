@@ -89,10 +89,6 @@ describe("Router Coverage Tests", function () {
             expect(await receiver.balanceOf(addr1.address)).to.equal(depositAmount);
         });
 
-            // Verify the deposit was successful by checking receiver's balance
-            expect(await receiver.balanceOf(receiverAddress)).to.equal(depositAmount);
-        });
-
         it("Should revert simulation with invalid source chain", async function () {
             const invalidMessage = { ...message, sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR };
             await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
