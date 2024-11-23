@@ -58,7 +58,12 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(super.processMessage(), "Rate limit exceeded");
+        if (block.timestamp >= periodStart + periodDuration) {
+            _resetPeriod();
+        }
+        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
+        currentPeriodMessages++;
+        emit MessageProcessed(msg.sender, block.timestamp);
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);

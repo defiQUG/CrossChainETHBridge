@@ -36,9 +36,13 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
     }
 
     function processMessage() external virtual override returns (bool) {
-        bool success = RateLimiter.processMessage();
-        require(success, "Rate limit check failed");
-        return success;
+        if (block.timestamp >= periodStart + periodDuration) {
+            _resetPeriod();
+        }
+        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
+        currentPeriodMessages++;
+        emit MessageProcessed(msg.sender, block.timestamp);
+        return true;
     }
 
     function routeMessage(
