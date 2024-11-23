@@ -64,7 +64,17 @@ describe("MockRouter Coverage Tests", function() {
         it("Should allow owner to set extra fee", async function() {
             const newFee = ethers.parseEther("0.5");
             await mockRouter.setExtraFee(newFee);
-            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, {});
+            const message = Client.EVM2AnyMessage({
+                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
+                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                    ["address", "uint256"],
+                    [addr2.address, ethers.parseEther("1.0")]
+                ),
+                tokenAmounts: [],
+                extraArgs: "0x",
+                feeToken: ethers.ZeroAddress
+            });
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             expect(fee).to.equal(ethers.parseEther("0.6")); // 0.1 base + 0.5 extra
         });
 
@@ -75,8 +85,18 @@ describe("MockRouter Coverage Tests", function() {
         });
 
         it("Should revert getFee for unsupported chain", async function() {
+            const message = Client.EVM2AnyMessage({
+                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
+                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                    ["address", "uint256"],
+                    [addr2.address, ethers.parseEther("1.0")]
+                ),
+                tokenAmounts: [],
+                extraArgs: "0x",
+                feeToken: ethers.ZeroAddress
+            });
             await expect(
-                mockRouter.getFee(999n, {})
+                mockRouter.getFee(999n, message)
             ).to.be.revertedWith("Chain not supported");
         });
     });
@@ -85,11 +105,11 @@ describe("MockRouter Coverage Tests", function() {
         it("Should validate message data correctly", async function() {
             const message = {
                 sourceChainSelector: DOM_CHAIN_SELECTOR,
-                sender: ethers.hexlify(ethers.zeroPadValue(addr1.address, 32)),
-                data: ethers.hexlify(ethers.AbiCoder.defaultAbiCoder().encode(
+                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 32),
+                data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ["address", "uint256"],
                     [addr2.address, ethers.parseEther("1.0")]
-                )),
+                ),
                 destTokenAmounts: []
             };
 
