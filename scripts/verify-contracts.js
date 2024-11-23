@@ -1,84 +1,61 @@
-const hre = require('hardhat');
-const fs = require('fs');
-const path = require('path');
-
-async function verifyContract(name, address, constructorArguments) {
-  console.log(`Verifying ${name} at ${address}...`);
-  try {
-    await hre.run('verify:verify', {
-      address: address,
-      constructorArguments: constructorArguments
-    });
-    console.log(`✅ ${name} verified successfully`);
-  } catch (error) {
-    if (error.message.includes('Already Verified')) {
-      console.log(`ℹ️  ${name} is already verified`);
-    } else {
-      console.error(`❌ Failed to verify ${name}:`, error);
-      throw error;
-    }
-  }
-}
+const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
-  console.log('Starting contract verification process...');
+  console.log("Starting contract verification...");
 
-  // Load deployment addresses
-  const deploymentPath = path.join(__dirname, '../deployments/addresses.json');
+  const deploymentPath = path.join(__dirname, "deployments/addresses.json");
   if (!fs.existsSync(deploymentPath)) {
-    throw new Error('Deployment addresses file not found. Please run deployment first.');
+    throw new Error("Deployment addresses file not found. Please run deployment first.");
   }
 
-  const addresses = JSON.parse(fs.readFileSync(deploymentPath, 'utf8'));
-
-  // Verify MockRouter
-  if (addresses.mockRouter) {
-    await verifyContract('MockRouter', addresses.mockRouter, []);
-  }
-
-  // Verify MockWETH
-  if (addresses.mockWeth) {
-    await verifyContract('MockWETH', addresses.mockWeth, [
-      "Wrapped Ether",
-      "WETH"
-    ]);
-  }
+  const addresses = JSON.parse(fs.readFileSync(deploymentPath));
 
   // Verify RateLimiter
-  if (addresses.rateLimiter) {
-    await verifyContract('RateLimiter', addresses.rateLimiter, [
-      process.env.MAX_MESSAGES_PER_PERIOD,
-      process.env.PERIOD_LENGTH
-    ]);
-  }
+  console.log("Verifying RateLimiter...");
+  await hre.run("verify:verify", {
+    address: addresses.RateLimiter,
+    constructorArguments: [10, 3600],
+  });
 
   // Verify EmergencyPause
-  if (addresses.emergencyPause) {
-    await verifyContract('EmergencyPause', addresses.emergencyPause, [
-      process.env.PAUSE_THRESHOLD,
-      process.env.PAUSE_DURATION
-    ]);
-  }
+  console.log("Verifying EmergencyPause...");
+  await hre.run("verify:verify", {
+    address: addresses.EmergencyPause,
+    constructorArguments: [
+      ethers.parseEther("100"),
+      3600
+    ],
+  });
+
+  // Verify MockWETH
+  console.log("Verifying MockWETH...");
+  await hre.run("verify:verify", {
+    address: addresses.MockWETH,
+    constructorArguments: ["Wrapped Ether", "WETH"],
+  });
 
   // Verify CrossChainMessenger
-  if (addresses.crossChainMessenger) {
-    await verifyContract('CrossChainMessenger', addresses.crossChainMessenger, [
-      addresses.mockRouter,
-      addresses.mockWeth,
-      process.env.BRIDGE_FEE,
-      process.env.MAX_FEE,
-      process.env.MAX_MESSAGES_PER_PERIOD,
-      process.env.PAUSE_THRESHOLD,
-      process.env.PAUSE_DURATION
-    ]);
-  }
+  console.log("Verifying CrossChainMessenger...");
+  await hre.run("verify:verify", {
+    address: addresses.CrossChainMessenger,
+    constructorArguments: [
+      addresses.MockRouter,
+      addresses.MockWETH,
+      addresses.RateLimiter,
+      addresses.EmergencyPause,
+      ethers.parseEther("0.1"),
+      ethers.parseEther("1")
+    ],
+  });
 
-  console.log('✨ All contracts verified successfully');
+  console.log("Contract verification completed successfully");
 }
 
 main()
   .then(() => process.exit(0))
   .catch((error) => {
-    console.error('❌ Verification failed:', error);
+    console.error(error);
     process.exit(1);
   });
