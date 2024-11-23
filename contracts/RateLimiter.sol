@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract RateLimiter is Ownable {
+contract RateLimiter {
     uint256 public immutable maxMessagesPerPeriod;
     uint256 public immutable periodLength;
     uint256 public currentPeriodStart;
@@ -20,7 +18,7 @@ contract RateLimiter is Ownable {
         currentPeriodStart = block.timestamp;
     }
 
-    function checkAndUpdateRateLimit() external returns (bool) {
+    function checkAndUpdateRateLimit() public returns (bool) {
         if (block.timestamp >= currentPeriodStart + periodLength) {
             currentPeriodStart = block.timestamp;
             messageCount = 0;
@@ -33,11 +31,11 @@ contract RateLimiter is Ownable {
         return true;
     }
 
-    function getCurrentPeriodMessageCount() external view returns (uint256) {
+    function getCurrentPeriodMessageCount() public view returns (uint256) {
         return messageCount;
     }
 
-    function timeUntilReset() external view returns (uint256) {
+    function timeUntilReset() public view returns (uint256) {
         uint256 periodEnd = currentPeriodStart + periodLength;
         if (block.timestamp >= periodEnd) return 0;
         return periodEnd - block.timestamp;
