@@ -99,12 +99,16 @@ contract TestRouter is MockRouter, IRouterClient {
         }
         require(size > 0, "Target contract does not exist");
 
+        // Decode the depositor address from extraArgs
+        address depositor = abi.decode(message.extraArgs, (address));
+
         // Create message ID and emit event before simulation
         bytes32 messageId = keccak256(abi.encode(
             block.timestamp,
             target,
             message.sourceChainSelector,
-            message.data
+            message.data,
+            depositor
         ));
         emit MessageSimulated(target, messageId, msg.value);
 
@@ -113,6 +117,7 @@ contract TestRouter is MockRouter, IRouterClient {
             gas: gasleft() - 2000,
             value: msg.value
         }(message.data);
+
         if (!success) {
             if (result.length > 0) {
                 assembly {
@@ -121,6 +126,12 @@ contract TestRouter is MockRouter, IRouterClient {
             }
             revert("Message simulation failed");
         }
+
+        // After successful execution, mint WETH to the depositor
+        (success, ) = target.call{value: 0}(
+            abi.encodeWithSignature("transfer(address,uint256)", depositor, msg.value)
+        );
+        require(success, "WETH transfer failed");
     }
 
     // First ccipSend implementation removed as it was duplicated and contained errors

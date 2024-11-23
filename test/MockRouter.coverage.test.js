@@ -71,7 +71,7 @@ describe("Router Coverage Tests", function () {
             // Update message with correct receiver and data
             message.receiver = receiverAddress;
             const depositInterface = new ethers.Interface([
-                "function deposit()"
+                "function deposit() payable"
             ]);
             message.data = depositInterface.encodeFunctionData("deposit");
 
