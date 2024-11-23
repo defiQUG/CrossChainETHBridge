@@ -139,18 +139,3 @@ describe("MockRouter Tests", function() {
         });
     });
 });
-
-        it("Should revert ccipSend with insufficient fee", async function() {
-            const message = {
-                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
-                data: "0x",
-                tokenAmounts: [],
-                extraArgs: "0x",
-                feeToken: ethers.ZeroAddress
-            };
-            await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseEther("0.05")
-            })).to.be.revertedWith("Insufficient fee");
-        });
-    });
-});

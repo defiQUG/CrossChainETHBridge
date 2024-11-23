@@ -26,6 +26,7 @@ async function deployTestContracts() {
     const TestRouter = await ethers.getContractFactory('TestRouter');
     const mockRouter = await TestRouter.deploy();
     await mockRouter.waitForDeployment();
+    await mockRouter.initialize(10, 3600); // 10 messages per hour
 
     // Deploy CrossChainMessenger
     const CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger');
