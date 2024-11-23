@@ -90,7 +90,7 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function ccipReceive(
         Client.Any2EVMMessage memory message
-    ) external override whenNotPaused {
+    ) external whenNotPaused {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
