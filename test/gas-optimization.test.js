@@ -36,13 +36,18 @@ describe("Gas Optimization Tests", function() {
     describe("Gas Usage Analysis", function() {
         it("Should optimize gas for message sending", async function() {
             const amount = ethers.parseEther("1.0");
-            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, {
+            const message = {
                 receiver: user.address,
-                data: "0x",
+                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                    ['address', 'uint256'],
+                    [user.address, amount]
+                ),
                 tokenAmounts: [],
+                feeToken: ethers.ZeroAddress,
                 extraArgs: "0x"
-            });
-            const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount.add(fee) });
+            };
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
+            const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount + fee });
             const receipt = await tx.wait();
             expect(receipt.gasUsed).to.be.below(300000n, "Gas usage too high for message sending");
         });
@@ -54,23 +59,24 @@ describe("Gas Optimization Tests", function() {
                 value: ethers.parseEther("10.0")
             });
 
-            const messageId = ethers.hexlify(ethers.randomBytes(32));
-            const sourceChainSelector = 138n; // Defi Oracle Meta Chain ID
-            const sender = ethers.zeroPadValue(await owner.getAddress(), 20);
             const amount = ethers.parseEther("1.0");
             const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['address', 'uint256'],
                 [await user.getAddress(), amount]
             );
 
-            // Create CCIP message format
-            const message = {
-                messageId: messageId,
-                sourceChainSelector: sourceChainSelector,
-                sender: sender,
-                data: data,
-                destTokenAmounts: []
-            };
+            const message = createCCIPMessage({
+                sender: await owner.getAddress(),
+                data: data
+            });
+
+            // Send message directly to the target using MockRouter's simulateMessageReceived function
+            const tx = await mockRouter.simulateMessageReceived(
+                await crossChainMessenger.getAddress(),
+                message
+            );
+            const receipt = await tx.wait();
+            expect(receipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
 
             // Send message directly to the target using MockRouter's simulateMessageReceived function
             const tx = await mockRouter.simulateMessageReceived(

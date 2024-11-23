@@ -33,7 +33,31 @@ async function getContractAt(name, address) {
     return Factory.attach(address);
 }
 
+function createCCIPMessage({
+    messageId = ethers.hexlify(ethers.randomBytes(32)),
+    sourceChainSelector = 138n,
+    sender,
+    data,
+    destTokenAmounts = [],
+    feeToken = ethers.ZeroAddress,
+    extraArgs = "0x"
+} = {}) {
+    if (!sender) throw new Error("Sender address is required");
+    if (!data) throw new Error("Message data is required");
+
+    return {
+        messageId,
+        sourceChainSelector,
+        sender: ethers.zeroPadValue(sender, 20),
+        data,
+        destTokenAmounts,
+        feeToken,
+        extraArgs
+    };
+}
+
 module.exports = {
     deployContract,
-    getContractAt
+    getContractAt,
+    createCCIPMessage
 };
