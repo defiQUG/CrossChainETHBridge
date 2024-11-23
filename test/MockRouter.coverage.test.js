@@ -60,9 +60,17 @@ describe("Router Coverage Tests", function () {
         });
 
         it("Should handle message simulation correctly", async function () {
-            const TestReceiver = await ethers.getContractFactory("TestRouter");
-            const receiver = await TestReceiver.deploy();
+            // Deploy a mock contract that can receive messages
+            const MockWETH = await ethers.getContractFactory("MockWETH");
+            const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
+
+            // Update message data to be a valid WETH deposit
+            message.data = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['address'],
+                [addr1.address]
+            );
+
             await router.simulateMessageReceived(await receiver.getAddress(), message);
         });
 
@@ -112,7 +120,7 @@ describe("Router Coverage Tests", function () {
         });
 
         it("Should validate message data correctly", async function () {
-            const invalidMessage = { ...ccipMessage, receiver: ethers.ZeroAddress };
+            const invalidMessage = { ...ccipMessage, sender: ethers.hexlify(ethers.randomBytes(10)) }; // Invalid 10-byte sender
             await expect(router.validateMessage(invalidMessage))
                 .to.be.revertedWith("Invalid sender length");
         });
