@@ -5,12 +5,12 @@ const { deployContract } = require("./test-utils");
 const TEST_CONFIG = {
     POLYGON_CHAIN_SELECTOR: 137n,
     DEFI_ORACLE_META_CHAIN_SELECTOR: 138n,
-    BRIDGE_FEE: ethers.parseEther("0.1"),
-    MAX_FEE: ethers.parseEther("1.0"),
-    MAX_MESSAGES_PER_PERIOD: 5,
+    BRIDGE_FEE: ethers.parseEther("0.001"),
+    MAX_FEE: ethers.parseEther("0.1"),
+    MAX_MESSAGES_PER_PERIOD: 10,
     PAUSE_THRESHOLD: ethers.parseEther("5.0"),
     PAUSE_DURATION: 3600, // 1 hour
-    RATE_LIMIT_PERIOD: 3600 // 1 hour
+    PERIOD_DURATION: 3600 // 1 hour
 };
 
 // Deploy all contracts needed for testing
@@ -23,14 +23,26 @@ async function deployTestContracts() {
     // Deploy MockRouter
     const mockRouter = await deployContract("MockRouter");
 
+    // Deploy RateLimiter
+    const rateLimiter = await deployContract("RateLimiter", [
+        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
+        TEST_CONFIG.PERIOD_DURATION
+    ]);
+
+    // Deploy EmergencyPause
+    const emergencyPause = await deployContract("EmergencyPause", [
+        TEST_CONFIG.PAUSE_THRESHOLD,
+        TEST_CONFIG.PAUSE_DURATION
+    ]);
+
     // Deploy CrossChainMessenger
     const crossChainMessenger = await deployContract("CrossChainMessenger", [
         await mockRouter.getAddress(),
         await mockWETH.getAddress(),
+        await rateLimiter.getAddress(),
+        await emergencyPause.getAddress(),
         TEST_CONFIG.BRIDGE_FEE,
-        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
-        TEST_CONFIG.PAUSE_THRESHOLD,
-        TEST_CONFIG.PAUSE_DURATION
+        TEST_CONFIG.MAX_FEE
     ]);
 
     // Fund the contract for tests
@@ -46,6 +58,8 @@ async function deployTestContracts() {
         addr2,
         mockWETH,
         mockRouter,
+        rateLimiter,
+        emergencyPause,
         crossChainMessenger,
         TEST_CONFIG
     };
