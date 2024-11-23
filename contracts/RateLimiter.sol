@@ -1,52 +1,32 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+contract RateLimiter {
+    uint256 public rateLimit;
+    uint256 public rateLimitPeriod;
+    mapping(address => uint256) public lastTransferTime;
+    mapping(address => uint256) public transferredAmount;
 
-contract RateLimiter is Ownable, Pausable {
-    uint256 public constant RATE_PERIOD = 1 hours;
-    uint256 public maxMessagesPerPeriod;
-    mapping(uint256 => uint256) public messageCountByPeriod;
+    event RateLimitUpdated(uint256 newLimit, uint256 newPeriod);
 
-    event RateLimitUpdated(uint256 newLimit);
-    event MessageProcessed(uint256 period);
-
-    constructor(uint256 _maxMessagesPerPeriod) {
-        maxMessagesPerPeriod = _maxMessagesPerPeriod;
-        _transferOwnership(msg.sender);
+    constructor(uint256 _rateLimit, uint256 _rateLimitPeriod) {
+        rateLimit = _rateLimit;
+        rateLimitPeriod = _rateLimitPeriod;
     }
 
-    function setMaxMessagesPerPeriod(uint256 _maxMessagesPerPeriod) external onlyOwner {
-        maxMessagesPerPeriod = _maxMessagesPerPeriod;
-        emit RateLimitUpdated(_maxMessagesPerPeriod);
+    function checkRateLimit(address user, uint256 amount) public view returns (bool) {
+        if (block.timestamp >= lastTransferTime[user] + rateLimitPeriod) {
+            return amount <= rateLimit;
+        }
+        return transferredAmount[user] + amount <= rateLimit;
     }
 
-    function getCurrentPeriod() public view returns (uint256) {
-        return block.timestamp / RATE_PERIOD;
-    }
-
-    // Changed from internal to public for testing
-    function processMessage() public whenNotPaused {
-        uint256 currentPeriod = getCurrentPeriod();
-        require(
-            messageCountByPeriod[currentPeriod] < maxMessagesPerPeriod,
-            "Rate limit exceeded for current period"
-        );
-        messageCountByPeriod[currentPeriod]++;
-        emit MessageProcessed(currentPeriod);
-    }
-
-    // Added internal function for contract inheritance
-    function _processMessage() internal whenNotPaused {
-        processMessage();
-    }
-
-    function emergencyPause() external onlyOwner {
-        _pause();
-    }
-
-    function emergencyUnpause() external onlyOwner {
-        _unpause();
+    function updateTransferredAmount(address user, uint256 amount) internal {
+        if (block.timestamp >= lastTransferTime[user] + rateLimitPeriod) {
+            transferredAmount[user] = amount;
+        } else {
+            transferredAmount[user] += amount;
+        }
+        lastTransferTime[user] = block.timestamp;
     }
 }
