@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./SecurityBase.sol";
@@ -53,9 +53,10 @@ contract RateLimiter is SecurityBase {
 
         require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
 
+        bytes32 messageId = keccak256(abi.encodePacked(msg.sender, block.timestamp, _currentPeriodMessages));
         _currentPeriodMessages++;
-        emit MessageProcessed(msg.sender, block.timestamp);
-        return true;
+
+        return _processMessage(messageId, abi.encodePacked("rate-limited-message"));
     }
 
     function _resetPeriod() internal {
