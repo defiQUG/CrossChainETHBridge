@@ -42,9 +42,7 @@ async function deployTestContracts() {
         await rateLimiter.getAddress(),
         await emergencyPause.getAddress(),
         TEST_CONFIG.BRIDGE_FEE,
-        TEST_CONFIG.MAX_FEE,
-        TEST_CONFIG.POLYGON_CHAIN_SELECTOR,
-        TEST_CONFIG.DEFI_ORACLE_META_CHAIN_SELECTOR
+        TEST_CONFIG.MAX_FEE
     ]);
 
     // Fund the contract for tests
