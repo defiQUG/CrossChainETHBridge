@@ -77,7 +77,7 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(checkAndUpdateRateLimit(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -98,7 +98,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(checkAndUpdateRateLimit(), "Rate limit exceeded");
 
         // Validate target contract exists
         uint256 size;
