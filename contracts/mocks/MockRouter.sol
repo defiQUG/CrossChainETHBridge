@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "../security/RateLimiter.sol";
 
-abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable {
+abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
