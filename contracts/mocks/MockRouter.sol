@@ -43,7 +43,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(checkAndUpdateRateLimit(), "Rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
 
@@ -82,7 +82,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
     ) external virtual whenNotPaused payable {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
-        require(checkAndUpdateRateLimit(), "Rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
