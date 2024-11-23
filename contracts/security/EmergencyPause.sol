@@ -39,7 +39,17 @@ contract EmergencyPause is Ownable, Pausable {
         emit PauseDurationUpdated(oldDuration, _pauseDuration);
     }
 
+    function checkAndUnpause() public {
+        if (paused() && block.timestamp >= lastPauseTimestamp + pauseDuration) {
+            uint256 timestamp = block.timestamp;
+            _unpause();
+            emit EmergencyUnpauseTriggered(timestamp);
+            totalValueLocked = 0;
+        }
+    }
+
     function lockValue(uint256 amount) external {
+        checkAndUnpause();
         require(!paused(), "Contract is paused");
         totalValueLocked += amount;
         emit ValueLocked(amount);
@@ -47,11 +57,12 @@ contract EmergencyPause is Ownable, Pausable {
         if (amount >= pauseThreshold) {
             _pause();
             lastPauseTimestamp = block.timestamp;
-            emit EmergencyPauseTriggered(block.timestamp, pauseDuration);
+            emit EmergencyPauseTriggered(lastPauseTimestamp, pauseDuration);
         }
     }
 
     function unlockValue(uint256 amount) external {
+        checkAndUnpause();
         require(!paused(), "Contract is paused");
         require(amount <= totalValueLocked, "Amount exceeds locked value");
         totalValueLocked -= amount;
@@ -60,8 +71,9 @@ contract EmergencyPause is Ownable, Pausable {
 
     function emergencyUnpause() external onlyOwner {
         require(paused(), "Contract is not paused");
+        uint256 timestamp = block.timestamp;
         _unpause();
-        emit EmergencyUnpauseTriggered(block.timestamp);
+        emit EmergencyUnpauseTriggered(timestamp);
         totalValueLocked = 0;
     }
 
@@ -69,6 +81,16 @@ contract EmergencyPause is Ownable, Pausable {
         if (!paused()) return 0;
         uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
         if (elapsedTime >= pauseDuration) return 0;
+        return pauseDuration - elapsedTime;
+    }
+}
+
+    function getRemainingPauseDuration() external view returns (uint256) {
+        if (!paused()) return 0;
+        uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
+        if (elapsedTime >= pauseDuration) {
+            return 0;
+        }
         return pauseDuration - elapsedTime;
     }
 }
