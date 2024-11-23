@@ -12,7 +12,6 @@ contract RateLimiter is SecurityBase {
     bool private _initialized;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 period);
-    event MessageProcessed(address indexed sender, uint256 timestamp);
     event PeriodReset(uint256 timestamp);
 
     modifier whenInitialized() {
@@ -20,7 +19,7 @@ contract RateLimiter is SecurityBase {
         _;
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external {
+    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual {
         require(!_initialized, "RateLimiter: already initialized");
         require(maxMessages > 0, "RateLimiter: max messages must be positive");
         require(periodDuration > 0, "RateLimiter: period duration must be positive");
@@ -41,7 +40,9 @@ contract RateLimiter is SecurityBase {
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function processMessage() external virtual whenInitialized returns (bool) {
+    function processMessage() public virtual override returns (bool) {
+        require(_initialized, "RateLimiter: not initialized");
+
         if (block.timestamp >= _periodStart + _periodDuration) {
             _resetPeriod();
         }
