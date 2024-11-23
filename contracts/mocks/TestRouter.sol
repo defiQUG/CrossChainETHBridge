@@ -57,9 +57,9 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("Empty message data");
         }
 
-        // Check token amounts
-        if (message.tokenAmounts.length > 0 && message.destTokenAmounts.length != message.tokenAmounts.length) {
-            revert("Token amount mismatch");
+        // Check token amounts if present
+        if (message.destTokenAmounts.length > 0) {
+            revert("Token transfers not supported");
         }
 
         return true;
