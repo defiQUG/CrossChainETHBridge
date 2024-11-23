@@ -67,11 +67,11 @@ describe("Router Coverage Tests", function () {
 
             const depositAmount = ethers.parseEther("1.0");
 
-            // Update message data to be a valid WETH deposit
-            message.data = ethers.AbiCoder.defaultAbiCoder().encode(
-                ['address'],
-                [addr1.address]
-            );
+            // Update message data to be a valid WETH deposit call
+            const depositInterface = new ethers.Interface([
+                "function deposit()"
+            ]);
+            message.data = depositInterface.encodeFunctionData("deposit");
 
             await router.simulateMessageReceived(
                 await receiver.getAddress(),
