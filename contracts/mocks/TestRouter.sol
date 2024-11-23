@@ -79,6 +79,14 @@ contract TestRouter is MockRouter, IRouterClient {
         require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
+        // Validate target contract exists
+        uint256 size;
+        assembly {
+            size := extcodesize(target)
+        }
+        require(size > 0, "Target contract does not exist");
+
+        // Create message ID and emit event before simulation
         bytes32 messageId = keccak256(abi.encode(
             block.timestamp,
             target,
@@ -87,8 +95,16 @@ contract TestRouter is MockRouter, IRouterClient {
         ));
         emit MessageSimulated(target, messageId);
 
-        (bool success, ) = target.call(message.data);
-        require(success, "Message simulation failed");
+        // Try to execute the message
+        (bool success, bytes memory result) = target.call{gas: gasleft() - 2000}(message.data);
+        if (!success) {
+            if (result.length > 0) {
+                assembly {
+                    revert(add(32, result), mload(result))
+                }
+            }
+            revert("Message simulation failed");
+        }
     }
 
     // First ccipSend implementation removed as it was duplicated and contained errors
