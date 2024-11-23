@@ -87,7 +87,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
         // Check rate limit and emergency pause before processing
         rateLimiter.processMessage();
-        emergencyPause.lockValue(transferAmount);
+        emergencyPause.checkAndUpdateValue(transferAmount);
 
         bytes32 messageId = router.ccipSend{value: requiredFee}(
             POLYGON_CHAIN_SELECTOR,
@@ -114,7 +114,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
         // Check rate limit and emergency pause
         rateLimiter.processMessage();
-        emergencyPause.lockValue(amount);
+        emergencyPause.checkAndUpdateValue(amount);
 
         // Handle WETH operations with proper error checking
         try weth.deposit{value: amount}() {
