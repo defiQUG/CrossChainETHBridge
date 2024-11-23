@@ -52,6 +52,19 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("Invalid sender length");
         }
 
+        // Check message data
+        if (message.data.length == 0) {
+            revert("Empty message data");
+        }
+
+        // Check token amounts
+        if (message.tokenAmounts.length > 0 && message.destTokenAmounts.length != message.tokenAmounts.length) {
+            revert("Token amount mismatch");
+        }
+
+        return true;
+    }
+
         // Check receiver address
         if (message.receiver == address(0)) {
             revert("Invalid recipient");
