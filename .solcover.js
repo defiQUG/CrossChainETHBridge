@@ -1,20 +1,16 @@
 module.exports = {
-    skipFiles: [],
+    skipFiles: ['mocks/'],
     configureYulOptimizer: true,
+    solcOptimizerDetails: {
+        peephole: false,
+        jumpdestRemover: false,
+        orderLiterals: false,
+        deduplicate: false,
+        cse: false,
+        constantOptimizer: false,
+        yul: false
+    },
     mocha: {
         timeout: 100000
-    },
-    providerOptions: {
-        default_balance_ether: 100,
-        total_accounts: 20,
-    },
-    measureStatementCoverage: true,
-    measureFunctionCoverage: true,
-    measureBranchCoverage: true,
-    measureModifierCoverage: true,
-    measureLineCoverage: true,
-    // Force coverage to run with hardhat network
-    network: {
-        url: 'http://localhost:8545'
     }
 };
