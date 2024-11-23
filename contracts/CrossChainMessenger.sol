@@ -5,6 +5,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./RateLimiter.sol";
 import "./EmergencyPause.sol";
 
@@ -14,7 +15,7 @@ interface IWETH {
     function transfer(address to, uint256 value) external returns (bool);
 }
 
-contract CrossChainMessenger is ReentrancyGuard, RateLimiter, EmergencyPause {
+contract CrossChainMessenger is ReentrancyGuard, RateLimiter, EmergencyPause, Ownable {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable router;
@@ -36,6 +37,7 @@ contract CrossChainMessenger is ReentrancyGuard, RateLimiter, EmergencyPause {
     )
         RateLimiter(_maxMessagesPerPeriod, 3600) // 1 hour period
         EmergencyPause(_pauseThreshold, _pauseDuration)
+        Ownable(msg.sender)
     {
         require(_router != address(0), "CrossChainMessenger: zero router address");
         require(_weth != address(0), "CrossChainMessenger: zero WETH address");
@@ -106,14 +108,6 @@ contract CrossChainMessenger is ReentrancyGuard, RateLimiter, EmergencyPause {
         require(_newFee <= 1 ether, "CrossChainMessenger: fee exceeds maximum");
         bridgeFee = _newFee;
         emit BridgeFeeUpdated(_newFee);
-    }
-
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function unpause() external onlyOwner {
-        _unpause();
     }
 
     function emergencyWithdraw(address payable _recipient) external onlyOwner {
