@@ -5,8 +5,6 @@ import "./MockRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
 contract TestRouter is MockRouter, IRouterClient {
-    mapping(uint64 => address[]) private _supportedTokens;
-
     constructor() MockRouter() {
         // Chain setup is handled in MockRouter constructor
     }
@@ -25,14 +23,14 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Unsupported chain");
-        return BRIDGE_FEE;
+        return super.getFee(destinationChainSelector, message);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         require(message.messageId != bytes32(0), "Invalid message ID");
         require(message.sourceChainSelector != 0, "Invalid chain selector");
-        require(message.sender != address(0), "Invalid sender");
-        require(message.receiver != address(0), "Invalid recipient");
+        require(message.sender.length == 20, "Invalid sender length");
+        require(message.data.length > 0, "Empty message data");
         return true;
     }
 
