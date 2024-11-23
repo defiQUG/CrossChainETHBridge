@@ -2,10 +2,22 @@
 pragma solidity ^0.8.20;
 
 import "./MockRouter.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 
-contract TestRouter is MockRouter {
+contract TestRouter is MockRouter, IRouterClient {
     constructor() MockRouter() {
         // Chain setup is handled in MockRouter constructor
+    }
+
+    function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
+        return _supportedChains[destChainSelector];
+    }
+
+    function getFee(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) public view override(MockRouter, IRouterClient) returns (uint256) {
+        return super.getFee(destinationChainSelector, message);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
