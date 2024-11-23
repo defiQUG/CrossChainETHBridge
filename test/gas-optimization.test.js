@@ -73,18 +73,18 @@ describe("Gas Optimization Tests", function() {
                 [await user.getAddress(), amount]
             );
 
-            // Create properly formatted message
+            // Create properly formatted message with exact 20-byte sender
             const message = {
                 messageId: ethers.hexlify(ethers.randomBytes(32)),
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
-                sender: await owner.getAddress(),
+                sender: ethers.zeroPadValue(await owner.getAddress(), 20),
                 data: data,
                 destTokenAmounts: [],
                 feeToken: ethers.ZeroAddress,
                 extraArgs: "0x"
             };
 
-            // Send message with proper value
+            // Send first message with proper value
             const receiveTx = await mockRouter.simulateMessageReceived(
                 await crossChainMessenger.getAddress(),
                 message,
@@ -93,10 +93,17 @@ describe("Gas Optimization Tests", function() {
             const receiveReceipt = await receiveTx.wait();
             expect(receiveReceipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
 
-            // Send message directly to the target using MockRouter's simulateMessageReceived function
+            // Fund contract again for second message
+            await owner.sendTransaction({
+                to: await crossChainMessenger.getAddress(),
+                value: amount
+            });
+
+            // Send second message with proper value
             const tx = await mockRouter.simulateMessageReceived(
                 await crossChainMessenger.getAddress(),
-                message
+                message,
+                { value: amount }
             );
             const receipt = await tx.wait();
             expect(receipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
