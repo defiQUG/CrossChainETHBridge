@@ -21,18 +21,18 @@ async function deployTestContracts() {
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
     // Deploy TestRouter (concrete implementation of MockRouter)
-    const mockRouter = await deployContract("TestRouter");
+    const mockRouter = await deployContract("TestRouter", []);
 
-    // Deploy RateLimiter
+    // Deploy RateLimiter with proper constructor arguments
     const rateLimiter = await deployContract("RateLimiter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
-        ethers.getBigInt(TEST_CONFIG.PERIOD_DURATION)
+        TEST_CONFIG.PERIOD_DURATION
     ]);
 
-    // Deploy EmergencyPause
+    // Deploy EmergencyPause with proper constructor arguments
     const emergencyPause = await deployContract("EmergencyPause", [
         TEST_CONFIG.PAUSE_THRESHOLD,
-        ethers.getBigInt(TEST_CONFIG.PAUSE_DURATION)
+        TEST_CONFIG.PAUSE_DURATION
     ]);
 
     // Deploy CrossChainMessenger with pre-deployed contracts
@@ -42,7 +42,9 @@ async function deployTestContracts() {
         await rateLimiter.getAddress(),
         await emergencyPause.getAddress(),
         TEST_CONFIG.BRIDGE_FEE,
-        TEST_CONFIG.MAX_FEE
+        TEST_CONFIG.MAX_FEE,
+        TEST_CONFIG.POLYGON_CHAIN_SELECTOR,
+        TEST_CONFIG.DEFI_ORACLE_META_CHAIN_SELECTOR
     ]);
 
     // Fund the contract for tests
