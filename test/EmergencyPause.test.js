@@ -35,9 +35,12 @@ describe("EmergencyPause", function() {
         });
 
         it("Should trigger pause when threshold exceeded", async function() {
-            await expect(emergencyPause.lockValue(PAUSE_THRESHOLD))
+            const tx = await emergencyPause.lockValue(PAUSE_THRESHOLD);
+            const receipt = await tx.wait();
+            const block = await ethers.provider.getBlock(receipt.blockNumber);
+            await expect(tx)
                 .to.emit(emergencyPause, "EmergencyPauseTriggered")
-                .withArgs(await time.latest(), PAUSE_DURATION);
+                .withArgs(block.timestamp, PAUSE_DURATION);
             expect(await emergencyPause.paused()).to.be.true;
         });
 
@@ -69,12 +72,13 @@ describe("EmergencyPause", function() {
 
         it("Should allow owner to force unpause", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
-            // Get the next block's timestamp and use it in the same transaction
-            const nextBlockTimestamp = BigInt(await time.latest());
-            await time.setNextBlockTimestamp(nextBlockTimestamp);
-            await expect(emergencyPause.emergencyUnpause())
+            await ethers.provider.send("evm_mine");
+            const tx = await emergencyPause.emergencyUnpause();
+            const receipt = await tx.wait();
+            const block = await ethers.provider.getBlock(receipt.blockNumber);
+            await expect(tx)
                 .to.emit(emergencyPause, "EmergencyUnpauseTriggered")
-                .withArgs(nextBlockTimestamp);
+                .withArgs(block.timestamp);
             expect(await emergencyPause.paused()).to.be.false;
         });
 

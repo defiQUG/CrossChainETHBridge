@@ -97,20 +97,21 @@ describe("Security Features Integration Tests", function() {
     describe("Integration", function() {
         it("Should integrate rate limiting with emergency pause", async function() {
             const amount = ethers.parseEther("1.0");
+            const maxMessages = await rateLimiter.maxMessagesPerPeriod();
 
             // Process messages until rate limit
-            for(let i = 0; i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD; i++) {
-                if(i < TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1) {
-                    await rateLimiter.checkAndUpdateRateLimit();
+            for(let i = 0; i < maxMessages; i++) {
+                if(i < maxMessages - 1) {
+                    await rateLimiter.processMessage();
                     await emergencyPause.lockValue(amount);
                 } else {
-                    await expect(rateLimiter.checkAndUpdateRateLimit())
+                    await expect(rateLimiter.processMessage())
                         .to.be.revertedWith("Rate limit exceeded");
                 }
             }
 
             // Verify total value locked
-            const expectedLocked = amount.mul(TEST_CONFIG.MAX_MESSAGES_PER_PERIOD - 1);
+            const expectedLocked = amount * BigInt(maxMessages - 1n);
             expect(await emergencyPause.totalValueLocked()).to.equal(expectedLocked);
         });
     });
