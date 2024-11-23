@@ -60,7 +60,7 @@ contract MockRouter is IRouterClient {
         return chainSelector == 137;
     }
 
-    function getSupportedTokens(uint64 chainSelector) external pure override returns (address[] memory) {
+    function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory) {
         require(chainSelector == 137, "Unsupported chain");
         address[] memory tokens = new address[](0);
         return tokens;
