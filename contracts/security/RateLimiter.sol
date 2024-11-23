@@ -10,11 +10,13 @@ contract RateLimiter is Ownable, Pausable {
     uint256 public currentPeriodMessages;
     uint256 public periodStart;
     uint256 public pauseDuration;
+    uint256 public lastPauseTimestamp;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
     event MessageProcessed(address indexed sender, uint256 timestamp);
     event PeriodReset(uint256 timestamp);
     event PauseDurationUpdated(uint256 duration);
+    event EmergencyPauseActivated(uint256 timestamp, uint256 duration);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
         require(_maxMessages > 0, "Max messages must be positive");
@@ -73,14 +75,28 @@ contract RateLimiter is Ownable, Pausable {
     }
 
     function emergencyPause() external onlyOwner {
-        require(!paused, "Already paused");
-        paused = true;
-        pauseStart = block.timestamp;
-        emit EmergencyPaused(block.timestamp, pauseDuration);
+        require(!paused(), "Already paused");
+        lastPauseTimestamp = block.timestamp;
+        _pause();
+        emit EmergencyPauseActivated(block.timestamp, pauseDuration);
     }
 
     function setPauseDuration(uint256 _duration) external onlyOwner {
         require(_duration > 0, "Duration must be positive");
         pauseDuration = _duration;
+        emit PauseDurationUpdated(_duration);
+    }
+
+    function emergencyUnpause() external onlyOwner {
+        require(paused(), "Not paused");
+        require(block.timestamp >= lastPauseTimestamp + pauseDuration, "Pause duration not elapsed");
+        _unpause();
+    }
+}
+
+    function emergencyUnpause() external onlyOwner {
+        require(paused(), "Not paused");
+        require(block.timestamp >= lastPauseTimestamp + pauseDuration, "Pause duration not elapsed");
+        _unpause();
     }
 }
