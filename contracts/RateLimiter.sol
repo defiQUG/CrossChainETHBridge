@@ -1,32 +1,45 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-contract RateLimiter {
-    uint256 public rateLimit;
-    uint256 public rateLimitPeriod;
-    mapping(address => uint256) public lastTransferTime;
-    mapping(address => uint256) public transferredAmount;
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-    event RateLimitUpdated(uint256 newLimit, uint256 newPeriod);
+contract RateLimiter is Ownable {
+    uint256 public immutable maxMessagesPerPeriod;
+    uint256 public immutable periodLength;
+    uint256 public currentPeriodStart;
+    uint256 public messageCount;
 
-    constructor(uint256 _rateLimit, uint256 _rateLimitPeriod) {
-        rateLimit = _rateLimit;
-        rateLimitPeriod = _rateLimitPeriod;
+    event RateLimitUpdated(uint256 timestamp, uint256 count);
+    event PeriodReset(uint256 timestamp);
+
+    constructor(uint256 _maxMessagesPerPeriod, uint256 _periodLength) {
+        require(_maxMessagesPerPeriod > 0, "Max messages must be positive");
+        require(_periodLength > 0, "Period length must be positive");
+        maxMessagesPerPeriod = _maxMessagesPerPeriod;
+        periodLength = _periodLength;
+        currentPeriodStart = block.timestamp;
     }
 
-    function checkRateLimit(address user, uint256 amount) public view returns (bool) {
-        if (block.timestamp >= lastTransferTime[user] + rateLimitPeriod) {
-            return amount <= rateLimit;
+    function checkAndUpdateRateLimit() external returns (bool) {
+        if (block.timestamp >= currentPeriodStart + periodLength) {
+            currentPeriodStart = block.timestamp;
+            messageCount = 0;
+            emit PeriodReset(block.timestamp);
         }
-        return transferredAmount[user] + amount <= rateLimit;
+
+        require(messageCount < maxMessagesPerPeriod, "Rate limit exceeded");
+        messageCount++;
+        emit RateLimitUpdated(block.timestamp, messageCount);
+        return true;
     }
 
-    function updateTransferredAmount(address user, uint256 amount) internal {
-        if (block.timestamp >= lastTransferTime[user] + rateLimitPeriod) {
-            transferredAmount[user] = amount;
-        } else {
-            transferredAmount[user] += amount;
-        }
-        lastTransferTime[user] = block.timestamp;
+    function getCurrentPeriodMessageCount() external view returns (uint256) {
+        return messageCount;
+    }
+
+    function timeUntilReset() external view returns (uint256) {
+        uint256 periodEnd = currentPeriodStart + periodLength;
+        if (block.timestamp >= periodEnd) return 0;
+        return periodEnd - block.timestamp;
     }
 }
