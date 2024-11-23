@@ -35,7 +35,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
         return _offRamps[sourceChainSelector][offRamp];
     }
 
-    function processMessage() internal override returns (bool) {
+    function processMessage() external virtual override returns (bool) {
         return super.processMessage();
     }
 
@@ -78,10 +78,6 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
         return true;
     }
 
-    function processMessage() internal override returns (bool) {
-        return super.processMessage();
-    }
-
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
@@ -93,14 +89,11 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        // Forward the deposit call with ETH value
         bytes4 depositSelector = bytes4(keccak256("deposit()"));
         bytes memory depositCall = abi.encodeWithSelector(depositSelector);
 
-        // Forward the call with msg.value
         (bool success, bytes memory result) = target.call{value: msg.value}(depositCall);
 
-        // Handle revert cases
         if (!success) {
             assembly {
                 if gt(returndatasize(), 0) {

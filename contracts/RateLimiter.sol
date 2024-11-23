@@ -29,7 +29,7 @@ contract RateLimiter is Ownable {
         emit RateLimitUpdated(_maxMessages, _periodDuration);
     }
 
-    function processMessage() external returns (bool) {
+    function processMessage() external virtual returns (bool) {
         if (block.timestamp >= periodStart + periodDuration) {
             _resetPeriod();
         }
