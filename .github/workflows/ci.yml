@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '20.x'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -45,7 +45,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '20.x'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -79,7 +79,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'
+          node-version: '20.x'
 
       - name: Install pnpm
         uses: pnpm/action-setup@v2
@@ -91,3 +91,12 @@ jobs:
 
       - name: Build contracts
         run: npx hardhat compile
+
+      - name: Verify contracts
+        if: env.ETHERSCAN_API_KEY != ''
+        env:
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
+        run: |
+          npx hardhat run scripts/verify-contracts.js --network mainnet || true
+          npx hardhat run scripts/verify-contracts.js --network polygon || true

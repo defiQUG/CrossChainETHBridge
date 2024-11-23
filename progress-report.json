@@ -1,0 +1,21 @@
+{
+  "contracts": {
+    "Smart Contract Core": {
+      "progress": 88,
+      "remainingTime": 40
+    },
+    "Testing Framework": {
+      "progress": 80,
+      "remainingTime": 35
+    },
+    "Infrastructure": {
+      "progress": 75,
+      "remainingTime": 25
+    }
+  },
+  "overall": {
+    "coverage": "81.00",
+    "mvpProgress": 81,
+    "totalRemainingTime": 100
+  }
+}
