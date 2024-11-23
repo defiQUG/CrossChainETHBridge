@@ -1,12 +1,15 @@
 const { ethers } = require("hardhat");
 
 async function deployContract(name, args = [], options = {}) {
-    // Handle abstract contracts
-    if (name.includes("MockRouter")) {
-        name = "TestRouter";
+    // Use fully qualified names for security contracts
+    let contractName = name;
+    if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
+        contractName = `contracts/security/${name}.sol:${name}`;
+    } else if (name.includes("MockRouter")) {
+        contractName = "TestRouter";
     }
 
-    const Factory = await ethers.getContractFactory(name);
+    const Factory = await ethers.getContractFactory(contractName);
     const deploymentArgs = args.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
             return ethers.getBigInt(arg.toString());
@@ -29,7 +32,11 @@ async function deployContract(name, args = [], options = {}) {
 }
 
 async function getContractAt(name, address) {
-    const Factory = await ethers.getContractFactory(name);
+    let contractName = name;
+    if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
+        contractName = `contracts/security/${name}.sol:${name}`;
+    }
+    const Factory = await ethers.getContractFactory(contractName);
     return Factory.attach(address);
 }
 

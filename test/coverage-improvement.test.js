@@ -25,12 +25,19 @@ describe("Coverage Improvement Tests", function () {
         [owner, user1, user2] = await ethers.getSigners();
         INITIAL_BALANCE = ethers.parseEther("10.0");
 
+        // Deploy contracts in correct order
         router = await deployContract("MockRouter");
         weth = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
+        const rateLimiter = await deployContract("RateLimiter", [MAX_MESSAGES, RATE_PERIOD]);
+        const emergencyPause = await deployContract("EmergencyPause", [PAUSE_THRESHOLD, PAUSE_DURATION]);
+
         messenger = await deployContract("CrossChainMessenger", [
             await router.getAddress(),
             await weth.getAddress(),
-            MAX_MESSAGES
+            await rateLimiter.getAddress(),
+            await emergencyPause.getAddress(),
+            BRIDGE_FEE,
+            MAX_FEE
         ]);
 
         // Fund the contract
