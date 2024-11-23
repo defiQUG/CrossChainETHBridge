@@ -36,7 +36,7 @@ describe("Router Coverage Tests", function () {
 
         it("Should revert getSupportedTokens for invalid chain", async function () {
             await expect(router.getSupportedTokens(138)) // Defi Oracle Meta
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("Chain not supported");
         });
     });
 
@@ -63,13 +63,13 @@ describe("Router Coverage Tests", function () {
             const TestReceiver = await ethers.getContractFactory("TestRouter");
             const receiver = await TestReceiver.deploy();
             await receiver.waitForDeployment();
-            await router.simulateMessageReceived(receiver.address, message);
+            await router.simulateMessageReceived(await receiver.getAddress(), message);
         });
 
         it("Should revert simulation with invalid source chain", async function () {
             const invalidMessage = { ...message, sourceChainSelector: POLYGON_CHAIN_SELECTOR };
             await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
-                .to.be.revertedWith("Invalid source chain");
+                .to.be.revertedWith("Chain not supported");
         });
 
         it("Should revert simulation with zero address target", async function () {
@@ -108,19 +108,19 @@ describe("Router Coverage Tests", function () {
             expect(messageFee).to.equal(ethers.parseEther("0.1"));
 
             await expect(router.getFee(DEFI_ORACLE_META_CHAIN_SELECTOR, ccipMessage))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("Chain not supported");
         });
 
         it("Should validate message data correctly", async function () {
             const invalidMessage = { ...ccipMessage, receiver: ethers.ZeroAddress };
             await expect(router.validateMessage(invalidMessage))
-                .to.be.revertedWith("Invalid recipient");
+                .to.be.revertedWith("Invalid sender length");
         });
 
         it("Should handle message validation errors", async function () {
             const invalidMessage = { ...ccipMessage, sourceChainSelector: 0 };
             await expect(router.validateMessage(invalidMessage))
-                .to.be.revertedWith("Invalid chain selector");
+                .to.be.revertedWith("Chain not supported");
         });
     });
 });

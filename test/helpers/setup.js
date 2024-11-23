@@ -32,7 +32,7 @@ async function deployTestContracts() {
     // Deploy EmergencyPause
     const emergencyPause = await deployContract("EmergencyPause", [
         TEST_CONFIG.PAUSE_THRESHOLD,
-        TEST_CONFIG.PAUSE_DURATION
+        TEST_CONFIG.PAUSE_DURATION.toString() // Convert to string to avoid ethers.js bigint issues
     ]);
 
     // Deploy CrossChainMessenger with pre-deployed contracts
