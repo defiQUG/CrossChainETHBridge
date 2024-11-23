@@ -7,10 +7,12 @@ contract RateLimiter is SecurityBase {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
+    uint256 private messageCount;
     mapping(uint256 => uint256) private messageCountsByPeriod;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
     event PeriodReset(uint256 timestamp);
+    event MessageProcessed(address indexed sender, uint256 timestamp);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
         require(_maxMessages > 0, "Max messages must be positive");
@@ -18,6 +20,7 @@ contract RateLimiter is SecurityBase {
         maxMessagesPerPeriod = _maxMessages;
         periodDuration = _periodDuration;
         currentPeriodStart = block.timestamp;
+        messageCount = 0;
     }
 
     function getCurrentPeriod() public view returns (uint256) {
@@ -35,7 +38,7 @@ contract RateLimiter is SecurityBase {
         return messageCount < maxMessagesPerPeriod;
     }
 
-    function processMessage() public override whenNotPaused returns (bool) {
+    function processMessage() public virtual whenNotPaused returns (bool) {
         require(checkRateLimit(), "Rate limit exceeded");
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             messageCount = 0;
