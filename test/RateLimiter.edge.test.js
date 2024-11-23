@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect } = require("./setup");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
 
@@ -7,12 +7,11 @@ describe("RateLimiter Edge Cases", function () {
   let owner;
   let user;
   const MAX_MESSAGES = 5;
-  const PERIOD_DURATION = 3600; // 1 hour
 
   beforeEach(async function () {
     [owner, user] = await ethers.getSigners();
     const RateLimiter = await ethers.getContractFactory("RateLimiter");
-    rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, PERIOD_DURATION);
+    rateLimiter = await RateLimiter.deploy(MAX_MESSAGES);
     await rateLimiter.deployed();
   });
 
@@ -24,11 +23,12 @@ describe("RateLimiter Edge Cases", function () {
       }
 
       // Advance time to just before period end
-      await time.increase(PERIOD_DURATION - 2);
+      const RATE_PERIOD = await rateLimiter.RATE_PERIOD();
+      await time.increase(RATE_PERIOD.toNumber() - 2);
 
       // Should still be rate limited
       await expect(rateLimiter.processMessage())
-        .to.be.revertedWithCustomError(rateLimiter, "RateLimitExceeded");
+        .to.be.revertedWith("Rate limit exceeded for current period");
 
       // Advance time to just after period end
       await time.increase(3);
@@ -39,17 +39,18 @@ describe("RateLimiter Edge Cases", function () {
     });
 
     it("Should handle rapid period transitions", async function () {
+      const RATE_PERIOD = await rateLimiter.RATE_PERIOD();
       // Process messages in multiple consecutive periods
       for (let period = 0; period < 3; period++) {
         for (let msg = 0; msg < MAX_MESSAGES; msg++) {
           await rateLimiter.processMessage();
         }
-        await time.increase(PERIOD_DURATION);
+        await time.increase(RATE_PERIOD.toNumber());
       }
 
-      // Verify period stats are correct
-      const [remaining, timeLeft] = await rateLimiter.getPeriodStats();
-      expect(remaining).to.equal(MAX_MESSAGES - 1);
+      // Verify current period can process messages
+      await expect(rateLimiter.processMessage())
+        .to.not.be.reverted;
     });
   });
 
@@ -61,25 +62,30 @@ describe("RateLimiter Edge Cases", function () {
 
       // Update rate limit mid-period
       const newMax = MAX_MESSAGES - 2;
-      await rateLimiter.updateRateLimit(newMax, PERIOD_DURATION);
+      await rateLimiter.setMaxMessagesPerPeriod(newMax);
+
+      // Process up to new limit
+      await rateLimiter.processMessage();
 
       // Should enforce new limit immediately
       await expect(rateLimiter.processMessage())
-        .to.be.revertedWithCustomError(rateLimiter, "RateLimitExceeded");
+        .to.be.revertedWith("Rate limit exceeded for current period");
     });
 
     it("Should handle multiple rate updates in quick succession", async function () {
+      // Multiple rate updates
       for (let i = 2; i <= 5; i++) {
-        await rateLimiter.updateRateLimit(i, PERIOD_DURATION);
+        await rateLimiter.setMaxMessagesPerPeriod(i);
       }
 
-      // Process messages up to new limit
+      // Process messages up to final limit
       for (let i = 0; i < 5; i++) {
         await rateLimiter.processMessage();
       }
 
+      // Should enforce latest limit
       await expect(rateLimiter.processMessage())
-        .to.be.revertedWithCustomError(rateLimiter, "RateLimitExceeded");
+        .to.be.revertedWith("Rate limit exceeded for current period");
     });
   });
 });

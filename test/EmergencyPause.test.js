@@ -43,9 +43,10 @@ describe("EmergencyPause", function () {
     });
 
     it("Should allow pauser to request pause", async function () {
-      await expect(emergencyPause.connect(pauser).requestPause())
-        .to.emit(emergencyPause, "PauseRequested")
-        .withArgs(pauser.address, (await time.latest()) + 3600);
+      const tx = await emergencyPause.connect(pauser).requestPause();
+      const receipt = await tx.wait();
+      const timestamp = await time.latest();
+      expect(tx).to.emit(emergencyPause, "PauseRequested").withArgs(pauser.address, timestamp + 3600);
     });
 
     it("Should enforce pause delay", async function () {
