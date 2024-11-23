@@ -84,16 +84,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(success, "Message simulation failed");
     }
 
-    function ccipSend(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) external payable override returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
-
-        (bool success, ) = target.call(simulatedMessage.data);
-        require(success, "Message simulation failed");
-    }
+    // First ccipSend implementation removed as it was duplicated and contained errors
 
     function ccipSend(
         uint64 destinationChainSelector,
