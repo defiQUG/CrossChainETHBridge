@@ -37,7 +37,7 @@ contract RateLimiter is Ownable {
         }
     }
 
-    function processMessage() external returns (bool) {
+    function processMessage() internal returns (bool) {
         checkPeriodReset();
         require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
         currentPeriodMessages++;
