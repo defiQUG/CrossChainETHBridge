@@ -4,18 +4,48 @@ pragma solidity ^0.8.19;
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MockRouter is IRouterClient {
+contract MockRouter is IRouterClient, Ownable {
+    uint256 private _extraFee;
+    mapping(uint64 => bool) private _supportedChains;
+    mapping(uint64 => address[]) private _supportedTokens;
+
     event MessageSent(
         uint64 destinationChainSelector,
         bytes message
     );
+    event ExtraFeeUpdated(uint256 oldFee, uint256 newFee);
+    event ChainSupportUpdated(uint64 chainSelector, bool supported);
+    event TokenSupportUpdated(uint64 chainSelector, address[] tokens);
+
+    constructor() {
+        _supportedChains[137] = true; // Polygon PoS
+        _supportedChains[138] = true; // Defi Oracle Meta
+    }
+
+    function setExtraFee(uint256 newFee) external onlyOwner {
+        uint256 oldFee = _extraFee;
+        _extraFee = newFee;
+        emit ExtraFeeUpdated(oldFee, newFee);
+    }
+
+    function setSupportedChain(uint64 chainSelector, bool supported) external onlyOwner {
+        _supportedChains[chainSelector] = supported;
+        emit ChainSupportUpdated(chainSelector, supported);
+    }
+
+    function setSupportedTokens(uint64 chainSelector, address[] calldata tokens) external onlyOwner {
+        _supportedTokens[chainSelector] = tokens;
+        emit TokenSupportUpdated(chainSelector, tokens);
+    }
 
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override returns (bytes32) {
-        require(destinationChainSelector != 0, "Invalid chain selector");
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
 
         bytes memory encodedMessage = abi.encode(
             message.receiver,
@@ -50,20 +80,19 @@ contract MockRouter is IRouterClient {
 
     function getFee(
         uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) external pure override returns (uint256) {
-        require(destinationChainSelector == 137, "Unsupported chain");
-        return 0.1 ether;
+        Client.EVM2AnyMessage memory // message parameter kept for interface compatibility
+    ) public view override returns (uint256) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        return 0.1 ether + _extraFee;
     }
 
-    function isChainSupported(uint64 chainSelector) external pure override returns (bool) {
-        return chainSelector == 137;
+    function isChainSupported(uint64 chainSelector) external view override returns (bool) {
+        return _supportedChains[chainSelector];
     }
 
-    function getSupportedTokens(uint64 chainSelector) external pure returns (address[] memory) {
-        require(chainSelector == 137, "Unsupported chain");
-        address[] memory tokens = new address[](0);
-        return tokens;
+    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
+        require(_supportedChains[chainSelector], "Chain not supported");
+        return _supportedTokens[chainSelector];
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
@@ -83,7 +112,7 @@ contract MockRouter is IRouterClient {
         address target,
         Client.Any2EVMMessage memory message
     ) external {
-        require(message.sourceChainSelector == 138, "Invalid source chain");
+        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
 
