@@ -70,7 +70,7 @@ describe("EmergencyPause", function() {
         it("Should allow owner to force unpause", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
             // Get the next block's timestamp and use it in the same transaction
-            const nextBlockTimestamp = await time.latest() + 1n;
+            const nextBlockTimestamp = BigInt(await time.latest());
             await time.setNextBlockTimestamp(nextBlockTimestamp);
             await expect(emergencyPause.emergencyUnpause())
                 .to.emit(emergencyPause, "EmergencyUnpauseTriggered")
