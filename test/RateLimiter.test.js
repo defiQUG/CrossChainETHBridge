@@ -30,30 +30,30 @@ describe("contracts/security/RateLimiter.sol:RateLimiter", function() {
     describe("Rate Limiting", function() {
         it("Should allow messages within rate limit", async function() {
             for (let i = 0; i < MAX_MESSAGES; i++) {
-                await expect(rateLimiter.processMessage())
+                await expect(rateLimiter.checkAndUpdateRateLimit())
                     .to.emit(rateLimiter, "MessageProcessed")
                     .withArgs(owner.address, await time.latest());
             }
-            await expect(rateLimiter.processMessage())
+            await expect(rateLimiter.checkAndUpdateRateLimit())
                 .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should reset counter after period expires", async function() {
             // Use up all messages
             for (let i = 0; i < MAX_MESSAGES; i++) {
-                await rateLimiter.processMessage();
+                await rateLimiter.checkAndUpdateRateLimit();
             }
             // Advance time by period length
             await time.increase(PERIOD_LENGTH + 1);
             // Should be able to send messages again
-            await expect(rateLimiter.processMessage())
+            await expect(rateLimiter.checkAndUpdateRateLimit())
                 .to.emit(rateLimiter, "PeriodReset");
             expect(await rateLimiter.getCurrentMessageCount()).to.equal(1);
         });
 
         it("Should track message count correctly", async function() {
             for (let i = 0; i < 3; i++) {
-                await rateLimiter.processMessage();
+                await rateLimiter.checkAndUpdateRateLimit();
             }
             expect(await rateLimiter.getCurrentMessageCount()).to.equal(3);
             expect(await rateLimiter.getRemainingMessages()).to.equal(MAX_MESSAGES - 3);
