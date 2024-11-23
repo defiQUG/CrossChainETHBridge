@@ -84,13 +84,3 @@ contract EmergencyPause is Ownable, Pausable {
         return pauseDuration - elapsedTime;
     }
 }
-
-    function getRemainingPauseDuration() external view returns (uint256) {
-        if (!paused()) return 0;
-        uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
-        if (elapsedTime >= pauseDuration) {
-            return 0;
-        }
-        return pauseDuration - elapsedTime;
-    }
-}
