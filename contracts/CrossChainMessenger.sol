@@ -35,21 +35,22 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     constructor(
         address _router,
         address _weth,
+        address _rateLimiter,
+        address _emergencyPause,
         uint256 _bridgeFee,
-        uint256 _maxMessagesPerPeriod,
-        uint256 _pauseThreshold,
-        uint256 _pauseDuration
+        uint256 _maxFee
     ) {
         require(_router != address(0), "CrossChainMessenger: zero router address");
         require(_weth != address(0), "CrossChainMessenger: zero WETH address");
-        require(_bridgeFee <= MAX_FEE, "CrossChainMessenger: fee exceeds maximum");
+        require(_rateLimiter != address(0), "CrossChainMessenger: zero rate limiter address");
+        require(_emergencyPause != address(0), "CrossChainMessenger: zero emergency pause address");
+        require(_bridgeFee <= _maxFee, "CrossChainMessenger: fee exceeds maximum");
 
         router = IRouterClient(_router);
         weth = IWETH(_weth);
+        rateLimiter = RateLimiter(_rateLimiter);
+        emergencyPause = EmergencyPause(_emergencyPause);
         bridgeFee = _bridgeFee;
-
-        rateLimiter = new RateLimiter(_maxMessagesPerPeriod, 3600);
-        emergencyPause = new EmergencyPause(_pauseThreshold, _pauseDuration);
     }
 
     function getRouter() external view returns (address) {

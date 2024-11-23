@@ -24,7 +24,7 @@ async function deployTestContracts() {
     const mockRouter = await deployContract("MockRouter");
 
     // Deploy RateLimiter
-    const rateLimiter = await deployContract("contracts/security/RateLimiter.sol:RateLimiter", [
+    const rateLimiter = await deployContract("RateLimiter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
     ]);
@@ -35,7 +35,7 @@ async function deployTestContracts() {
         TEST_CONFIG.PAUSE_DURATION
     ]);
 
-    // Deploy CrossChainMessenger
+    // Deploy CrossChainMessenger with pre-deployed contracts
     const crossChainMessenger = await deployContract("CrossChainMessenger", [
         await mockRouter.getAddress(),
         await mockWETH.getAddress(),
