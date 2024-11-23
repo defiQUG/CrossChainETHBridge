@@ -27,7 +27,15 @@ contract RateLimiter is Ownable {
         pauseDuration = 1 hours; // Default pause duration
     }
 
-    function setRateLimit(uint256 _maxMessages, uint256 _periodDuration) external onlyOwner {
+    function checkPeriodReset() internal {
+        if (block.timestamp >= periodStart + periodDuration) {
+            periodStart = block.timestamp;
+            currentPeriodMessages = 0;
+            emit PeriodReset(block.timestamp);
+        }
+    }
+
+    function setRateLimit(uint256 _maxMessages, uint256 _periodDuration) public onlyOwner {
         require(_maxMessages > 0, "Max messages must be positive");
         require(_periodDuration > 0, "Period duration must be positive");
         maxMessagesPerPeriod = _maxMessages;
@@ -35,17 +43,8 @@ contract RateLimiter is Ownable {
         emit RateLimitUpdated(_maxMessages, _periodDuration);
     }
 
-    // Alias for backward compatibility
     function setMaxMessagesPerPeriod(uint256 _maxMessages) external onlyOwner {
         setRateLimit(_maxMessages, periodDuration);
-    }
-
-    function checkPeriodReset() internal {
-        if (block.timestamp >= periodStart + periodDuration) {
-            periodStart = block.timestamp;
-            currentPeriodMessages = 0;
-            emit PeriodReset(block.timestamp);
-        }
     }
 
     function processMessage() public returns (bool) {
