@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { deployContract } = require("./test-utils");
 
 // Shared test configuration
 const TEST_CONFIG = {
@@ -17,26 +18,20 @@ async function deployTestContracts() {
     const [owner, user, addr1, addr2] = await ethers.getSigners();
 
     // Deploy MockWETH
-    const MockWETH = await ethers.getContractFactory("MockWETH");
-    const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-    await mockWETH.waitForDeployment();
+    const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
     // Deploy MockRouter
-    const MockRouter = await ethers.getContractFactory("MockRouter");
-    const mockRouter = await MockRouter.deploy();
-    await mockRouter.waitForDeployment();
+    const mockRouter = await deployContract("MockRouter");
 
     // Deploy CrossChainMessenger
-    const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    const crossChainMessenger = await CrossChainMessenger.deploy(
+    const crossChainMessenger = await deployContract("CrossChainMessenger", [
         await mockRouter.getAddress(),
         await mockWETH.getAddress(),
         TEST_CONFIG.BRIDGE_FEE,
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PAUSE_THRESHOLD,
         TEST_CONFIG.PAUSE_DURATION
-    );
-    await crossChainMessenger.waitForDeployment();
+    ]);
 
     // Fund the contract for tests
     await owner.sendTransaction({
