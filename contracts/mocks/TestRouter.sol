@@ -173,21 +173,3 @@ contract TestRouter is MockRouter, IRouterClient {
 
     receive() external payable override {}
 }
-
-    function setSupportedChain(uint64 chainSelector, bool supported) external onlyOwner {
-        _supportedChains[chainSelector] = supported;
-        emit ChainSupportUpdated(chainSelector, supported);
-    }
-
-    function setSupportedTokens(address token, bool supported) external onlyOwner {
-        _supportedTokens[token] = supported;
-        emit TokenSupportUpdated(token, supported);
-    }
-
-    function setExtraFee(uint256 _extraFee) external onlyOwner {
-        extraFee = _extraFee;
-        emit ExtraFeeUpdated(_extraFee);
-    }
-
-    receive() external payable override {}
-}
