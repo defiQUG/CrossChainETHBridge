@@ -15,6 +15,9 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
         require(_supportedChains[chainSelector], "Unsupported chain");
+        if (chainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR) {
+            revert("Unsupported chain");
+        }
         return _supportedTokens[chainSelector];
     }
 
@@ -31,6 +34,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(message.sourceChainSelector != 0, "Invalid chain selector");
         require(message.sender.length == 20, "Invalid sender length");
         require(message.data.length > 0, "Empty message data");
+        require(message.receiver != address(0), "Invalid recipient");
         return true;
     }
 
@@ -61,6 +65,7 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused {
         require(target != address(0), "Invalid target address");
+        require(_supportedChains[message.sourceChainSelector], "Invalid source chain");
         require(validateMessage(message), "Message validation failed");
         require(processMessage(), "Rate limit exceeded");
 
