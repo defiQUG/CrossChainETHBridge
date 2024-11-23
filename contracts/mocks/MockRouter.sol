@@ -19,7 +19,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     uint256 internal constant _extraFee = 0.0005 ether;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
-    event MessageSimulated(address indexed target, bytes32 indexed messageId);
+    event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
     constructor() RateLimiter(100, 1 hours) {
@@ -84,10 +84,14 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
-        emit MessageSimulated(target, messageId);
+        emit MessageSimulated(target, messageId, msg.value);
+
+        // Forward the deposit call with ETH value
+        bytes4 depositSelector = bytes4(keccak256("deposit()"));
+        bytes memory depositCall = abi.encodeWithSelector(depositSelector);
 
         // Forward the call with msg.value
-        (bool success, bytes memory result) = target.call{value: msg.value}(message.data);
+        (bool success, bytes memory result) = target.call{value: msg.value}(depositCall);
 
         // Handle revert cases
         if (!success) {
