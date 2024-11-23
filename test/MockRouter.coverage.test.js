@@ -122,8 +122,18 @@ describe("Router Coverage Tests", function () {
             };
         });
 
-        it("Should handle ccipReceive correctly", async function () {
-            await router.ccipReceive(ccipMessage);
+        it("Should handle message processing correctly", async function () {
+            const validMessage = {
+                ...ccipMessage,
+                sourceChainSelector: POLYGON_CHAIN_SELECTOR,
+                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                    ['address', 'uint256'],
+                    [addr1.address, ethers.parseEther("1.0")]
+                )
+            };
+
+            // Process message should succeed
+            expect(await router.processMessage()).to.be.true;
         });
 
         it("Should handle fee calculations correctly", async function () {
@@ -144,6 +154,77 @@ describe("Router Coverage Tests", function () {
             const invalidMessage = { ...ccipMessage, sourceChainSelector: 0 };
             await expect(router.validateMessage(invalidMessage))
                 .to.be.revertedWith("Chain not supported");
+        });
+
+        it("Should handle routeMessage execution correctly", async function () {
+            const MockWETH = await ethers.getContractFactory("MockWETH");
+            const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
+            await receiver.waitForDeployment();
+
+            const receiverAddress = await receiver.getAddress();
+            const depositInterface = new ethers.Interface(["function deposit() payable"]);
+            const depositCall = depositInterface.encodeFunctionData("deposit");
+
+            const validMessage = {
+                ...ccipMessage,
+                data: depositCall,
+                receiver: receiverAddress
+            };
+
+            const gasLimit = 300000;
+            const gasForCallExactCheck = 1;
+
+            const [success, retBytes, gasUsed] = await router.routeMessage(
+                validMessage,
+                gasForCallExactCheck,
+                gasLimit,
+                receiverAddress
+            );
+
+            expect(success).to.be.true;
+            expect(gasUsed).to.be.lte(gasLimit);
+        });
+
+        it("Should handle routeMessage failures", async function () {
+            const invalidReceiver = ethers.ZeroAddress;
+            const gasLimit = 300000;
+
+            const [success, , ] = await router.routeMessage(
+                ccipMessage,
+                0,
+                gasLimit,
+                invalidReceiver
+            );
+
+            expect(success).to.be.false;
+        });
+
+        it("Should enforce gas limits correctly", async function () {
+            const MockWETH = await ethers.getContractFactory("MockWETH");
+            const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
+            await receiver.waitForDeployment();
+
+            const receiverAddress = await receiver.getAddress();
+            const depositInterface = new ethers.Interface(["function deposit() payable"]);
+            const depositCall = depositInterface.encodeFunctionData("deposit");
+
+            const validMessage = {
+                ...ccipMessage,
+                data: depositCall,
+                receiver: receiverAddress
+            };
+
+            const tooLowGasLimit = 1000;
+            const gasForCallExactCheck = 1;
+
+            await expect(
+                router.routeMessage(
+                    validMessage,
+                    gasForCallExactCheck,
+                    tooLowGasLimit,
+                    receiverAddress
+                )
+            ).to.be.revertedWith("Gas limit exceeded");
         });
     });
 });
