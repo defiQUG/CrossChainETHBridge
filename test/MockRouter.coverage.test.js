@@ -45,14 +45,15 @@ describe("MockRouter Coverage Tests", function () {
 
         beforeEach(async function () {
             message = {
-                messageId: ethers.hexlify(ethers.randomBytes(32)),
+                messageId: ethers.randomBytes(32),
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
-                sender: owner.address,
+                sender: ethers.hexlify(ethers.randomBytes(20)),
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
                     [addr1.address, ethers.parseEther("1.0")]
                 ),
-                destTokenAmounts: []
+                destTokenAmounts: [],
+                extraArgs: "0x"
             };
         });
 
@@ -80,16 +81,18 @@ describe("MockRouter Coverage Tests", function () {
 
         beforeEach(async function () {
             ccipMessage = {
+                messageId: ethers.randomBytes(32),
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
-                sender: owner.address,
+                sender: ethers.hexlify(ethers.randomBytes(20)),
                 receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
-                    ['uint256'],
-                    [ethers.parseEther("1.0")]
+                    ['address', 'uint256'],
+                    [addr1.address, ethers.parseEther("1.0")]
                 ),
                 tokenAmounts: [],
                 extraArgs: "0x",
-                feeToken: ethers.ZeroAddress
+                feeToken: ethers.ZeroAddress,
+                feeAmount: ethers.parseEther("0.1")
             };
         });
 
