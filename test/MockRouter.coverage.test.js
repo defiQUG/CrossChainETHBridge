@@ -132,8 +132,12 @@ describe("Router Coverage Tests", function () {
                 )
             };
 
-            // Process message should succeed
-            expect(await router.processMessage()).to.be.true;
+            // Call processMessage and wait for transaction
+            const tx = await router.processMessage();
+            await tx.wait();
+
+            // Verify transaction succeeded
+            expect(tx.hash).to.be.properHex(66);
         });
 
         it("Should handle fee calculations correctly", async function () {

@@ -15,10 +15,15 @@ module.exports = {
     }
   },
   networks: {
-    defiOracleMeta: {
+    mainnet: {
       url: process.env.DEFI_ORACLE_META_RPC || "https://mainnet-rpc.dometachain.com",
       chainId: 138,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      verify: {
+        etherscan: {
+          apiUrl: "https://api.dometachain.com"
+        }
+      }
     },
     polygon: {
       url: process.env.POLYGON_RPC || "https://polygon-rpc.com",
