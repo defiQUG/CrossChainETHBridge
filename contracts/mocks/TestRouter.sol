@@ -109,10 +109,12 @@ contract TestRouter is MockRouter, IRouterClient {
         emit MessageSimulated(target, messageId, msg.value);
 
         // Try to execute the message with forwarded ETH value
+        bytes4 depositSelector = bytes4(keccak256("deposit()"));
+        bytes memory depositCall = abi.encodeWithSelector(depositSelector);
         (bool success, bytes memory result) = target.call{
             gas: gasleft() - 2000,
             value: msg.value
-        }(message.data);
+        }(depositCall);
         if (!success) {
             if (result.length > 0) {
                 assembly {
