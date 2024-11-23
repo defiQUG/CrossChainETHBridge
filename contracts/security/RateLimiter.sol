@@ -11,7 +11,6 @@ contract RateLimiter is SecurityBase {
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
     event PeriodReset(uint256 timestamp);
-    event MessageProcessed(address indexed sender, uint256 timestamp);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
         require(_maxMessages > 0, "Max messages must be positive");
@@ -37,7 +36,7 @@ contract RateLimiter is SecurityBase {
         return messageCount < maxMessagesPerPeriod;
     }
 
-    function processMessage() public virtual whenNotPaused returns (bool) {
+    function processMessage() public virtual override whenNotPaused returns (bool) {
         require(checkRateLimit(), "Rate limit exceeded");
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             messageCount = 0;

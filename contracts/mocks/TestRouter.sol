@@ -4,9 +4,8 @@ pragma solidity ^0.8.20;
 import "./MockRouter.sol";
 
 contract TestRouter is MockRouter {
-    constructor() {
-        _supportedChains[137] = true; // Polygon
-        _supportedChains[138] = true; // Defi Oracle Meta
+    constructor() MockRouter() {
+        // Chain setup is handled in MockRouter constructor
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
