@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "./SecurityBase.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RateLimiter is SecurityBase {
+contract RateLimiter is Ownable {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
-    mapping(uint256 => uint256) private messageCountsByPeriod;
+    uint256 public messageCount;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
+    event MessageProcessed(uint256 timestamp, uint256 count);
     event PeriodReset(uint256 timestamp);
 
     constructor(uint256 _maxMessages, uint256 _periodDuration) {
@@ -18,39 +19,36 @@ contract RateLimiter is SecurityBase {
         maxMessagesPerPeriod = _maxMessages;
         periodDuration = _periodDuration;
         currentPeriodStart = block.timestamp;
-        messageCount = 0;
+        _transferOwnership(msg.sender);
     }
 
-    function getCurrentPeriod() public view returns (uint256) {
-        return currentPeriodStart;
+    function setMaxMessagesPerPeriod(uint256 _maxMessages) external onlyOwner {
+        require(_maxMessages > 0, "Max messages must be positive");
+        maxMessagesPerPeriod = _maxMessages;
+        emit RateLimitUpdated(_maxMessages, periodDuration);
     }
 
-    function messageCountByPeriod(uint256 period) external view returns (uint256) {
-        return messageCountsByPeriod[period];
+    function setPeriodDuration(uint256 _periodDuration) external onlyOwner {
+        require(_periodDuration > 0, "Period duration must be positive");
+        periodDuration = _periodDuration;
+        emit RateLimitUpdated(maxMessagesPerPeriod, _periodDuration);
     }
 
-    function checkRateLimit() public view returns (bool) {
+    function checkPeriodReset() internal {
         if (block.timestamp >= currentPeriodStart + periodDuration) {
-            return true;
-        }
-        return messageCount < maxMessagesPerPeriod;
-    }
-
-    function processMessage() public virtual override whenNotPaused returns (bool) {
-        require(checkRateLimit(), "Rate limit exceeded");
-        if (block.timestamp >= currentPeriodStart + periodDuration) {
-            messageCount = 0;
             currentPeriodStart = block.timestamp;
+            messageCount = 0;
             emit PeriodReset(block.timestamp);
         }
-        messageCount++;
-        messageCountsByPeriod[currentPeriodStart] = messageCount;
-        emit MessageProcessed(msg.sender, block.timestamp);
-        return true;
     }
 
-    function checkAndUpdateRateLimit() external whenNotPaused {
-        require(processMessage(), "Rate limit exceeded");
+    function processMessage() external returns (bool) {
+        checkPeriodReset();
+        require(messageCount < maxMessagesPerPeriod, "Rate limit exceeded");
+
+        messageCount++;
+        emit MessageProcessed(block.timestamp, messageCount);
+        return true;
     }
 
     function getCurrentMessageCount() external view returns (uint256) {
@@ -70,19 +68,5 @@ contract RateLimiter is SecurityBase {
             return 0;
         }
         return periodEnd - block.timestamp;
-    }
-
-    function setRateLimit(uint256 _maxMessages, uint256 _periodDuration) external onlyOwner {
-        require(_maxMessages > 0, "Max messages must be positive");
-        require(_periodDuration > 0, "Period duration must be positive");
-        maxMessagesPerPeriod = _maxMessages;
-        periodDuration = _periodDuration;
-        emit RateLimitUpdated(_maxMessages, _periodDuration);
-    }
-
-    function setMaxMessagesPerPeriod(uint256 _maxMessages) external onlyOwner {
-        require(_maxMessages > 0, "Max messages must be positive");
-        maxMessagesPerPeriod = _maxMessages;
-        emit RateLimitUpdated(_maxMessages, periodDuration);
     }
 }
