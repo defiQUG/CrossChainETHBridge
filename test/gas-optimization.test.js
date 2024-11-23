@@ -73,11 +73,11 @@ describe("Gas Optimization Tests", function() {
                 [await user.getAddress(), amount]
             );
 
-            // Create properly formatted message with exact 20-byte sender
+            // Create properly formatted message with exact requirements from TestRouter
             const message = {
-                messageId: ethers.hexlify(ethers.randomBytes(32)),
+                messageId: ethers.keccak256(ethers.randomBytes(32)),
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(await owner.getAddress(), 20),
+                sender: ethers.getBytes(ethers.zeroPadValue(await owner.getAddress(), 20)),
                 data: data,
                 destTokenAmounts: [],
                 feeToken: ethers.ZeroAddress,
