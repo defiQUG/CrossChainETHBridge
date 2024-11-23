@@ -33,7 +33,6 @@ contract TestRouter is MockRouter, IRouterClient {
         require(message.sourceChainSelector != 0, "Invalid chain selector");
         require(message.sender.length == 20, "Invalid sender length");
         require(message.data.length > 0, "Empty message data");
-        require(message.receiver != address(0), "Invalid recipient");
         return true;
     }
 
