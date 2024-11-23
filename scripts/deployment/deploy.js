@@ -28,7 +28,10 @@ async function main() {
 
   // Deploy MockWETH
   const MockWETH = await hre.ethers.getContractFactory("MockWETH");
-  const mockWETH = await MockWETH.deploy();
+  const mockWETH = await MockWETH.deploy(
+    "Wrapped Ether", // Token name
+    "WETH"          // Token symbol
+  );
   await mockWETH.waitForDeployment();
   console.log("MockWETH deployed to:", await mockWETH.getAddress());
 
