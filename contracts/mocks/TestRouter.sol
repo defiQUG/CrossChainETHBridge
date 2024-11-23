@@ -86,7 +86,7 @@ contract TestRouter is MockRouter, IRouterClient {
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
-    ) external override whenNotPaused {
+    ) external override whenNotPaused payable {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
@@ -108,8 +108,11 @@ contract TestRouter is MockRouter, IRouterClient {
         ));
         emit MessageSimulated(target, messageId);
 
-        // Try to execute the message
-        (bool success, bytes memory result) = target.call{gas: gasleft() - 2000}(message.data);
+        // Try to execute the message with forwarded ETH value
+        (bool success, bytes memory result) = target.call{
+            gas: gasleft() - 2000,
+            value: msg.value
+        }(message.data);
         if (!success) {
             if (result.length > 0) {
                 assembly {

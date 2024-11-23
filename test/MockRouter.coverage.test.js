@@ -65,13 +65,22 @@ describe("Router Coverage Tests", function () {
             const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
 
+            const depositAmount = ethers.parseEther("1.0");
+
             // Update message data to be a valid WETH deposit
             message.data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['address'],
                 [addr1.address]
             );
 
-            await router.simulateMessageReceived(await receiver.getAddress(), message);
+            await router.simulateMessageReceived(
+                await receiver.getAddress(),
+                message,
+                { value: depositAmount }
+            );
+
+            // Verify the deposit was successful
+            expect(await receiver.balanceOf(addr1.address)).to.equal(depositAmount);
         });
 
         it("Should revert simulation with invalid source chain", async function () {
