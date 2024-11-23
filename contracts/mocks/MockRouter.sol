@@ -4,9 +4,10 @@ pragma solidity ^0.8.20;
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "../security/RateLimiter.sol";
 
-abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
+abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
