@@ -14,7 +14,7 @@ const {
     DEFI_ORACLE_META_CHAIN_SELECTOR
 } = TEST_CONFIG;
 
-describe("RateLimiter", function() {
+describe("contracts/security/RateLimiter.sol:RateLimiter", function() {
     let owner, user1, user2;
     let rateLimiter;
     const MAX_MESSAGES = 5;
@@ -22,7 +22,7 @@ describe("RateLimiter", function() {
 
     beforeEach(async function() {
         [owner, user1, user2] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("RateLimiter");
+        const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, PERIOD_LENGTH);
         await rateLimiter.waitForDeployment();
     });

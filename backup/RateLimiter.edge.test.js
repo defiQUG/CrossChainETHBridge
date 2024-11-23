@@ -7,7 +7,7 @@ describe("RateLimiter Edge Cases", function () {
   const MAX_MESSAGES = 5;
   beforeEach(async function () {
     [owner, user] = await ethers.getSigners();
-    const RateLimiter = await ethers.getContractFactory("RateLimiter");
+    const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
     rateLimiter = await RateLimiter.deploy(MAX_MESSAGES);
     await rateLimiter.waitForDeployment();
   });

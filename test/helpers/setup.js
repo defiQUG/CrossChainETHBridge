@@ -24,7 +24,7 @@ async function deployTestContracts() {
     const mockRouter = await deployContract("MockRouter");
 
     // Deploy RateLimiter
-    const rateLimiter = await deployContract("RateLimiter", [
+    const rateLimiter = await deployContract("contracts/security/RateLimiter.sol:RateLimiter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
     ]);

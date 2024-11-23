@@ -1,6 +1,6 @@
 const { ethers } = require('hardhat'); const { expect } = require('chai'); const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup'); const { deployContract, getContractAt } = require('./helpers/test-utils');
 
-describe("RateLimiter", function() {
+describe("contracts/security/RateLimiter.sol:RateLimiter", function() {
     let owner, user1, user2;
     let rateLimiter;
     const MAX_MESSAGES_PER_PERIOD = 5;
@@ -15,7 +15,7 @@ describe("RateLimiter", function() {
     mockWETH = contracts.mockWETH;
     crossChainMessenger = contracts.crossChainMessenger;
         [owner, user1, user2] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("RateLimiter");
+        const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES_PER_PERIOD, PERIOD_LENGTH);
         await rateLimiter.waitForDeployment();
     });
