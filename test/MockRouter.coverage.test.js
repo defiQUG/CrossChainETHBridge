@@ -17,17 +17,17 @@ describe("MockRouter Coverage Tests", function () {
 
   describe("Chain Support and Token Management", function () {
     it("Should verify supported chains correctly", async function () {
-      expect(await mockRouter.isChainSupported(137)).to.be.true;
-      expect(await mockRouter.isChainSupported(138)).to.be.false;
+      expect(await mockRouter.isChainSupported(137)).to.be.true; // Polygon PoS
+      expect(await mockRouter.isChainSupported(138)).to.be.false; // Defi Oracle Meta
     });
 
     it("Should handle getSupportedTokens for valid chain", async function () {
-      const tokens = await mockRouter.getSupportedTokens(137);
+      const tokens = await mockRouter.getSupportedTokens(137); // Polygon PoS
       expect(tokens).to.be.an('array').that.is.empty;
     });
 
     it("Should revert getSupportedTokens for invalid chain", async function () {
-      await expect(mockRouter.getSupportedTokens(138))
+      await expect(mockRouter.getSupportedTokens(138)) // Defi Oracle Meta
         .to.be.revertedWith("Unsupported chain");
     });
   });
@@ -87,7 +87,7 @@ describe("MockRouter Coverage Tests", function () {
 
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
-        sourceChainSelector: 138,
+        sourceChainSelector: 138, // From Defi Oracle Meta
         sender: ethers.utils.hexZeroPad(owner.address, 32),
         data: ethers.utils.defaultAbiCoder.encode(
           ['address', 'uint256'],
@@ -101,9 +101,7 @@ describe("MockRouter Coverage Tests", function () {
 
     it("Should handle fee calculations correctly", async function () {
       const { utils } = ethers;
-
-      // Create message using Client.EVM2AnyMessage as a function
-      const messageParams = {
+      const message = {
         receiver: utils.defaultAbiCoder.encode(['address'], [addr1.address]),
         data: utils.defaultAbiCoder.encode(['uint256'], [utils.parseEther("1.0")]),
         tokenAmounts: [],
@@ -111,19 +109,17 @@ describe("MockRouter Coverage Tests", function () {
         feeToken: ethers.constants.AddressZero
       };
 
-      const message = Client.EVM2AnyMessage(messageParams);
-      const messageFee = await mockRouter.getFee(137, message);
+      const messageFee = await mockRouter.getFee(137, message); // To Polygon PoS
       expect(messageFee).to.equal(utils.parseEther("0.1"));
 
-      // Test fee calculation with address
-      const addressFee = await mockRouter.getFee(137, addr1.address);
-      expect(addressFee).to.equal(utils.parseEther("0.1"));
+      await expect(mockRouter.getFee(138, message)) // To Defi Oracle Meta
+        .to.be.revertedWith("Unsupported chain");
     });
 
     it("Should validate message data correctly", async function () {
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
-        sourceChainSelector: 138,
+        sourceChainSelector: 138, // From Defi Oracle Meta
         sender: ethers.utils.hexZeroPad(owner.address, 32),
         data: ethers.utils.defaultAbiCoder.encode(
           ['address', 'uint256'],
