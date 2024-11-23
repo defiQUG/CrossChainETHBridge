@@ -88,5 +88,14 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         require(success, "Message simulation failed");
     }
 
+    function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        uint256 totalFee = _baseFee;
+        if (message.data.length > 0) {
+            totalFee += _extraFee;
+        }
+        return totalFee;
+    }
+
     receive() external payable virtual {}
 }
