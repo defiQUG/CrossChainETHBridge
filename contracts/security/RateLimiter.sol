@@ -68,4 +68,21 @@ contract RateLimiter is Ownable {
         messageCount++;
         emit MessageProcessed(msg.sender, block.timestamp);
     }
+
+    function processMessage() external checkRateLimit {
+        // The checkRateLimit modifier handles all the rate limiting logic
+    }
+
+    function setMaxMessagesPerPeriod(uint256 _maxMessages) external onlyOwner {
+        require(_maxMessages > 0, "Max messages must be positive");
+        maxMessagesPerPeriod = _maxMessages;
+        emit RateLimitUpdated(_maxMessages, periodDuration);
+    }
+
+    function emergencyPause() external onlyOwner {
+        // This function is called in emergency situations to pause message processing
+        _pause();
+    }
+        emit MessageProcessed(msg.sender, block.timestamp);
+    }
 }
