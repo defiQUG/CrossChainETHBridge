@@ -68,4 +68,15 @@ contract EmergencyPause is SecurityBase {
         _unpause();
         emit SecurityUnpaused(msg.sender, block.timestamp);
     }
+
+    function checkAndPause(uint256 amount) external whenNotPaused returns (bool) {
+        messageCount++;
+        emit MessageProcessed(msg.sender, block.timestamp);
+
+        if (messageCount >= pauseThreshold) {
+            _triggerEmergencyPause();
+            return false;
+        }
+        return true;
+    }
 }
