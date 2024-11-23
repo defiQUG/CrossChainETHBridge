@@ -19,7 +19,7 @@ describe("RateLimiter", function () {
         it("Should allow messages within rate limit", async function () {
             for (let i = 0; i < 5; i++) {
                 await rateLimiter.connect(user).processMessage();
-                const messageCount = await rateLimiter.currentPeriodMessages();
+                const messageCount = await rateLimiter.getCurrentPeriodMessages();
                 expect(messageCount).to.equal(i + 1);
             }
         });
@@ -29,7 +29,7 @@ describe("RateLimiter", function () {
                 await rateLimiter.connect(user).processMessage();
             }
             await expect(rateLimiter.connect(user).processMessage())
-                .to.be.revertedWith("Rate limit exceeded");
+                .to.be.revertedWith("RateLimiter: rate limit exceeded");
         });
 
         it("Should reset period after duration", async function () {
@@ -44,7 +44,7 @@ describe("RateLimiter", function () {
 
             // Should allow messages in new period
             await rateLimiter.connect(user).processMessage();
-            const messageCount = await rateLimiter.currentPeriodMessages();
+            const messageCount = await rateLimiter.getCurrentPeriodMessages();
             expect(messageCount).to.equal(1);
         });
 
@@ -52,14 +52,14 @@ describe("RateLimiter", function () {
             const newMax = 20;
             const newPeriod = 7200;
 
-            await rateLimiter.connect(owner).updateRateLimit(newMax, newPeriod);
+            await rateLimiter.connect(owner).setRateLimit(newMax, newPeriod);
 
-            expect(await rateLimiter.maxMessagesPerPeriod()).to.equal(newMax);
-            expect(await rateLimiter.periodDuration()).to.equal(newPeriod);
+            expect(await rateLimiter.getMaxMessagesPerPeriod()).to.equal(newMax);
+            expect(await rateLimiter.getPeriodDuration()).to.equal(newPeriod);
         });
 
         it("Should not allow non-owner to update rate limit", async function () {
-            await expect(rateLimiter.connect(user).updateRateLimit(20, 7200))
+            await expect(rateLimiter.connect(user).setRateLimit(20, 7200))
                 .to.be.revertedWith("Ownable: caller is not the owner");
         });
     });
