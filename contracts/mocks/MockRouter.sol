@@ -23,8 +23,9 @@ contract MockRouter is IRouterClient, Ownable {
 
     constructor() {
         _supportedChains[137] = true; // Polygon PoS
-        _supportedChains[138] = true; // Defi Oracle Meta
-        _baseFee = 0.01 ether; // Set default base fee
+        _supportedChains[138] = false; // Defi Oracle Meta - not supported initially
+        _baseFee = 0.1 ether; // Set default base fee to match test expectations
+        _extraFee = 0.05 ether; // Set default extra fee
     }
 
     function setBaseFee(uint256 newFee) external onlyOwner {
@@ -122,8 +123,11 @@ contract MockRouter is IRouterClient, Ownable {
             revert("Invalid chain selector");
         }
 
-        (address recipient, ) = abi.decode(message.data, (address, uint256));
-        if (recipient == address(0)) {
+        if (message.sender == address(0)) {
+            revert("Invalid sender");
+        }
+
+        if (message.receiver == address(0)) {
             revert("Invalid recipient");
         }
 
