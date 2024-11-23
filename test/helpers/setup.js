@@ -20,8 +20,8 @@ async function deployTestContracts() {
     // Deploy MockWETH
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
-    // Deploy MockRouter
-    const mockRouter = await deployContract("MockRouter");
+    // Deploy TestRouter (concrete implementation of MockRouter)
+    const mockRouter = await deployContract("TestRouter");
 
     // Deploy RateLimiter
     const rateLimiter = await deployContract("RateLimiter", [
