@@ -100,8 +100,8 @@ describe("Security Features Integration Tests", function() {
             const maxMessages = await rateLimiter.maxMessagesPerPeriod();
 
             // Process messages until rate limit
-            for(let i = 0; i < maxMessages; i++) {
-                if(i < maxMessages - 1) {
+            for(let i = 0n; i < maxMessages; i++) {
+                if(i < maxMessages - 1n) {
                     await rateLimiter.processMessage();
                     await emergencyPause.lockValue(amount);
                 } else {
@@ -110,9 +110,10 @@ describe("Security Features Integration Tests", function() {
                 }
             }
 
-            // Verify total value locked
-            const expectedLocked = amount * BigInt(maxMessages - 1n);
-            expect(await emergencyPause.totalValueLocked()).to.equal(expectedLocked);
+            // Verify total value locked using BigInt arithmetic
+            const expectedLocked = amount * (maxMessages - 1n);
+            const actualLocked = await emergencyPause.totalValueLocked();
+            expect(actualLocked).to.equal(expectedLocked);
         });
     });
 });

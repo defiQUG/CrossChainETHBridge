@@ -14,56 +14,59 @@ const {
     DEFI_ORACLE_META_CHAIN_SELECTOR
 } = TEST_CONFIG;
 
-describe("contracts/security/RateLimiter.sol:RateLimiter", function() {
+describe("RateLimiter", function() {
     let owner, user1, user2;
     let rateLimiter;
-    const MAX_MESSAGES = 5;
-    const PERIOD_LENGTH = 3600; // 1 hour in seconds
+    const MAX_MESSAGES = 5n;
+    const PERIOD_LENGTH = 3600n; // 1 hour in seconds
 
     beforeEach(async function() {
         [owner, user1, user2] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
+        const RateLimiter = await ethers.getContractFactory("RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, PERIOD_LENGTH);
         await rateLimiter.waitForDeployment();
     });
 
     describe("Rate Limiting", function() {
         it("Should allow messages within rate limit", async function() {
-            for (let i = 0; i < MAX_MESSAGES; i++) {
-                await expect(rateLimiter.checkAndUpdateRateLimit())
+            for (let i = 0; i < Number(MAX_MESSAGES); i++) {
+                const tx = await rateLimiter.processMessage();
+                const receipt = await tx.wait();
+                const block = await ethers.provider.getBlock(receipt.blockNumber);
+                await expect(tx)
                     .to.emit(rateLimiter, "MessageProcessed")
-                    .withArgs(owner.address, await time.latest());
+                    .withArgs(owner.address, block.timestamp);
             }
-            await expect(rateLimiter.checkAndUpdateRateLimit())
+            await expect(rateLimiter.processMessage())
                 .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should reset counter after period expires", async function() {
             // Use up all messages
-            for (let i = 0; i < MAX_MESSAGES; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+            for (let i = 0; i < Number(MAX_MESSAGES); i++) {
+                await rateLimiter.processMessage();
             }
             // Advance time by period length
-            await time.increase(PERIOD_LENGTH + 1);
+            await time.increase(Number(PERIOD_LENGTH) + 1);
             // Should be able to send messages again
-            await expect(rateLimiter.checkAndUpdateRateLimit())
+            await expect(rateLimiter.processMessage())
                 .to.emit(rateLimiter, "PeriodReset");
-            expect(await rateLimiter.getCurrentMessageCount()).to.equal(1);
+            expect(await rateLimiter.getCurrentPeriodMessages()).to.equal(1n);
         });
 
         it("Should track message count correctly", async function() {
             for (let i = 0; i < 3; i++) {
-                await rateLimiter.checkAndUpdateRateLimit();
+                await rateLimiter.processMessage();
             }
-            expect(await rateLimiter.getCurrentMessageCount()).to.equal(3);
-            expect(await rateLimiter.getRemainingMessages()).to.equal(MAX_MESSAGES - 3);
+            expect(await rateLimiter.getCurrentPeriodMessages()).to.equal(3n);
+            expect(await rateLimiter.getRemainingMessages()).to.equal(MAX_MESSAGES - 3n);
         });
     });
 
     describe("Admin Functions", function() {
         it("Should allow owner to update rate limit parameters", async function() {
-            const newMaxMessages = 10;
-            const newPeriodLength = 7200;
+            const newMaxMessages = 10n;
+            const newPeriodLength = 7200n;
             await expect(rateLimiter.setRateLimit(newMaxMessages, newPeriodLength))
                 .to.emit(rateLimiter, "RateLimitUpdated")
                 .withArgs(newMaxMessages, newPeriodLength);
@@ -73,14 +76,14 @@ describe("contracts/security/RateLimiter.sol:RateLimiter", function() {
         });
 
         it("Should prevent non-owners from updating parameters", async function() {
-            await expect(rateLimiter.connect(user1).setRateLimit(10, PERIOD_LENGTH))
+            await expect(rateLimiter.connect(user1).setRateLimit(10n, PERIOD_LENGTH))
                 .to.be.revertedWith("Ownable: caller is not the owner");
         });
 
         it("Should validate rate limit parameters", async function() {
-            await expect(rateLimiter.setRateLimit(0, PERIOD_LENGTH))
+            await expect(rateLimiter.setRateLimit(0n, PERIOD_LENGTH))
                 .to.be.revertedWith("Max messages must be positive");
-            await expect(rateLimiter.setRateLimit(MAX_MESSAGES, 0))
+            await expect(rateLimiter.setRateLimit(MAX_MESSAGES, 0n))
                 .to.be.revertedWith("Period duration must be positive");
         });
     });
