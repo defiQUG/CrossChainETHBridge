@@ -2,59 +2,79 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "./SecurityBase.sol";
 
-contract RateLimiter is Ownable {
-    uint256 public maxMessagesPerPeriod;
-    uint256 public periodDuration;
-    uint256 public currentPeriodMessages;
-    uint256 public periodStart;
+contract RateLimiter is SecurityBase {
+    uint256 private _maxMessagesPerPeriod;
+    uint256 private _periodDuration;
+    uint256 private _currentPeriodMessages;
+    uint256 private _periodStart;
+    bool private _initialized;
 
     event RateLimitUpdated(uint256 maxMessages, uint256 period);
     event MessageProcessed(address indexed sender, uint256 timestamp);
     event PeriodReset(uint256 timestamp);
 
-    constructor(uint256 _maxMessages, uint256 _periodDuration) {
-        require(_maxMessages > 0, "Max messages must be positive");
-        require(_periodDuration > 0, "Period duration must be positive");
-        maxMessagesPerPeriod = _maxMessages;
-        periodDuration = _periodDuration;
-        periodStart = block.timestamp;
+    modifier whenInitialized() {
+        require(_initialized, "RateLimiter: not initialized");
+        _;
     }
 
-    function setRateLimit(uint256 _maxMessages, uint256 _periodDuration) external onlyOwner {
-        require(_maxMessages > 0, "Max messages must be positive");
-        require(_periodDuration > 0, "Period duration must be positive");
-        maxMessagesPerPeriod = _maxMessages;
-        periodDuration = _periodDuration;
-        emit RateLimitUpdated(_maxMessages, _periodDuration);
+    function initialize(uint256 maxMessages, uint256 periodDuration) external {
+        require(!_initialized, "RateLimiter: already initialized");
+        require(maxMessages > 0, "RateLimiter: max messages must be positive");
+        require(periodDuration > 0, "RateLimiter: period duration must be positive");
+
+        _maxMessagesPerPeriod = maxMessages;
+        _periodDuration = periodDuration;
+        _periodStart = block.timestamp;
+        _initialized = true;
+
+        emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function processMessage() external virtual returns (bool) {
-        if (block.timestamp >= periodStart + periodDuration) {
+    function setRateLimit(uint256 maxMessages, uint256 periodDuration) external onlyOwner whenInitialized {
+        require(maxMessages > 0, "RateLimiter: max messages must be positive");
+        require(periodDuration > 0, "RateLimiter: period duration must be positive");
+        _maxMessagesPerPeriod = maxMessages;
+        _periodDuration = periodDuration;
+        emit RateLimitUpdated(maxMessages, periodDuration);
+    }
+
+    function processMessage() external virtual whenInitialized returns (bool) {
+        if (block.timestamp >= _periodStart + _periodDuration) {
             _resetPeriod();
         }
 
-        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
 
-        currentPeriodMessages++;
+        _currentPeriodMessages++;
         emit MessageProcessed(msg.sender, block.timestamp);
         return true;
     }
 
     function _resetPeriod() internal {
-        periodStart = block.timestamp;
-        currentPeriodMessages = 0;
+        _periodStart = block.timestamp;
+        _currentPeriodMessages = 0;
         emit PeriodReset(block.timestamp);
     }
 
-    function getCurrentPeriodMessages() external view returns (uint256) {
-        return currentPeriodMessages;
+    function getCurrentPeriodMessages() external view whenInitialized returns (uint256) {
+        return _currentPeriodMessages;
     }
 
-    function getTimeUntilReset() external view returns (uint256) {
-        if (block.timestamp >= periodStart + periodDuration) {
+    function getTimeUntilReset() external view whenInitialized returns (uint256) {
+        if (block.timestamp >= _periodStart + _periodDuration) {
             return 0;
         }
-        return (periodStart + periodDuration) - block.timestamp;
+        return (_periodStart + _periodDuration) - block.timestamp;
+    }
+
+    function getMaxMessagesPerPeriod() external view whenInitialized returns (uint256) {
+        return _maxMessagesPerPeriod;
+    }
+
+    function getPeriodDuration() external view whenInitialized returns (uint256) {
+        return _periodDuration;
     }
 }

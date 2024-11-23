@@ -10,8 +10,9 @@ async function deployTestContracts() {
 
     // Deploy RateLimiter
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
-    const rateLimiter = await RateLimiter.deploy(10, 3600); // 10 messages per hour
+    const rateLimiter = await RateLimiter.deploy();
     await rateLimiter.waitForDeployment();
+    await rateLimiter.initialize(10, 3600); // 10 messages per hour
 
     // Deploy EmergencyPause
     const EmergencyPause = await ethers.getContractFactory('EmergencyPause');
