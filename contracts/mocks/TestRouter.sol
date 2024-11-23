@@ -19,11 +19,11 @@ contract TestRouter is MockRouter, IRouterClient {
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor() {
+    constructor() MockRouter() {
         // Initialization moved to initialize function
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external {
+    function initialize(uint256 maxMessages, uint256 periodDuration) external override {
         require(!_initialized, "TestRouter: already initialized");
         super.initialize(maxMessages, periodDuration);
 
