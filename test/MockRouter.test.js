@@ -13,7 +13,7 @@ describe("MockRouter Coverage Tests", function() {
     [owner, addr1, addr2] = await ethers.getSigners();
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
-    await mockRouter.deployed();
+    await mockRouter.waitForDeployment();
   });
 
   describe("Chain Support and Token Management", function() {
@@ -37,27 +37,27 @@ describe("MockRouter Coverage Tests", function() {
   describe("Message Reception", function() {
     it("Should handle fee calculations correctly", async function() {
       const message = {
-        receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
-        data: ethers.utils.defaultAbiCoder.encode(
+        receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
+        data: ethers.AbiCoder.defaultAbiCoder().encode(
           ["address", "uint256"],
-          [addr2.address, ethers.utils.parseEther("1.0")]
+          [addr2.address, ethers.parseEther("1.0")]
         ),
         tokenAmounts: [],
-        extraArgs: ethers.utils.hexlify("0x"),
-        feeToken: ethers.constants.AddressZero
+        extraArgs: ethers.hexlify("0x"),
+        feeToken: ethers.ZeroAddress
       };
 
       const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-      expect(fee).to.equal(ethers.utils.parseEther("0.1"));
+      expect(fee).to.equal(ethers.parseEther("0.1"));
     });
 
     it("Should validate message data correctly", async function() {
       const message = {
         sourceChainSelector: DOM_CHAIN_SELECTOR,
-        sender: ethers.utils.hexlify(ethers.utils.zeroPad(addr1.address, 32)),
-        data: ethers.utils.hexlify(ethers.utils.defaultAbiCoder.encode(
+        sender: ethers.hexlify(ethers.zeroPadValue(addr1.address, 32)),
+        data: ethers.hexlify(ethers.AbiCoder.defaultAbiCoder().encode(
           ["address", "uint256"],
-          [addr2.address, ethers.utils.parseEther("1.0")]
+          [addr2.address, ethers.parseEther("1.0")]
         )),
         destTokenAmounts: []
       };
@@ -69,10 +69,10 @@ describe("MockRouter Coverage Tests", function() {
     it("Should handle message validation errors", async function() {
       const message = {
         sourceChainSelector: 0n,
-        sender: ethers.utils.hexlify(ethers.utils.zeroPad(addr1.address, 32)),
-        data: ethers.utils.hexlify(ethers.utils.defaultAbiCoder.encode(
+        sender: ethers.hexlify(ethers.zeroPadValue(addr1.address, 32)),
+        data: ethers.hexlify(ethers.AbiCoder.defaultAbiCoder().encode(
           ["address", "uint256"],
-          [addr2.address, ethers.utils.parseEther("1.0")]
+          [addr2.address, ethers.parseEther("1.0")]
         )),
         destTokenAmounts: []
       };
