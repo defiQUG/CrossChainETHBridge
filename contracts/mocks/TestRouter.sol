@@ -106,7 +106,7 @@ contract TestRouter is MockRouter, IRouterClient {
             message.sourceChainSelector,
             message.data
         ));
-        emit MessageSimulated(target, messageId);
+        emit MessageSimulated(target, messageId, msg.value);
 
         // Try to execute the message with forwarded ETH value
         (bool success, bytes memory result) = target.call{
