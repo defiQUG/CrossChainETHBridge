@@ -69,28 +69,27 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override whenNotPaused {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Invalid source chain");
-
-        // Create a new message with the target address
-        Client.Any2EVMMessage memory simulatedMessage = Client.Any2EVMMessage({
-            messageId: message.messageId,
-            sourceChainSelector: message.sourceChainSelector,
-            sender: message.sender,
-            data: message.data,
-            tokenAmounts: message.tokenAmounts,
-            destTokenAmounts: message.destTokenAmounts,
-            extraArgs: message.extraArgs
-        });
-
-        require(validateMessage(simulatedMessage), "Message validation failed");
+        require(validateMessage(message), "Message validation failed");
         require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(
             block.timestamp,
             target,
-            simulatedMessage.sourceChainSelector,
-            simulatedMessage.data
+            message.sourceChainSelector,
+            message.data
         ));
         emit MessageSimulated(target, messageId);
+
+        (bool success, ) = target.call(message.data);
+        require(success, "Message simulation failed");
+    }
+
+    function ccipSend(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) external payable override returns (bytes32) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
 
         (bool success, ) = target.call(simulatedMessage.data);
         require(success, "Message simulation failed");
