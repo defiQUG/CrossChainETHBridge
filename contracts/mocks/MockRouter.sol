@@ -90,6 +90,3 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     receive() external payable virtual {}
 }
-
-    receive() external payable virtual {}
-}

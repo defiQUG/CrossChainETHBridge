@@ -58,7 +58,20 @@ contract TestRouter is MockRouter {
     }
 
     receive() external payable override {}
-}
+
+    function ccipSend(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) external payable override returns (bytes32) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
+
+        bytes32 messageId = keccak256(abi.encode(
+            block.timestamp,
+            msg.sender,
+            destinationChainSelector,
+            message
+        ));
 
         emit MessageSent(messageId, destinationChainSelector, message);
         return messageId;
@@ -67,15 +80,8 @@ contract TestRouter is MockRouter {
     function ccipReceive(
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused {
-        require(isChainSupported(message.sourceChainSelector), "Chain not supported");
+        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
     }
-
-    function processMessage() public override returns (bool) {
-        super.processMessage();
-        return true;
-    }
-
-    receive() external payable override {}
 }
