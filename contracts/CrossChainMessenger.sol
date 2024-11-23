@@ -68,7 +68,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
         uint256 transferAmount = msg.value - bridgeFee;
         rateLimiter.checkAndUpdateRateLimit();
-        emergencyPause.checkAndPause(transferAmount);
+        emergencyPause.lockValue(transferAmount);
 
         bytes memory data = abi.encode(_recipient, transferAmount);
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
@@ -99,7 +99,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         require(address(this).balance >= amount, "CrossChainMessenger: insufficient balance");
 
         rateLimiter.checkAndUpdateRateLimit();
-        emergencyPause.checkAndPause(amount);
+        emergencyPause.lockValue(amount);
 
         weth.deposit{value: amount}();
         require(weth.transfer(recipient, amount), "CrossChainMessenger: WETH transfer failed");
