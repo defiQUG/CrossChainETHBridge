@@ -1,53 +1,59 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IAny2EVMMessageReceiver.sol";
+import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract MockRouter is IRouterClient, Ownable {
-    uint256 private _baseFee;
-    uint256 private _extraFee;
+contract MockRouter is IRouter, ReentrancyGuard {
+    using Client for Client.Any2EVMMessage;
+    using Client for Client.EVM2AnyMessage;
+
     mapping(uint64 => bool) private _supportedChains;
+    uint256 private constant _baseFee = 0.1 ether;
+    uint256 private constant _extraFee = 0.05 ether;
     mapping(uint64 => address[]) private _supportedTokens;
 
-    event MessageSent(
-        uint64 destinationChainSelector,
-        bytes message
-    );
-    event BaseFeeUpdated(uint256 oldFee, uint256 newFee);
-    event ExtraFeeUpdated(uint256 oldFee, uint256 newFee);
-    event ChainSupportUpdated(uint64 chainSelector, bool supported);
-    event TokenSupportUpdated(uint64 chainSelector, address[] tokens);
+    event MessageReceived(bytes32 messageId);
+    event MessageSimulated(address indexed target, bytes32 messageId);
+    event MessageSent(uint64 indexed chainSelector, bytes data);
 
     constructor() {
-        _supportedChains[137] = true; // Polygon PoS
-        _supportedChains[138] = false; // Defi Oracle Meta - not supported initially
-        _baseFee = 0.1 ether; // Set default base fee to match test expectations
-        _extraFee = 0.05 ether; // Set default extra fee
+        _supportedChains[137] = true; // Only Polygon PoS is supported
     }
 
-    function setBaseFee(uint256 newFee) external onlyOwner {
-        uint256 oldFee = _baseFee;
-        _baseFee = newFee;
-        emit BaseFeeUpdated(oldFee, newFee);
+    function isChainSupported(uint64 chainSelector) external view override returns (bool) {
+        return _supportedChains[chainSelector];
     }
 
-    function setExtraFee(uint256 newFee) external onlyOwner {
-        uint256 oldFee = _extraFee;
-        _extraFee = newFee;
-        emit ExtraFeeUpdated(oldFee, newFee);
+    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
+        require(_supportedChains[chainSelector], "Chain not supported");
+        return _supportedTokens[chainSelector];
     }
 
-    function setSupportedChain(uint64 chainSelector, bool supported) external onlyOwner {
-        _supportedChains[chainSelector] = supported;
-        emit ChainSupportUpdated(chainSelector, supported);
+    function getFee(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) public view override returns (uint256) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        uint256 totalFee = _baseFee;
+        if (message.tokenAmounts.length > 0) {
+            totalFee += _extraFee;
+        }
+        return totalFee;
     }
 
-    function setSupportedTokens(uint64 chainSelector, address[] calldata tokens) external onlyOwner {
-        _supportedTokens[chainSelector] = tokens;
-        emit TokenSupportUpdated(chainSelector, tokens);
+    function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
+        if (message.sourceChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+        if (message.sender.length == 0) {
+            revert("Invalid sender");
+        }
+        if (message.data.length < 64) {
+            revert("Invalid data");
+        }
+        return true;
     }
 
     function ccipSend(
@@ -66,10 +72,7 @@ contract MockRouter is IRouterClient, Ownable {
             message.feeToken
         );
 
-        emit MessageSent(
-            destinationChainSelector,
-            encodedMessage
-        );
+        emit MessageSent(destinationChainSelector, encodedMessage);
 
         if (msg.value > requiredFee) {
             payable(msg.sender).transfer(msg.value - requiredFee);
@@ -78,94 +81,26 @@ contract MockRouter is IRouterClient, Ownable {
         return keccak256(encodedMessage);
     }
 
-    function sendMessage(
-        address receiver,
-        uint256 amount
-    ) external payable returns (bytes32) {
-        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(receiver),
-            data: abi.encode(amount),
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: address(0)
-        });
-
-        return this.ccipSend(137, message);
-    }
-
-    function getFee(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) public view override returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-
-        uint256 totalFee = _baseFee;
-
-        // Add extra fee if message contains token transfers
-        if (message.tokenAmounts.length > 0) {
-            totalFee += _extraFee;
-        }
-
-        return totalFee;
-    }
-
-    function isChainSupported(uint64 chainSelector) external view override returns (bool) {
-        return _supportedChains[chainSelector];
-    }
-
-    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
-        require(_supportedChains[chainSelector], "Chain not supported");
-        return _supportedTokens[chainSelector];
-    }
-
-    function validateMessage(Client.Any2EVMMessage memory message) public pure returns (bool) {
-        if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
-        }
-
-        if (message.sender.length == 0) {
-            revert("Invalid sender");
-        }
-
-        if (message.data.length == 0) {
-            revert("Invalid data");
-        }
-
-        return true;
-    }
-
-        // Decode data to get recipient
-        address recipient;
-        assembly {
-            recipient := mload(add(message.data, 0x20))
-        }
-        if (recipient == address(0)) {
-            revert("Invalid recipient");
-        }
-
-        return true;
-    }
-
-        return true;
-    }
-
-        return true;
-    }
-
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
     ) external {
-        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
 
-        IAny2EVMMessageReceiver(target).ccipReceive(message);
+        bytes32 messageId = keccak256(abi.encode(message));
+        emit MessageSimulated(target, messageId);
+
+        (bool success, ) = target.call(message.data);
+        require(success, "Message simulation failed");
     }
 
-    function ccipReceive(Client.Any2EVMMessage memory message) external {
+    function ccipReceive(
+        Client.Any2EVMMessage memory message
+    ) external override {
         require(validateMessage(message), "Invalid message");
-        emit MessageSent(message.sourceChainSelector, message.data);
+        bytes32 messageId = keccak256(abi.encode(message));
+        emit MessageReceived(messageId);
     }
 
     receive() external payable {}
