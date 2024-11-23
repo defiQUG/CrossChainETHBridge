@@ -18,7 +18,7 @@ contract TestRouter is MockRouter, IRouterClient {
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor() RateLimiter(10, 3600) {  // 10 messages per hour
+    constructor() RateLimiter(10, 3600) Pausable() {  // 10 messages per hour
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true; // Defi Oracle Meta
@@ -58,7 +58,7 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(super.processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -79,7 +79,7 @@ contract TestRouter is MockRouter, IRouterClient {
         require(target != address(0), "Invalid target address");
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(super.processMessage(), "Rate limit exceeded");
 
         // Validate target contract exists
         uint256 size;
