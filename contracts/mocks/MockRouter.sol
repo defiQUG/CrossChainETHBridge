@@ -61,14 +61,17 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
+        if (message.messageId == bytes32(0)) {
+            revert("Invalid message ID");
+        }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("Chain not supported");
         }
-        if (message.sender.length == 0) {
-            revert("Invalid sender");
+        if (message.sender.length != 20) {
+            revert("Invalid sender length");
         }
-        if (message.data.length < 4) {
-            revert("Invalid data length");
+        if (message.data.length == 0) {
+            revert("Empty message data");
         }
         return true;
     }
