@@ -10,9 +10,9 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
     constructor() {
-        // Initialize supported chains
-        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
+        // Initialize only Polygon as supported chain for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
+        // DEFI_ORACLE_META_CHAIN_SELECTOR is intentionally not supported initially
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
@@ -20,9 +20,7 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
-        if (!_supportedChains[chainSelector]) {
-            revert("Chain not supported");
-        }
+        require(_supportedChains[chainSelector], "Chain not supported");
         return new address[](0);
     }
 
@@ -30,9 +28,7 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        if (!_supportedChains[destinationChainSelector]) {
-            revert("Chain not supported");
-        }
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
         return 100000000000000000; // 0.1 ETH
     }
 
