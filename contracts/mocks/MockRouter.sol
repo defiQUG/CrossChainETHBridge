@@ -34,10 +34,6 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         return _offRamps[sourceChainSelector][offRamp];
     }
 
-    function processMessage() external virtual override returns (bool) {
-        return super.processMessage();
-    }
-
     function routeMessage(
         Client.Any2EVMMessage calldata message,
         uint16 gasForCallExactCheck,
@@ -46,7 +42,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(this.processMessage(), "Rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -83,7 +79,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     ) external virtual payable {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
-        require(this.processMessage(), "Rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
