@@ -48,11 +48,12 @@ describe("Coverage Improvement Tests", function () {
 
   describe("RateLimiter Edge Cases", function () {
     it("Should handle multiple messages within same period", async function () {
+      const messageValue = await parseEther("1.0");
       for (let i = 0; i < MAX_MESSAGES; i++) {
-        await messenger.sendToPolygon(user1.address, { value: parseEther("1.0") });
+        await messenger.sendToPolygon(user1.address, { value: messageValue });
       }
       await expect(
-        messenger.sendToPolygon(user1.address, { value: parseEther("1.0") })
+        messenger.sendToPolygon(user1.address, { value: messageValue })
       ).to.be.revertedWith("Rate limit exceeded for current period");
     });
   });
@@ -86,14 +87,14 @@ describe("Coverage Improvement Tests", function () {
 
   describe("MockRouter", function () {
     it("Should handle ccipSend correctly", async function () {
-      const amount = parseEther("1.0");
+      const amount = await parseEther("1.0");
       await messenger.sendToPolygon(user1.address, { value: amount });
       const events = await router.queryFilter(router.filters.MessageSent());
       expect(events.length).to.be.above(0);
     });
 
     it("Should emit correct events on message send", async function () {
-      const amount = parseEther("1.0");
+      const amount = await parseEther("1.0");
       await expect(messenger.sendToPolygon(user1.address, { value: amount }))
         .to.emit(router, "MessageSent");
     });
