@@ -37,7 +37,6 @@ contract CrossChainMessenger is ReentrancyGuard, RateLimiter, EmergencyPause, Ow
     )
         RateLimiter(_maxMessagesPerPeriod, 3600) // 1 hour period
         EmergencyPause(_pauseThreshold, _pauseDuration)
-        Ownable(msg.sender)
     {
         require(_router != address(0), "CrossChainMessenger: zero router address");
         require(_weth != address(0), "CrossChainMessenger: zero WETH address");
