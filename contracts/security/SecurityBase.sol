@@ -21,5 +21,6 @@ abstract contract SecurityBase is Ownable, Pausable {
         emit SecurityUnpaused(msg.sender, block.timestamp);
     }
 
-    function processMessage() public virtual whenNotPaused returns (bool);
+    // Abstract function without modifiers - implementing contracts will add whenNotPaused
+    function processMessage() public virtual returns (bool);
 }
