@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "../RateLimiter.sol";
 
-abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
+abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -43,7 +43,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "Chain not supported");
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(super.processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
 
@@ -82,7 +82,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     ) external virtual whenNotPaused payable {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
-        require(processMessage(), "Rate limit exceeded");
+        require(super.processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
