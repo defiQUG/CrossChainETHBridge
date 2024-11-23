@@ -58,14 +58,14 @@ describe("MockRouter Tests", function() {
         });
 
         it("Should allow owner to set supported tokens", async function() {
-            const tokens = [addr1.address, addr2.address];
-            await mockRouter.setSupportedTokens(POLYGON_CHAIN_SELECTOR, tokens);
-            const supportedTokens = await mockRouter.getSupportedTokens(POLYGON_CHAIN_SELECTOR);
-            expect(supportedTokens).to.deep.equal(tokens);
+            const token = addr1.address;
+            await mockRouter.setSupportedTokens(token, true);
+            expect(await mockRouter._testSupportedTokens(token)).to.be.true;
         });
 
         it("Should prevent non-owner from setting supported tokens", async function() {
-            await expect(mockRouter.connect(addr1).setSupportedTokens(POLYGON_CHAIN_SELECTOR, [addr2.address]))
+            const token = addr2.address;
+            await expect(mockRouter.connect(addr1).setSupportedTokens(token, true))
                 .to.be.revertedWith("Ownable: caller is not the owner");
         });
     });
@@ -90,7 +90,7 @@ describe("MockRouter Tests", function() {
             const newFee = ethers.parseEther("0.5");
             await mockRouter.setExtraFee(newFee);
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            expect(fee).to.equal(ethers.parseEther("0.6")); // 0.1 base + 0.5 extra
+            expect(fee).to.equal(ethers.parseEther("1.1")); // BASE_FEE (0.6) + extraFee (0.5)
         });
 
         it("Should prevent non-owner from setting extra fee", async function() {
@@ -107,8 +107,10 @@ describe("MockRouter Tests", function() {
     describe("Message Handling", function() {
         it("Should validate message data correctly", async function() {
             const message = {
+                messageId: ethers.hexlify(ethers.randomBytes(32)),
                 sourceChainSelector: DOM_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 32),
+                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 20),
+                data: "0x1234",
                 destTokenAmounts: []
             };
             expect(await mockRouter.validateMessage(message)).to.be.true;
@@ -123,7 +125,7 @@ describe("MockRouter Tests", function() {
                 feeToken: ethers.ZeroAddress
             };
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseEther("0.1")
+                value: ethers.parseEther("0.6") // BASE_FEE
             })).to.emit(mockRouter, "MessageSent");
         });
 

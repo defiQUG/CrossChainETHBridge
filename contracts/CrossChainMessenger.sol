@@ -21,11 +21,15 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     IRouterClient public immutable router;
     IWETH public immutable weth;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
+    uint64 public constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
     uint256 public bridgeFee;
     uint256 public constant MAX_FEE = 1 ether;
 
     RateLimiter private rateLimiter;
     EmergencyPause private emergencyPause;
+
+    // Track processed messages to prevent replay attacks
+    mapping(bytes32 => bool) private processedMessages;
 
     event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event MessageReceived(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
@@ -64,6 +68,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     function sendToPolygon(address _recipient) external payable nonReentrant {
         require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
+        require(msg.value > 0, "CrossChainMessenger: zero amount");
 
         bytes memory data = abi.encode(_recipient, msg.value);
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
@@ -74,14 +79,13 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
             feeToken: address(0)
         });
 
-        // Get the required fee from the router
         uint256 requiredFee = router.getFee(POLYGON_CHAIN_SELECTOR, message);
         require(msg.value >= requiredFee, "CrossChainMessenger: insufficient payment");
 
-        // Calculate the actual transfer amount after fee
         uint256 transferAmount = msg.value - requiredFee;
         require(transferAmount > 0, "CrossChainMessenger: amount too small");
 
+        // Check rate limit and emergency pause before processing
         rateLimiter.processMessage();
         emergencyPause.lockValue(transferAmount);
 
@@ -96,7 +100,8 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     function ccipReceive(Client.Any2EVMMessage calldata message) external {
         require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
         require(msg.sender == address(router), "CrossChainMessenger: caller is not router");
-        require(message.sourceChainSelector == 138, "CrossChainMessenger: invalid source chain");
+        require(message.sourceChainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR, "CrossChainMessenger: invalid source chain");
+        require(!processedMessages[message.messageId], "CrossChainMessenger: message already processed");
 
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
 
@@ -104,11 +109,20 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         require(amount > 0, "CrossChainMessenger: zero amount");
         require(address(this).balance >= amount, "CrossChainMessenger: insufficient balance");
 
+        // Mark message as processed before state changes
+        processedMessages[message.messageId] = true;
+
+        // Check rate limit and emergency pause
         rateLimiter.processMessage();
         emergencyPause.lockValue(amount);
 
-        weth.deposit{value: amount}();
-        require(weth.transfer(recipient, amount), "CrossChainMessenger: WETH transfer failed");
+        // Handle WETH operations with proper error checking
+        try weth.deposit{value: amount}() {
+            bool success = weth.transfer(recipient, amount);
+            require(success, "CrossChainMessenger: WETH transfer failed");
+        } catch {
+            revert("CrossChainMessenger: WETH deposit failed");
+        }
 
         emit MessageReceived(message.messageId, address(bytes20(message.sender)), recipient, amount);
     }

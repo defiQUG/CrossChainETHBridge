@@ -10,7 +10,7 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
     uint256 private extraFee;
-    mapping(address => bool) private _testSupportedTokens;
+    mapping(address => bool) public testSupportedTokens;
     uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
 
     // Events for state changes
@@ -138,7 +138,7 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function setSupportedTokens(address token, bool supported) external onlyOwner {
-        _testSupportedTokens[token] = supported;
+        testSupportedTokens[token] = supported;
         emit TokenSupportUpdated(token, supported);
     }
 
