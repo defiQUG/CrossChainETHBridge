@@ -5,6 +5,15 @@ const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 describe("CrossChainMessenger", function() {
     let owner, user, addr1, addr2;
     let mockRouter, mockWETH, crossChainMessenger;
+    const {
+        BRIDGE_FEE,
+        MAX_FEE,
+        MAX_MESSAGES_PER_PERIOD,
+        PAUSE_THRESHOLD,
+        PAUSE_DURATION,
+        POLYGON_CHAIN_SELECTOR,
+        DEFI_ORACLE_META_CHAIN_SELECTOR
+    } = TEST_CONFIG;
 
     beforeEach(async function() {
         const contracts = await deployTestContracts();
@@ -21,7 +30,7 @@ describe("CrossChainMessenger", function() {
         it("Should initialize with correct parameters", async function() {
             expect(await crossChainMessenger.router()).to.equal(await mockRouter.getAddress());
             expect(await crossChainMessenger.weth()).to.equal(await mockWETH.getAddress());
-            expect(await crossChainMessenger.bridgeFee()).to.equal(TEST_CONFIG.BRIDGE_FEE);
+            expect(await crossChainMessenger.bridgeFee()).to.equal(BRIDGE_FEE);
         });
     });
 

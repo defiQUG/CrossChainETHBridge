@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");

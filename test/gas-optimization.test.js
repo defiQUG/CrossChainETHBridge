@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
@@ -22,17 +27,17 @@ describe("Gas Optimization Tests", function() {
     // Deploy MockRouter
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
-    await mockRouter.deployed();
+    await mockRouter.waitForDeployment();
 
     // Deploy MockWETH
     const MockWETH = await ethers.getContractFactory("MockWETH");
     mockWeth = await MockWETH.deploy("Wrapped Ether", "WETH");
-    await mockWeth.deployed();
+    await mockWeth.waitForDeployment();
 
     // Deploy CrossChainMessenger with router, WETH addresses, and maxMessagesPerPeriod
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     crossChainMessenger = await CrossChainMessenger.deploy(mockRouter.address, mockWeth.address, 100); // 100 messages per period
-    await crossChainMessenger.deployed();
+    await crossChainMessenger.waitForDeployment();
   });
 
   describe("Gas Usage Analysis", function() {

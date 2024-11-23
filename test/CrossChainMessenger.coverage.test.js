@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
@@ -15,12 +20,12 @@ describe("CrossChainMessenger Coverage Tests", function () {
     // Deploy MockWETH
     const MockWETH = await ethers.getContractFactory("MockWETH");
     mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-    await mockWETH.deployed();
+    await mockWETH.waitForDeployment();
 
     // Deploy MockRouter
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
-    await mockRouter.deployed();
+    await mockRouter.waitForDeployment();
 
     // Deploy CrossChainMessenger with router, WETH, and rate limit
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
@@ -29,7 +34,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
       mockWETH.address,
       MAX_MESSAGES_PER_PERIOD
     );
-    await messenger.deployed();
+    await messenger.waitForDeployment();
 
     // Send initial ETH after deployment
     await owner.sendTransaction({

@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
@@ -12,7 +17,7 @@ describe("RateLimiter Edge Cases", function () {
     [owner, user] = await ethers.getSigners();
     const RateLimiter = await ethers.getContractFactory("RateLimiter");
     rateLimiter = await RateLimiter.deploy(MAX_MESSAGES);
-    await rateLimiter.deployed();
+    await rateLimiter.waitForDeployment();
   });
 
   describe("Period Boundary Tests", function () {

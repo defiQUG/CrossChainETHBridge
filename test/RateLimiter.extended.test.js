@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
@@ -11,7 +16,7 @@ describe("RateLimiter Extended Tests", function () {
     [owner, addr1] = await ethers.getSigners();
     const RateLimiter = await ethers.getContractFactory("RateLimiter");
     rateLimiter = await RateLimiter.deploy(MAX_MESSAGES);
-    await rateLimiter.deployed();
+    await rateLimiter.waitForDeployment();
   });
 
   describe("Period Management", function () {

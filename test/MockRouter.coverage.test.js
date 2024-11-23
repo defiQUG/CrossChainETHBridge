@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { Client } = require("./helpers/Client");
@@ -12,7 +17,7 @@ describe("MockRouter Coverage Tests", function () {
     [owner, addr1, addr2] = await ethers.getSigners();
     const MockRouter = await ethers.getContractFactory("MockRouter");
     mockRouter = await MockRouter.deploy();
-    await mockRouter.deployed();
+    await mockRouter.waitForDeployment();
   });
 
   describe("Chain Support and Token Management", function () {
@@ -36,7 +41,7 @@ describe("MockRouter Coverage Tests", function () {
     it("Should handle message simulation correctly", async function () {
       const MockReceiver = await ethers.getContractFactory("MockRouter");
       const receiver = await MockReceiver.deploy();
-      await receiver.deployed();
+      await receiver.waitForDeployment();
 
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),
@@ -83,7 +88,7 @@ describe("MockRouter Coverage Tests", function () {
     it("Should handle ccipReceive correctly", async function () {
       const MockReceiver = await ethers.getContractFactory("MockRouter");
       const receiver = await MockReceiver.deploy();
-      await receiver.deployed();
+      await receiver.waitForDeployment();
 
       const message = {
         messageId: ethers.utils.hexZeroPad("0x1", 32),

@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 const { Client } = require("./helpers/Client");
@@ -10,7 +15,7 @@ describe("MockRouter Extended Tests", function () {
     [owner, user1, user2] = await ethers.getSigners();
     const MockRouter = await ethers.getContractFactory("MockRouter");
     router = await MockRouter.deploy();
-    await router.deployed();
+    await router.waitForDeployment();
   });
 
   describe("Message Handling", function () {

@@ -1,3 +1,8 @@
+const { ethers } = require("hardhat");
+const { expect } = require("chai");
+const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
+const { deployContract, getContractAt } = require("./helpers/test-utils");
+
 const { deployTestContracts, TEST_CONFIG } = require("./helpers/setup");
 const { ethers } = require("hardhat");
 
@@ -11,7 +16,7 @@ describe("MockWETH Extended Tests", function () {
     [owner, addr1, addr2] = await ethers.getSigners();
     const MockWETH = await ethers.getContractFactory("MockWETH");
     mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-    await mockWETH.deployed();
+    await mockWETH.waitForDeployment();
   });
 
   describe("Token Metadata", function () {
