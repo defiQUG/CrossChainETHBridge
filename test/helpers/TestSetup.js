@@ -5,7 +5,7 @@ async function deployTestContracts() {
 
     // Deploy mock WETH
     const MockWETH = await ethers.getContractFactory('MockWETH');
-    const mockWETH = await MockWETH.deploy();
+    const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWETH.waitForDeployment();
 
     // Deploy RateLimiter
