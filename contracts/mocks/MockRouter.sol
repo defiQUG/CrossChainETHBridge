@@ -5,9 +5,8 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../security/RateLimiter.sol";
-import "../security/EmergencyPause.sol";
 
-contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
+contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -24,7 +23,6 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
 
     constructor()
         RateLimiter(100, 1 hours)  // 100 messages per hour
-        EmergencyPause(1000)       // Emergency pause after 1000 messages
     {
         _supportedChains[137] = true; // Only Polygon PoS is supported
     }
@@ -52,7 +50,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
         bytes calldata message,
         address feeToken,
         uint256 feeAmount
-    ) external payable returns (bytes32) {
+    ) external payable virtual returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
         require(msg.value >= feeAmount, "Insufficient fee");
         require(processMessage(), "Rate limit exceeded");
@@ -84,7 +82,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) external payable returns (bytes32) {
+    ) external payable virtual returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
         require(processMessage(), "Rate limit exceeded");
 
@@ -138,7 +136,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, EmergencyPause {
 
     function ccipReceive(
         Client.Any2EVMMessage memory message
-    ) external whenNotPaused {
+    ) external virtual whenNotPaused {
         require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 

@@ -65,6 +65,7 @@ contract EmergencyPause is SecurityBase {
             "Emergency delay not elapsed"
         );
         messageCount = 0;
-        super.emergencyUnpause();
+        _unpause();
+        emit SecurityUnpaused(msg.sender, block.timestamp);
     }
 }
