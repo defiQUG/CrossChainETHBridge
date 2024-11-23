@@ -25,7 +25,7 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function initialize(uint256 maxMessages, uint256 periodDuration) external override {
         require(!_initialized, "TestRouter: already initialized");
-        super.initialize(maxMessages, periodDuration);
+        _initialize(maxMessages, periodDuration);
 
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
