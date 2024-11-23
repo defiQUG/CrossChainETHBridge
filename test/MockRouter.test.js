@@ -1,5 +1,3 @@
-const { getSigners, parseEther, deployContract } = require("./helpers/ethers-setup");
-const { expect } = require("chai");
 const { ethers } = require("hardhat");
 const { Client } = require("./helpers/Client");
 
