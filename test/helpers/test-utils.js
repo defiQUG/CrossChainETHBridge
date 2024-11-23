@@ -1,5 +1,11 @@
 const { ethers } = require("hardhat");
 
+// Chain selectors for supported networks
+const CHAIN_SELECTORS = {
+    DEFI_ORACLE_META: 138n,
+    POLYGON_POS: 137n
+};
+
 async function deployContract(name, args = [], options = {}) {
     // Use fully qualified names for security contracts
     let contractName = name;
@@ -7,6 +13,10 @@ async function deployContract(name, args = [], options = {}) {
         contractName = `contracts/security/${name}.sol:${name}`;
     } else if (name.includes("MockRouter")) {
         contractName = "TestRouter";
+        // Add default chain selectors if not provided
+        if (args.length === 0) {
+            args = [CHAIN_SELECTORS.DEFI_ORACLE_META, CHAIN_SELECTORS.POLYGON_POS];
+        }
     }
 
     const Factory = await ethers.getContractFactory(contractName);
@@ -20,13 +30,14 @@ async function deployContract(name, args = [], options = {}) {
         return arg;
     });
 
-    // Deploy with proper options handling
+    // Deploy with proper options and error handling
     try {
         const contract = await Factory.deploy(...deploymentArgs, { ...options });
         await contract.waitForDeployment();
         return contract;
     } catch (error) {
-        console.error(`Failed to deploy ${name}:`, error);
+        console.error(`Failed to deploy ${name} with args:`, deploymentArgs);
+        console.error('Error details:', error.message);
         throw error;
     }
 }
@@ -42,7 +53,7 @@ async function getContractAt(name, address) {
 
 function createCCIPMessage({
     messageId = ethers.hexlify(ethers.randomBytes(32)),
-    sourceChainSelector = 138n,
+    sourceChainSelector = CHAIN_SELECTORS.DEFI_ORACLE_META,
     sender,
     data,
     destTokenAmounts = [],
@@ -51,6 +62,9 @@ function createCCIPMessage({
 } = {}) {
     if (!sender) throw new Error("Sender address is required");
     if (!data) throw new Error("Message data is required");
+    if (!Object.values(CHAIN_SELECTORS).includes(sourceChainSelector)) {
+        throw new Error("Invalid chain selector");
+    }
 
     return {
         messageId,
@@ -64,6 +78,7 @@ function createCCIPMessage({
 }
 
 module.exports = {
+    CHAIN_SELECTORS,
     deployContract,
     getContractAt,
     createCCIPMessage
