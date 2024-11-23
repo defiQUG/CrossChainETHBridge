@@ -61,7 +61,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     }
 
     function sendToPolygon(address _recipient) external payable nonReentrant {
-        require(!emergencyPause.isPaused(), "CrossChainMessenger: contract is paused");
+        require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
         require(msg.value > bridgeFee, "CrossChainMessenger: insufficient payment");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
 
@@ -87,7 +87,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     }
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external {
-        require(!emergencyPause.isPaused(), "CrossChainMessenger: contract is paused");
+        require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
         require(msg.sender == address(router), "CrossChainMessenger: caller is not router");
         require(message.sourceChainSelector == 138, "CrossChainMessenger: invalid source chain");
 
@@ -113,7 +113,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     }
 
     function emergencyWithdraw(address payable _recipient) external onlyOwner {
-        require(emergencyPause.isPaused(), "CrossChainMessenger: contract not paused");
+        require(emergencyPause.paused(), "CrossChainMessenger: contract not paused");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
         uint256 balance = address(this).balance;
         require(balance > 0, "CrossChainMessenger: no balance to withdraw");
