@@ -15,11 +15,12 @@ contract EmergencyPause is Ownable, Pausable {
     event ValueLocked(uint256 amount);
     event ValueUnlocked(uint256 amount);
 
-    constructor(uint256 _pauseThreshold, uint256 _pauseDuration) Ownable(msg.sender) {
+    constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
         require(_pauseThreshold > 0, "Pause threshold must be greater than 0");
         require(_pauseDuration > 0, "Pause duration must be greater than 0");
         pauseThreshold = _pauseThreshold;
         pauseDuration = _pauseDuration;
+        _transferOwnership(msg.sender);
     }
 
     function setPauseThreshold(uint256 _pauseThreshold) external onlyOwner {
