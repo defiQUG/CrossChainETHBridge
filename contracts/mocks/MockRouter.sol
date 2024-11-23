@@ -4,10 +4,9 @@ pragma solidity ^0.8.20;
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 import "../security/RateLimiter.sol";
 
-abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable {
+abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -36,13 +35,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
     }
 
     function processMessage() external virtual override returns (bool) {
-        if (block.timestamp >= periodStart + periodDuration) {
-            _resetPeriod();
-        }
-        require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
-        currentPeriodMessages++;
-        emit MessageProcessed(msg.sender, block.timestamp);
-        return true;
+        return super.processMessage();
     }
 
     function routeMessage(
@@ -87,7 +80,7 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter, Pausable 
     function simulateMessageReceived(
         address target,
         Client.Any2EVMMessage memory message
-    ) external virtual whenNotPaused payable {
+    ) external virtual payable {
         require(target != address(0), "Invalid target address");
         require(validateMessage(message), "Message validation failed");
         require(this.processMessage(), "Rate limit exceeded");
