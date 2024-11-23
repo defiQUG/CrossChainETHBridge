@@ -1,18 +1,20 @@
 const { getSigners, parseEther, deployContract } = require("./helpers/ethers-setup");
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const { ZeroAddress } = ethers;
 
 describe("Coverage Improvement Tests", function () {
   let messenger, router, weth, owner, user1, user2;
   const RATE_PERIOD = 3600; // 1 hour in seconds
   const MAX_MESSAGES = 5;
-  const INITIAL_BALANCE = parseEther("10.0");
+  let INITIAL_BALANCE;
 
   beforeEach(async function () {
     [owner, user1, user2] = await getSigners();
+    INITIAL_BALANCE = await parseEther("10.0");
 
     router = await deployContract("MockRouter");
-    weth = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
+    weth = await deployContract("MockWETH", "Wrapped Ether", "WETH");
     messenger = await deployContract("CrossChainMessenger", [
       await router.getAddress(),
       await weth.getAddress(),
@@ -77,7 +79,7 @@ describe("Coverage Improvement Tests", function () {
     it("Should prevent emergency withdraw to zero address", async function () {
       await messenger.emergencyPause();
       await expect(
-        messenger.emergencyWithdraw(ethers.constants.AddressZero)
+        messenger.emergencyWithdraw(ZeroAddress)
       ).to.be.revertedWith("CrossChainMessenger: zero recipient address");
     });
   });
