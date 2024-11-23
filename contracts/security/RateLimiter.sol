@@ -19,7 +19,7 @@ contract RateLimiter is SecurityBase {
         _;
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual {
+    function _initialize(uint256 maxMessages, uint256 periodDuration) internal virtual {
         require(!_initialized, "RateLimiter: already initialized");
         require(maxMessages > 0, "RateLimiter: max messages must be positive");
         require(periodDuration > 0, "RateLimiter: period duration must be positive");
@@ -30,6 +30,10 @@ contract RateLimiter is SecurityBase {
         _initialized = true;
 
         emit RateLimitUpdated(maxMessages, periodDuration);
+    }
+
+    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual {
+        _initialize(maxMessages, periodDuration);
     }
 
     function setRateLimit(uint256 maxMessages, uint256 periodDuration) external onlyOwner whenInitialized {

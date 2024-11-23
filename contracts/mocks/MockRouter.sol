@@ -26,6 +26,10 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         // Chain support initialization moved to derived contracts
     }
 
+    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual override {
+        _initialize(maxMessages, periodDuration);
+    }
+
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
         return _onRamps[destChainSelector];
     }
