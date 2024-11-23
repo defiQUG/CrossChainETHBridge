@@ -10,8 +10,9 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
     constructor() {
-        // Chains will be initialized through separate function calls
-        // to match test expectations
+        // Initialize supported chains
+        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
+        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
@@ -33,7 +34,7 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         require(message.messageId != bytes32(0), "Invalid message ID");
-        require(message.sourceChainSelector != 0, "Invalid chain selector");
+        require(message.sourceChainSelector != 0, "Invalid source chain");
         require(message.sender.length == 20, "Invalid sender length");
         require(message.data.length > 0, "Empty message data");
         (address receiver,) = abi.decode(message.data, (address, uint256));
