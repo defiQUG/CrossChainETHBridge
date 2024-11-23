@@ -11,8 +11,8 @@ describe("CrossChainMessenger", function() {
     let crossChainMessenger;
     const POLYGON_CHAIN_SELECTOR = 137;
     const MAX_MESSAGES_PER_PERIOD = 5;
-    const BRIDGE_FEE = ethers.utils.parseEther("0.1");
-    const MAX_FEE = ethers.utils.parseEther("1.0");
+    const BRIDGE_FEE = ethers.parseEther("0.1");
+    const MAX_FEE = ethers.parseEther("1.0");
 
     beforeEach(async function() {
         [owner, user, addr1, addr2] = await ethers.getSigners();
@@ -39,7 +39,7 @@ describe("CrossChainMessenger", function() {
         // Fund the contract for tests
         await owner.sendTransaction({
             to: crossChainMessenger.address,
-            value: ethers.utils.parseEther("10.0")
+            value: ethers.parseEther("10.0")
         });
     });
 
@@ -55,8 +55,8 @@ describe("CrossChainMessenger", function() {
 
     describe("Message Sending", function() {
         it("Should send message to Polygon", async function() {
-            const amount = ethers.utils.parseEther("1");
-            const transferAmount = amount.sub(BRIDGE_FEE);
+            const amount = ethers.parseEther("1");
+            const transferAmount = amount - BRIDGE_FEE;
 
             const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             const receipt = await tx.wait();
@@ -69,7 +69,7 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should enforce rate limiting", async function() {
-            const amount = ethers.utils.parseEther("1");
+            const amount = ethers.parseEther("1");
 
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
@@ -83,7 +83,7 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should fail when sending with insufficient amount", async function() {
-            const insufficientAmount = BRIDGE_FEE.div(2);
+            const insufficientAmount = BRIDGE_FEE / 2n;
             await expect(
                 crossChainMessenger.sendToPolygon(addr1.address, {
                     value: insufficientAmount
@@ -102,7 +102,7 @@ describe("CrossChainMessenger", function() {
 
         it("Should prevent sending when paused", async function() {
             await crossChainMessenger.pause();
-            const amount = ethers.utils.parseEther("1");
+            const amount = ethers.parseEther("1");
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWith("Pausable: paused");
@@ -111,10 +111,10 @@ describe("CrossChainMessenger", function() {
 
     describe("Message Receiving", function() {
         it("Should receive message and convert to WETH", async function() {
-            const amount = ethers.utils.parseEther("1");
-            const messageId = ethers.utils.randomBytes(32);
-            const sender = ethers.utils.hexZeroPad(user.address, 32);
-            const data = ethers.utils.defaultAbiCoder.encode(
+            const amount = ethers.parseEther("1");
+            const messageId = ethers.randomBytes(32);
+            const sender = ethers.zeroPadValue(user.address, 32);
+            const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -139,10 +139,10 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should reject messages from invalid source chain", async function() {
-            const amount = ethers.utils.parseEther("1");
-            const messageId = ethers.utils.randomBytes(32);
-            const sender = ethers.utils.hexZeroPad(user.address, 32);
-            const data = ethers.utils.defaultAbiCoder.encode(
+            const amount = ethers.parseEther("1");
+            const messageId = ethers.randomBytes(32);
+            const sender = ethers.zeroPadValue(user.address, 32);
+            const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -164,9 +164,9 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should enforce rate limiting on message receiving (edge case)", async function() {
-            const amount = ethers.utils.parseEther("1");
-            const sender = ethers.utils.hexZeroPad(user.address, 32);
-            const data = ethers.utils.defaultAbiCoder.encode(
+            const amount = ethers.parseEther("1");
+            const sender = ethers.zeroPadValue(user.address, 32);
+            const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -174,7 +174,7 @@ describe("CrossChainMessenger", function() {
             // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
                 const message = {
-                    messageId: ethers.utils.randomBytes(32),
+                    messageId: ethers.randomBytes(32),
                     sourceChainSelector: 138,
                     sender: sender,
                     data: data,
@@ -189,7 +189,7 @@ describe("CrossChainMessenger", function() {
 
             // Next message should fail
             const message = {
-                messageId: ethers.utils.randomBytes(32),
+                messageId: ethers.randomBytes(32),
                 sourceChainSelector: 138,
                 sender: sender,
                 data: data,
@@ -205,10 +205,10 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should handle zero amount transfers (edge case)", async function() {
-            const amount = ethers.utils.parseEther("0");
-            const messageId = ethers.utils.randomBytes(32);
-            const sender = ethers.utils.hexZeroPad(user.address, 32);
-            const data = ethers.utils.defaultAbiCoder.encode(
+            const amount = ethers.parseEther("0");
+            const messageId = ethers.randomBytes(32);
+            const sender = ethers.zeroPadValue(user.address, 32);
+            const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -236,7 +236,7 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should allow owner to update fee", async function() {
-            const newFee = ethers.utils.parseEther("0.2");
+            const newFee = ethers.parseEther("0.2");
             await expect(crossChainMessenger.setBridgeFee(newFee))
                 .to.emit(crossChainMessenger, "BridgeFeeUpdated")
                 .withArgs(newFee);
@@ -244,21 +244,21 @@ describe("CrossChainMessenger", function() {
         });
 
         it("Should prevent non-owner from updating fee", async function() {
-            const newFee = ethers.utils.parseEther("0.2");
+            const newFee = ethers.parseEther("0.2");
             await expect(
                 crossChainMessenger.connect(addr1).setBridgeFee(newFee)
             ).to.be.revertedWith("Ownable: caller is not the owner");
         });
 
         it("Should prevent setting fee above maximum", async function() {
-            const maxFee = ethers.utils.parseEther("1.0");
+            const maxFee = ethers.parseEther("1.0");
             await expect(
-                crossChainMessenger.setBridgeFee(maxFee.add(1))
+                crossChainMessenger.setBridgeFee(maxFee + 1n)
             ).to.be.revertedWith("CrossChainMessenger: fee exceeds maximum");
         });
 
         it("Should accept transaction when amount slightly exceeds fee", async function() {
-            const slightlyAboveFee = BRIDGE_FEE.add(ethers.utils.parseEther("0.0001"));
+            const slightlyAboveFee = BRIDGE_FEE + ethers.parseEther("0.0001");
 
             // Deploy a new mock router
             const mockRouter = await ethers.getContractFactory("MockRouter");
@@ -296,7 +296,7 @@ describe("CrossChainMessenger", function() {
             // Verify the event arguments
             expect(event.args[1]).to.equal(owner.address); // sender
             expect(event.args[2]).to.equal(addr1.address); // recipient
-            expect(event.args[3]).to.equal(slightlyAboveFee.sub(BRIDGE_FEE)); // amount
+            expect(event.args[3]).to.equal(slightlyAboveFee - BRIDGE_FEE); // amount
         });
     });
 
@@ -321,7 +321,7 @@ describe("CrossChainMessenger", function() {
         it("Should prevent bridging when paused", async function() {
             await crossChainMessenger.pause();
             await expect(
-                crossChainMessenger.sendToPolygon(addr1.address, { value: ethers.utils.parseEther("1.0") })
+                crossChainMessenger.sendToPolygon(addr1.address, { value: ethers.parseEther("1.0") })
             ).to.be.revertedWith("Pausable: paused");
         });
 
@@ -335,7 +335,7 @@ describe("CrossChainMessenger", function() {
             await crossChainMessenger.unpause();
 
             // Now send a specific amount and test withdrawal
-            const amount = ethers.utils.parseEther("1.0");
+            const amount = ethers.parseEther("1.0");
             await owner.sendTransaction({
                 to: crossChainMessenger.address,
                 value: amount
@@ -349,9 +349,9 @@ describe("CrossChainMessenger", function() {
                 .withArgs(owner.address, amount);
 
             const finalBalance = await owner.getBalance();
-            expect(finalBalance.sub(ownerBalance)).to.be.closeTo(
+            expect(finalBalance - ownerBalance).to.be.closeTo(
                 amount,
-                ethers.utils.parseEther("0.001") // Account for gas
+                ethers.parseEther("0.001") // Account for gas
             );
         });
     });
