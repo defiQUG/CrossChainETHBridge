@@ -4,72 +4,61 @@ pragma solidity ^0.8.20;
 import "./MockRouter.sol";
 
 contract TestRouter is MockRouter {
-    mapping(uint64 => bool) public supportedChains;
-
     constructor() {
-        supportedChains[137] = true; // Polygon
-        supportedChains[138] = true; // Defi Oracle Meta
-    }
-
-    function isChainSupported(uint64 chainSelector) public view override returns (bool) {
-        return supportedChains[chainSelector];
+        _supportedChains[137] = true; // Polygon
+        _supportedChains[138] = true; // Defi Oracle Meta
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        return message.messageId != bytes32(0);
-    }
-
-    function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message)
-        public
-        pure
-        override
-        returns (uint256)
-    {
-        return 0.01 ether;
+        return message.messageId != bytes32(0) && super.validateMessage(message);
     }
 
     function routeMessage(
-        uint64 destinationChainSelector,
-        bytes calldata receiver,
-        bytes calldata message,
-        address feeToken,
-        uint256 feeAmount
-    ) external payable override returns (bytes32) {
-        require(isChainSupported(destinationChainSelector), "Chain not supported");
-        require(msg.value >= feeAmount, "Insufficient fee");
+        Client.Any2EVMMessage calldata message,
+        uint16 gasForCallExactCheck,
+        uint256 gasLimit,
+        address receiver
+    ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
+        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
+        require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
-        bytes32 messageId = keccak256(abi.encode(
-            destinationChainSelector,
-            receiver,
-            message,
-            feeToken,
-            feeAmount
-        ));
+        uint256 startGas = gasleft();
 
-        emit MessageSent(messageId, destinationChainSelector, Client.EVM2AnyMessage({
-            receiver: receiver,
-            data: message,
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: feeToken
-        }));
-        return messageId;
+        (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
+
+        gasUsed = startGas - gasleft();
+
+        if (success && gasForCallExactCheck > 0) {
+            require(gasUsed <= gasLimit, "Gas limit exceeded");
+        }
+
+        emit MessageReceived(message.messageId, message.sourceChainSelector, message);
+
+        return (success, retBytes, gasUsed);
     }
 
-    function ccipSend(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) external payable override returns (bytes32) {
-        require(isChainSupported(destinationChainSelector), "Chain not supported");
-        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
+    function simulateMessageReceived(
+        address target,
+        Client.Any2EVMMessage memory message
+    ) external override whenNotPaused {
+        require(target != address(0), "Invalid target address");
+        require(validateMessage(message), "Message validation failed");
+        require(processMessage(), "Rate limit exceeded");
 
-        bytes32 messageId = keccak256(abi.encode(
-            block.timestamp,
-            msg.sender,
-            destinationChainSelector,
-            message
-        ));
+        bytes32 messageId = keccak256(abi.encode(message));
+        emit MessageSimulated(target, messageId);
+
+        (bool success, ) = target.call(message.data);
+        require(success, "Message simulation failed");
+    }
+
+    function processMessage() public override returns (bool) {
+        return super.processMessage();
+    }
+
+    receive() external payable override {}
+}
 
         emit MessageSent(messageId, destinationChainSelector, message);
         return messageId;

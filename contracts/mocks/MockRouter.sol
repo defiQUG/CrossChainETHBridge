@@ -10,105 +10,54 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
-    mapping(uint64 => bool) private _supportedChains;
-    mapping(uint64 => address) private _onRamps;
-    mapping(uint64 => mapping(address => bool)) private _offRamps;
-    uint256 private constant _baseFee = 0.1 ether;
-    uint256 private constant _extraFee = 0.05 ether;
-    mapping(uint64 => address[]) private _supportedTokens;
+    mapping(uint64 => bool) internal _supportedChains;
+    mapping(uint64 => address[]) internal _supportedTokens;
+    mapping(uint64 => address) internal _onRamps;
+    mapping(uint64 => mapping(address => bool)) internal _offRamps;
+
+    uint256 internal constant _baseFee = 0.001 ether;
+    uint256 internal constant _extraFee = 0.0005 ether;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
-    constructor()
-        RateLimiter(100, 1 hours)  // 100 messages per hour
-    {
-        _supportedChains[137] = true; // Only Polygon PoS is supported
+    constructor() RateLimiter(100, 1 hours) {
+        _supportedChains[137] = true; // Polygon PoS
+        _supportedChains[138] = true; // Defi Oracle Meta
     }
 
-    function isChainSupported(uint64 chainSelector) external view virtual override returns (bool) {
-        return _supportedChains[chainSelector];
-    }
-
-    function getSupportedTokens(uint64 chainSelector) external view virtual override returns (address[] memory) {
-        require(_supportedChains[chainSelector], "Chain not supported");
-        return _supportedTokens[chainSelector];
-    }
-
-    function getOnRamp(uint64 destChainSelector) external view virtual override returns (address) {
+    function getOnRamp(uint64 destChainSelector) external view returns (address) {
         return _onRamps[destChainSelector];
     }
 
-    function isOffRamp(uint64 sourceChainSelector, address offRamp) external view virtual override returns (bool) {
+    function isOffRamp(uint64 sourceChainSelector, address offRamp) external view returns (bool) {
         return _offRamps[sourceChainSelector][offRamp];
     }
 
     function routeMessage(
-        uint64 destinationChainSelector,
-        bytes calldata receiver,
-        bytes calldata message,
-        address feeToken,
-        uint256 feeAmount
-    ) external payable virtual returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(msg.value >= feeAmount, "Insufficient fee");
+        Client.Any2EVMMessage calldata message,
+        uint16 gasForCallExactCheck,
+        uint256 gasLimit,
+        address receiver
+    ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
+        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
+        require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
-        bytes32 messageId = keccak256(abi.encode(
-            destinationChainSelector,
-            receiver,
-            message,
-            feeToken,
-            feeAmount
-        ));
+        uint256 startGas = gasleft();
 
-        emit MessageSent(messageId, destinationChainSelector, Client.EVM2AnyMessage({
-            receiver: receiver,
-            data: message,
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: feeToken
-        }));
-        return messageId;
-    }
+        (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
 
-    function getFee(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) public view virtual override returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-        uint256 totalFee = _baseFee;
-        if (message.tokenAmounts.length > 0) {
-            totalFee += _extraFee;
-        }
-        return totalFee;
-    }
+        gasUsed = startGas - gasleft();
 
-    function ccipSend(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) external payable virtual override returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(processMessage(), "Rate limit exceeded");
-
-        uint256 requiredFee = getFee(destinationChainSelector, message);
-        require(msg.value >= requiredFee, "Insufficient fee");
-
-        bytes32 messageId = keccak256(abi.encode(
-            block.timestamp,
-            msg.sender,
-            destinationChainSelector,
-            message
-        ));
-
-        emit MessageSent(messageId, destinationChainSelector, message);
-
-        if (msg.value > requiredFee) {
-            payable(msg.sender).transfer(msg.value - requiredFee);
+        if (success && gasForCallExactCheck > 0) {
+            require(gasUsed <= gasLimit, "Exceeded gas limit");
         }
 
-        return messageId;
+        emit MessageReceived(message.messageId, message.sourceChainSelector, message);
+
+        return (success, retBytes, gasUsed);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
@@ -118,8 +67,8 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (message.sender.length == 0) {
             revert("Invalid sender");
         }
-        if (message.data.length < 64) {
-            revert("Invalid data");
+        if (message.data.length < 4) {
+            revert("Invalid data length");
         }
         return true;
     }
@@ -139,15 +88,8 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         require(success, "Message simulation failed");
     }
 
-    function ccipReceive(
-        Client.Any2EVMMessage memory message
-    ) external virtual override whenNotPaused {
-        require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
-
-        bytes32 messageId = keccak256(abi.encode(message));
-        emit MessageReceived(messageId, message.sourceChainSelector, message);
-    }
+    receive() external payable virtual {}
+}
 
     receive() external payable virtual {}
 }
