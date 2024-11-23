@@ -1,7 +1,7 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
+const { deployContract, getContractAt, createCCIPMessage } = require('./helpers/test-utils');
 
 const {
     BRIDGE_FEE,
@@ -36,18 +36,26 @@ describe("Gas Optimization Tests", function() {
     describe("Gas Usage Analysis", function() {
         it("Should optimize gas for message sending", async function() {
             const amount = ethers.parseEther("1.0");
+            const data = ethers.AbiCoder.defaultAbiCoder().encode(
+                ['address', 'uint256'],
+                [user.address, amount]
+            );
+
+            // Construct message with proper format
             const message = {
-                receiver: user.address,
-                data: ethers.AbiCoder.defaultAbiCoder().encode(
-                    ['address', 'uint256'],
-                    [user.address, amount]
-                ),
+                receiver: await crossChainMessenger.getAddress(),
+                data: data,
                 tokenAmounts: [],
                 feeToken: ethers.ZeroAddress,
                 extraArgs: "0x"
             };
+
+            // Get fee and calculate total value
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            const sendTx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount + fee });
+            const totalValue = amount + fee;
+
+            // Send transaction with proper value
+            const sendTx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: totalValue });
             const sendReceipt = await sendTx.wait();
             expect(sendReceipt.gasUsed).to.be.below(300000n, "Gas usage too high for message sending");
         });
@@ -65,15 +73,22 @@ describe("Gas Optimization Tests", function() {
                 [await user.getAddress(), amount]
             );
 
-            const message = createCCIPMessage({
+            // Create properly formatted message
+            const message = {
+                messageId: ethers.hexlify(ethers.randomBytes(32)),
+                sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
                 sender: await owner.getAddress(),
-                data: data
-            });
+                data: data,
+                destTokenAmounts: [],
+                feeToken: ethers.ZeroAddress,
+                extraArgs: "0x"
+            };
 
-            // Send message directly to the target using MockRouter's simulateMessageReceived function
+            // Send message with proper value
             const receiveTx = await mockRouter.simulateMessageReceived(
                 await crossChainMessenger.getAddress(),
-                message
+                message,
+                { value: amount }
             );
             const receiveReceipt = await receiveTx.wait();
             expect(receiveReceipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
