@@ -82,7 +82,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         uint256 transferAmount = msg.value - requiredFee;
         require(transferAmount > 0, "CrossChainMessenger: amount too small");
 
-        rateLimiter.checkAndUpdateRateLimit();
+        rateLimiter.processMessage();
         emergencyPause.lockValue(transferAmount);
 
         bytes32 messageId = router.ccipSend{value: requiredFee}(
@@ -104,7 +104,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         require(amount > 0, "CrossChainMessenger: zero amount");
         require(address(this).balance >= amount, "CrossChainMessenger: insufficient balance");
 
-        rateLimiter.checkAndUpdateRateLimit();
+        rateLimiter.processMessage();
         emergencyPause.lockValue(amount);
 
         weth.deposit{value: amount}();
