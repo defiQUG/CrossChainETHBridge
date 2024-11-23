@@ -1,9 +1,9 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("solidity-coverage");
+require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");
 require('dotenv').config();
 
-/** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
     version: "0.8.20",
@@ -15,15 +15,13 @@ module.exports = {
     }
   },
   networks: {
-    mainnet: {
+    hardhat: {
+      chainId: 31337
+    },
+    defiOracleMeta: {
       url: process.env.DEFI_ORACLE_META_RPC || "https://mainnet-rpc.dometachain.com",
       chainId: 138,
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      verify: {
-        etherscan: {
-          apiUrl: "https://api.dometachain.com"
-        }
-      }
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : []
     },
     polygon: {
       url: process.env.POLYGON_RPC || "https://polygon-rpc.com",
@@ -33,8 +31,5 @@ module.exports = {
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
-  },
-  mocha: {
-    timeout: 100000
   }
 };
