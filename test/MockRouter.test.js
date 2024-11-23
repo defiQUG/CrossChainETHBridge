@@ -1,33 +1,24 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
-
-const {
-    BRIDGE_FEE,
-    MAX_FEE,
-    MAX_MESSAGES_PER_PERIOD,
-    PAUSE_THRESHOLD,
-    PAUSE_DURATION,
-    POLYGON_CHAIN_SELECTOR,
-    DEFI_ORACLE_META_CHAIN_SELECTOR
-} = TEST_CONFIG;
+const { deployTestContracts } = require('./helpers/TestSetup');
 
 describe("MockRouter Tests", function() {
     let owner, addr1, addr2, user;
     let mockRouter, mockWETH, crossChainMessenger;
     const DOM_CHAIN_SELECTOR = 138n;
     const POLYGON_CHAIN_SELECTOR = 137n;
+    const BASE_FEE = ethers.parseEther("0.6");
 
     beforeEach(async function() {
+        [owner, addr1, addr2, user] = await ethers.getSigners();
         const contracts = await deployTestContracts();
-        owner = contracts.owner;
-        user = contracts.user;
-        addr1 = contracts.addr1;
-        addr2 = contracts.addr2;
         mockRouter = contracts.mockRouter;
         mockWETH = contracts.mockWETH;
-        crossChainMessenger = contracts.crossChainMessenger;
+        crossChainMessenger = contracts.messenger;
+
+        // Initialize MockRouter
+        await mockRouter.initialize();
+        await mockRouter.setSupportedChain(POLYGON_CHAIN_SELECTOR, true);
     });
 
     describe("Chain Support and Token Management", function() {
@@ -86,11 +77,16 @@ describe("MockRouter Tests", function() {
             };
         });
 
-        it("Should allow owner to set extra fee", async function() {
-            const newFee = ethers.parseEther("0.5");
-            await mockRouter.setExtraFee(newFee);
+        it("Should calculate fee correctly with no extra fee", async function() {
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            expect(fee).to.equal(ethers.parseEther("1.1")); // BASE_FEE (0.6) + extraFee (0.5)
+            expect(fee).to.equal(BASE_FEE);
+        });
+
+        it("Should calculate fee correctly with extra fee", async function() {
+            const extraFee = ethers.parseEther("0.5");
+            await mockRouter.setExtraFee(extraFee);
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
+            expect(fee).to.equal(BASE_FEE + extraFee);
         });
 
         it("Should prevent non-owner from setting extra fee", async function() {
@@ -109,7 +105,7 @@ describe("MockRouter Tests", function() {
             const message = {
                 messageId: ethers.hexlify(ethers.randomBytes(32)),
                 sourceChainSelector: DOM_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 20),
+                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 32),
                 data: "0x1234",
                 destTokenAmounts: []
             };
@@ -125,9 +121,24 @@ describe("MockRouter Tests", function() {
                 feeToken: ethers.ZeroAddress
             };
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseEther("0.6") // BASE_FEE
+                value: BASE_FEE
             })).to.emit(mockRouter, "MessageSent");
         });
+
+        it("Should revert ccipSend with insufficient fee", async function() {
+            const message = {
+                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
+                data: "0x",
+                tokenAmounts: [],
+                extraArgs: "0x",
+                feeToken: ethers.ZeroAddress
+            };
+            await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
+                value: ethers.parseEther("0.05")
+            })).to.be.revertedWith("Insufficient fee");
+        });
+    });
+});
 
         it("Should revert ccipSend with insufficient fee", async function() {
             const message = {

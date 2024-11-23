@@ -1,6 +1,8 @@
 const { ethers } = require('hardhat');
 
 async function deployTestContracts() {
+    const [owner, user, addr1, addr2] = await ethers.getSigners();
+
     // Deploy mock WETH
     const MockWETH = await ethers.getContractFactory('MockWETH');
     const mockWETH = await MockWETH.deploy();
@@ -37,6 +39,10 @@ async function deployTestContracts() {
     await messenger.waitForDeployment();
 
     return {
+        owner,
+        user,
+        addr1,
+        addr2,
         mockWETH,
         rateLimiter,
         emergencyPause,
