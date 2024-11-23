@@ -9,6 +9,13 @@ uint64 constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
 uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
+    constructor() {
+        // Initialize supported tokens for test chains
+        _supportedTokens[DEFI_ORACLE_META_CHAIN_SELECTOR].push(address(0x1234567890123456789012345678901234567890));
+        _supportedTokens[POLYGON_CHAIN_SELECTOR].push(address(0x1234567890123456789012345678901234567890));
+        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
+        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
+    }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
         return _supportedChains[destChainSelector];
@@ -67,7 +74,12 @@ contract TestRouter is MockRouter, IRouterClient {
         require(validateMessage(message), "Message validation failed");
         require(processMessage(), "Rate limit exceeded");
 
-        bytes32 messageId = keccak256(abi.encode(message));
+        bytes32 messageId = keccak256(abi.encode(
+            block.timestamp,
+            target,
+            message.sourceChainSelector,
+            message.data
+        ));
         emit MessageSimulated(target, messageId);
 
         (bool success, ) = target.call(message.data);
