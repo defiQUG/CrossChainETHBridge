@@ -132,26 +132,50 @@ describe("Router Coverage Tests", function () {
                 )
             };
 
-            // Call processMessage and wait for transaction
+            // First check if we need to reset the rate limiting period
+            if (await router.shouldResetPeriod()) {
+                await router._resetPeriod();
+            }
+
+            // Call processMessage and verify rate limiting
             const tx = await router.processMessage();
             await tx.wait();
 
-            // Verify transaction succeeded
+            // Verify transaction succeeded and rate limiting state
             expect(tx.hash).to.be.properHex(66);
+            expect(await router.currentPeriodMessages()).to.be.gt(0);
         });
 
         it("Should handle fee calculations correctly", async function () {
+            const BASE_FEE = ethers.parseEther("0.6"); // 0.6 ETH base fee
             const messageFee = await router.getFee(POLYGON_CHAIN_SELECTOR, ccipMessage);
-            expect(messageFee).to.equal(ethers.parseEther("0.1"));
+            expect(messageFee).to.equal(BASE_FEE);
 
-            await expect(router.getFee(DEFI_ORACLE_META_CHAIN_SELECTOR, ccipMessage))
+            // Test unsupported chain
+            await expect(router.getFee(999, ccipMessage))
                 .to.be.revertedWith("Chain not supported");
         });
 
         it("Should validate message data correctly", async function () {
-            const invalidMessage = { ...ccipMessage, sender: ethers.hexlify(ethers.randomBytes(10)) }; // Invalid 10-byte sender
-            await expect(router.validateMessage(invalidMessage))
+            // Test invalid message ID
+            const invalidMessageId = { ...ccipMessage, messageId: ethers.ZeroHash };
+            await expect(router.validateMessage(invalidMessageId))
+                .to.be.revertedWith("Invalid message ID");
+
+            // Test invalid sender length
+            const invalidSender = { ...ccipMessage, sender: ethers.hexlify(ethers.randomBytes(10)) };
+            await expect(router.validateMessage(invalidSender))
                 .to.be.revertedWith("Invalid sender length");
+
+            // Test empty message data
+            const emptyData = { ...ccipMessage, data: "0x" };
+            await expect(router.validateMessage(emptyData))
+                .to.be.revertedWith("Empty message data");
+
+            // Test invalid token amounts
+            const invalidTokens = { ...ccipMessage, destTokenAmounts: [{ token: ethers.ZeroAddress, amount: 1 }] };
+            await expect(router.validateMessage(invalidTokens))
+                .to.be.revertedWith("Token transfers not supported");
         });
 
         it("Should handle message validation errors", async function () {
