@@ -63,14 +63,9 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
     function sendToPolygon(address _recipient) external payable nonReentrant {
         require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
-        require(msg.value > bridgeFee, "CrossChainMessenger: insufficient payment");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
 
-        uint256 transferAmount = msg.value - bridgeFee;
-        rateLimiter.checkAndUpdateRateLimit();
-        emergencyPause.lockValue(transferAmount);
-
-        bytes memory data = abi.encode(_recipient, transferAmount);
+        bytes memory data = abi.encode(_recipient, msg.value);
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
             data: data,
@@ -79,7 +74,18 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
             feeToken: address(0)
         });
 
-        bytes32 messageId = router.ccipSend{value: bridgeFee}(
+        // Get the required fee from the router
+        uint256 requiredFee = router.getFee(POLYGON_CHAIN_SELECTOR, message);
+        require(msg.value >= requiredFee, "CrossChainMessenger: insufficient payment");
+
+        // Calculate the actual transfer amount after fee
+        uint256 transferAmount = msg.value - requiredFee;
+        require(transferAmount > 0, "CrossChainMessenger: amount too small");
+
+        rateLimiter.checkAndUpdateRateLimit();
+        emergencyPause.lockValue(transferAmount);
+
+        bytes32 messageId = router.ccipSend{value: requiredFee}(
             POLYGON_CHAIN_SELECTOR,
             message
         );
