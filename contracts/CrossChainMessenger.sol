@@ -6,7 +6,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "security/RateLimiter.sol""";
+import "./security/RateLimiter.sol"""";
 import "./security/EmergencyPause.sol";
 
 interface IWETH {
