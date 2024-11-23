@@ -1,11 +1,14 @@
 const { ethers } = require("hardhat");
 
-async function deployContract(name, args = []) {
+async function deployContract(name, args = [], options = {}) {
     const Factory = await ethers.getContractFactory(name);
-    const deploymentArgs = args.map(arg =>
-        typeof arg === 'bigint' ? arg.toString() : arg
-    );
-    const contract = await Factory.deploy(...deploymentArgs);
+    const deploymentArgs = args.map(arg => {
+        if (typeof arg === 'number' || typeof arg === 'bigint') {
+            return ethers.getBigInt(arg.toString());
+        }
+        return arg;
+    });
+    const contract = await Factory.deploy(...deploymentArgs, options);
     await contract.waitForDeployment();
     return contract;
 }

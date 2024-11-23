@@ -26,13 +26,13 @@ async function deployTestContracts() {
     // Deploy RateLimiter
     const rateLimiter = await deployContract("RateLimiter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
-        TEST_CONFIG.PERIOD_DURATION
+        ethers.getBigInt(TEST_CONFIG.PERIOD_DURATION)
     ]);
 
     // Deploy EmergencyPause
     const emergencyPause = await deployContract("EmergencyPause", [
         TEST_CONFIG.PAUSE_THRESHOLD,
-        TEST_CONFIG.PAUSE_DURATION.toString() // Convert to string to avoid ethers.js bigint issues
+        ethers.getBigInt(TEST_CONFIG.PAUSE_DURATION)
     ]);
 
     // Deploy CrossChainMessenger with pre-deployed contracts

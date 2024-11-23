@@ -126,12 +126,6 @@ contract TestRouter is MockRouter, IRouterClient {
 
         // Verify the call was successful and ETH was transferred
         require(success, "ETH transfer failed");
-
-        // After successful execution, mint WETH to the depositor
-        (success, ) = target.call{value: 0}(
-            abi.encodeWithSignature("transfer(address,uint256)", depositor, msg.value)
-        );
-        require(success, "WETH transfer failed");
     }
 
     // First ccipSend implementation removed as it was duplicated and contained errors
