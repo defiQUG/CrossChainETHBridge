@@ -47,9 +47,9 @@ describe("Gas Optimization Tests", function() {
                 extraArgs: "0x"
             };
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount + fee });
-            const receipt = await tx.wait();
-            expect(receipt.gasUsed).to.be.below(300000n, "Gas usage too high for message sending");
+            const sendTx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount + fee });
+            const sendReceipt = await sendTx.wait();
+            expect(sendReceipt.gasUsed).to.be.below(300000n, "Gas usage too high for message sending");
         });
 
         it("Should optimize gas for message receiving", async function() {
@@ -71,12 +71,12 @@ describe("Gas Optimization Tests", function() {
             });
 
             // Send message directly to the target using MockRouter's simulateMessageReceived function
-            const tx = await mockRouter.simulateMessageReceived(
+            const receiveTx = await mockRouter.simulateMessageReceived(
                 await crossChainMessenger.getAddress(),
                 message
             );
-            const receipt = await tx.wait();
-            expect(receipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
+            const receiveReceipt = await receiveTx.wait();
+            expect(receiveReceipt.gasUsed).to.be.below(500000n, "Gas usage too high for message receiving");
 
             // Send message directly to the target using MockRouter's simulateMessageReceived function
             const tx = await mockRouter.simulateMessageReceived(
