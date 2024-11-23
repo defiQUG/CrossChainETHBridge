@@ -12,7 +12,7 @@ describe("EmergencyPause", function () {
     [owner, pauser, user] = await ethers.getSigners();
     const EmergencyPause = await ethers.getContractFactory("EmergencyPause");
     emergencyPause = await EmergencyPause.deploy();
-    await emergencyPause.deployed();
+    await emergencyPause.waitForDeployment();
   });
 
   describe("Access Control", function () {

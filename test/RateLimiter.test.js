@@ -11,7 +11,7 @@ describe("RateLimiter", function () {
     [owner, addr1] = await ethers.getSigners();
     const RateLimiter = await ethers.getContractFactory("RateLimiter");
     rateLimiter = await RateLimiter.deploy(MAX_MESSAGES);
-    await rateLimiter.deployed();
+    await rateLimiter.waitForDeployment();
   });
 
   describe("Rate Limiting", function () {
