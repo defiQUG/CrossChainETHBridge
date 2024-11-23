@@ -12,6 +12,8 @@ contract RateLimiter is Ownable, Pausable {
     uint256 public pauseDuration;
     uint256 public lastPauseTimestamp;
 
+    mapping(uint256 => uint256) private _messageCountByPeriod;
+
     event RateLimitUpdated(uint256 maxMessages, uint256 duration);
     event MessageProcessed(address indexed sender, uint256 timestamp);
     event PeriodReset(uint256 timestamp);
@@ -28,9 +30,13 @@ contract RateLimiter is Ownable, Pausable {
     }
 
     function checkPeriodReset() internal {
-        if (block.timestamp >= periodStart + periodDuration) {
-            periodStart = block.timestamp;
+        uint256 currentPeriod = getCurrentPeriod();
+        uint256 lastPeriod = (periodStart == 0) ? 0 : (periodStart / periodDuration);
+
+        if (currentPeriod > lastPeriod) {
+            _messageCountByPeriod[currentPeriod] = 0;
             currentPeriodMessages = 0;
+            periodStart = block.timestamp;
             emit PeriodReset(block.timestamp);
         }
     }
@@ -50,9 +56,17 @@ contract RateLimiter is Ownable, Pausable {
     function processMessage() public whenNotPaused returns (bool) {
         checkPeriodReset();
         require(currentPeriodMessages < maxMessagesPerPeriod, "Rate limit exceeded");
+
+        uint256 currentPeriod = getCurrentPeriod();
         currentPeriodMessages++;
+        _messageCountByPeriod[currentPeriod]++;
+
         emit MessageProcessed(msg.sender, block.timestamp);
         return true;
+    }
+
+    function messageCountByPeriod(uint256 period) external view returns (uint256) {
+        return _messageCountByPeriod[period];
     }
 
     function getCurrentPeriodMessages() external view returns (uint256) {
@@ -70,8 +84,8 @@ contract RateLimiter is Ownable, Pausable {
         return maxMessagesPerPeriod - currentPeriodMessages;
     }
 
-    function getCurrentPeriod() external view returns (uint256) {
-        return (block.timestamp - periodStart) / periodDuration;
+    function getCurrentPeriod() public view returns (uint256) {
+        return block.timestamp / periodDuration;
     }
 
     function emergencyPause() external onlyOwner {
@@ -86,13 +100,6 @@ contract RateLimiter is Ownable, Pausable {
         pauseDuration = _duration;
         emit PauseDurationUpdated(_duration);
     }
-
-    function emergencyUnpause() external onlyOwner {
-        require(paused(), "Not paused");
-        require(block.timestamp >= lastPauseTimestamp + pauseDuration, "Pause duration not elapsed");
-        _unpause();
-    }
-}
 
     function emergencyUnpause() external onlyOwner {
         require(paused(), "Not paused");
