@@ -123,13 +123,20 @@ contract MockRouter is IRouterClient, Ownable {
             revert("Invalid chain selector");
         }
 
-        if (message.sender == address(0)) {
+        // Decode sender from bytes to address
+        address sender = abi.decode(message.sender, (address));
+        if (sender == address(0)) {
             revert("Invalid sender");
         }
 
-        if (message.receiver == address(0)) {
+        // Decode data to get recipient
+        (address recipient,) = abi.decode(message.data, (address, uint256));
+        if (recipient == address(0)) {
             revert("Invalid recipient");
         }
+
+        return true;
+    }
 
         return true;
     }
