@@ -70,7 +70,7 @@ describe("RateLimiter Extended Tests", function () {
                 await rateLimiter.processMessage();
             }
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded for current period");
+                .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should handle rate limit updates", async function () {
@@ -78,7 +78,7 @@ describe("RateLimiter Extended Tests", function () {
             await rateLimiter.processMessage();
             await rateLimiter.processMessage();
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded for current period");
+                .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should prevent non-owner from updating rate limit", async function () {

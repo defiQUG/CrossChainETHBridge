@@ -39,7 +39,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should still be rate limited
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded for current period");
+                .to.be.revertedWith("Rate limit exceeded");
 
             // Advance time to just after period end
             await time.increase(3);
@@ -77,7 +77,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should enforce new limit immediately
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded for current period");
+                .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should handle multiple rate updates in quick succession", async function () {
@@ -93,7 +93,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should enforce latest limit
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded for current period");
+                .to.be.revertedWith("Rate limit exceeded");
         });
     });
 });
