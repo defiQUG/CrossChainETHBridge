@@ -2,8 +2,9 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract RateLimiter is Ownable {
+contract RateLimiter is Ownable, Pausable {
     uint256 public maxMessagesPerPeriod;
     uint256 public periodDuration;
     uint256 public currentPeriodStart;
@@ -58,7 +59,7 @@ contract RateLimiter is Ownable {
         return periodEnd - block.timestamp;
     }
 
-    function checkAndUpdateRateLimit() external {
+    function checkAndUpdateRateLimit() external whenNotPaused {
         if (block.timestamp >= currentPeriodStart + periodDuration) {
             messageCount = 0;
             currentPeriodStart = block.timestamp;
@@ -69,7 +70,7 @@ contract RateLimiter is Ownable {
         emit MessageProcessed(msg.sender, block.timestamp);
     }
 
-    function processMessage() external checkRateLimit {
+    function processMessage() external checkRateLimit whenNotPaused {
         // The checkRateLimit modifier handles all the rate limiting logic
     }
 
@@ -80,9 +81,6 @@ contract RateLimiter is Ownable {
     }
 
     function emergencyPause() external onlyOwner {
-        // This function is called in emergency situations to pause message processing
         _pause();
-    }
-        emit MessageProcessed(msg.sender, block.timestamp);
     }
 }
