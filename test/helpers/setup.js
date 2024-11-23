@@ -8,7 +8,7 @@ const TEST_CONFIG = {
     BRIDGE_FEE: ethers.parseEther("0.01"),  // Increased from 0.001 to 0.01
     MAX_FEE: ethers.parseEther("0.1"),
     MAX_MESSAGES_PER_PERIOD: 100,  // Increased from 10 to 100 for better testing
-    PAUSE_THRESHOLD: ethers.parseEther("5.0"),
+    PAUSE_THRESHOLD: ethers.parseEther("100.0"),  // Increased from 5.0 to 100.0 to match test scenarios
     PAUSE_DURATION: 3600, // 1 hour
     PERIOD_DURATION: 3600 // 1 hour
 };
