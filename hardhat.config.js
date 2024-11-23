@@ -49,6 +49,19 @@ module.exports = {
     timeout: 100000
   },
   coverage: {
-    provider: "hardhat"
+    provider: "hardhat",
+    enabled: true,
+    reporter: ['text', 'json', 'html'],
+    configureYulOptimizer: true,
+    solcOptimizerDetails: {
+      peephole: false,
+      inliner: false,
+      jumpdestRemover: false,
+      orderLiterals: false,
+      deduplicate: false,
+      cse: false,
+      constantOptimizer: false,
+      yul: false
+    }
   }
 };
