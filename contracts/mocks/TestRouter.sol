@@ -20,7 +20,9 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
-        require(_supportedChains[chainSelector], "Chain not supported");
+        if (!_supportedChains[chainSelector]) {
+            revert("Chain not supported");
+        }
         return new address[](0);
     }
 
@@ -28,23 +30,43 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("Chain not supported");
+        }
         return 100000000000000000; // 0.1 ETH
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
+        // Check message ID
         if (message.messageId == bytes32(0)) {
             revert("Invalid message ID");
         }
+
+        // Check chain selector
         if (message.sourceChainSelector == 0) {
             revert("Chain not supported");
         }
+
+        // Check sender address length
         if (message.sender.length != 20) {
             revert("Invalid sender length");
         }
+
+        // Check receiver address
+        if (message.receiver == address(0)) {
+            revert("Invalid recipient");
+        }
+
+        // Check message data
         if (message.data.length == 0) {
             revert("Empty message data");
         }
+
+        // Check token amounts
+        if (message.tokenAmounts.length > 0 && message.destTokenAmounts.length != message.tokenAmounts.length) {
+            revert("Token amount mismatch");
+        }
+
         return true;
     }
 
