@@ -11,13 +11,14 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 contract TestRouter is MockRouter, IRouterClient {
     uint256 private extraFee;
     mapping(address => bool) private _testSupportedTokens;
+    uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
 
     // Events for state changes
     event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor() {
+    constructor() RateLimiter(10, 3600) {  // 10 messages per hour
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true; // Defi Oracle Meta
@@ -37,35 +38,15 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        return 10000000000000000; // 0.01 ETH for testing
+        return BASE_FEE + extraFee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        // Check message ID
-        if (message.messageId == bytes32(0)) {
-            revert("Invalid message ID");
-        }
-
-        // Check chain selector
-        if (message.sourceChainSelector == 0) {
-            revert("Chain not supported");
-        }
-
-        // Check sender address length
-        if (message.sender.length != 20) {
-            revert("Invalid sender length");
-        }
-
-        // Check message data
-        if (message.data.length == 0) {
-            revert("Empty message data");
-        }
-
-        // Check token amounts if present
-        if (message.destTokenAmounts.length > 0) {
-            revert("Token transfers not supported");
-        }
-
+        require(message.messageId != bytes32(0), "Invalid message ID");
+        require(message.sourceChainSelector != 0, "Chain not supported");
+        require(message.sender.length == 20, "Invalid sender length");
+        require(message.data.length > 0, "Empty message data");
+        require(message.destTokenAmounts.length == 0, "Token transfers not supported");
         return true;
     }
 
@@ -107,9 +88,9 @@ contract TestRouter is MockRouter, IRouterClient {
         }
         require(size > 0, "Target contract does not exist");
 
-        // Create message ID and emit event before simulation
+        // Create message ID
         bytes32 messageId = keccak256(abi.encode(
-            block.timestamp,
+            message.messageId,
             target,
             message.sourceChainSelector,
             message.data,
@@ -117,26 +98,21 @@ contract TestRouter is MockRouter, IRouterClient {
         ));
         emit MessageSimulated(target, messageId, msg.value);
 
-        // Try to execute the message with forwarded ETH value
+        // Execute message with sufficient gas buffer
+        uint256 gasBuffer = 50000;
+        require(gasleft() > gasBuffer, "Insufficient gas");
+
         (bool success, bytes memory result) = target.call{
-            gas: gasleft() - 2000,
+            gas: gasleft() - gasBuffer,
             value: msg.value
         }(message.data);
 
         if (!success) {
-            if (result.length > 0) {
-                assembly {
-                    revert(add(32, result), mload(result))
-                }
+            assembly {
+                revert(add(32, result), mload(result))
             }
-            revert("Message simulation failed");
         }
-
-        // Verify the call was successful and ETH was transferred
-        require(success, "ETH transfer failed");
     }
-
-    // First ccipSend implementation removed as it was duplicated and contained errors
 
     function ccipSend(
         uint64 destinationChainSelector,
