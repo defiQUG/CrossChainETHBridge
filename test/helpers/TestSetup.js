@@ -24,9 +24,17 @@ async function deployTestContracts() {
 
     // Deploy TestRouter (concrete implementation of MockRouter)
     const TestRouter = await ethers.getContractFactory('TestRouter');
-    const mockRouter = await TestRouter.deploy();
+    const mockRouter = await TestRouter.deploy(
+        owner.address, // admin
+        ethers.ZeroAddress // feeToken
+    );
     await mockRouter.waitForDeployment();
-    await mockRouter.initialize(10, 3600); // 10 messages per hour
+    // Initialize with base fee
+    await mockRouter.initialize(
+        owner.address,
+        ethers.ZeroAddress,
+        ethers.parseEther('0.001') // base fee
+    );
 
     // Deploy CrossChainMessenger
     const CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger');
