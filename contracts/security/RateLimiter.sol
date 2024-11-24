@@ -11,6 +11,10 @@ contract RateLimiter is SecurityBase {
     uint256 private _periodStart;
     bool private _initialized;
 
+    constructor(uint256 maxMessages, uint256 periodDuration) {
+        _initialize(maxMessages, periodDuration);
+    }
+
     event RateLimitUpdated(uint256 maxMessages, uint256 period);
     event PeriodReset(uint256 timestamp);
 

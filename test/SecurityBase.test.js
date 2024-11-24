@@ -33,7 +33,7 @@ describe('SecurityBase', function() {
   describe('Access Control', function() {
     it('Should restrict admin functions to owner', async function() {
       await expect(
-        rateLimiter.connect(user).initialize(20, 7200)
+        rateLimiter.connect(user).setRateLimit(20, 7200)
       ).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
