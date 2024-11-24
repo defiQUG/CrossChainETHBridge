@@ -20,7 +20,10 @@ describe("Reentrancy Protection Tests", function () {
 
     // Deploy MockRouter
     const MockRouter = await ethers.getContractFactory("MockRouter");
-    mockRouter = await MockRouter.deploy();
+    mockRouter = await MockRouter.deploy(
+      10, // maxMessages: maximum messages per period
+      3600 // periodDuration: 1 hour in seconds
+    );
     await mockRouter.deployed();
 
     // Deploy MockEmergencyPause
