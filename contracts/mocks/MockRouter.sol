@@ -19,6 +19,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     uint256 internal _extraFee;
     address internal _admin;
     address internal _feeToken;
+    bool private _routerInitialized;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
@@ -33,11 +34,19 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address feeToken,
         uint256 baseFee
     ) external virtual {
+        require(!_routerInitialized, "MockRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
-        _transferOwnership(admin);
-        _initialize(100, 3600); // Default values: 100 messages per hour
+        require(feeToken != address(0), "Invalid fee token address");
+
+        // Initialize rate limiter first
+        super.initialize(100, 3600); // Default values: 100 messages per hour
+
+        _admin = admin;
+        _feeToken = feeToken;
         _baseFee = baseFee;
         _extraFee = baseFee / 2; // Set extra fee to half of base fee
+        _routerInitialized = true;
+        _transferOwnership(admin);
     }
 
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
