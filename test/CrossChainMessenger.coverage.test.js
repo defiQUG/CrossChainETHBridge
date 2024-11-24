@@ -14,7 +14,7 @@ const {
 } = TEST_CONFIG;
 
 describe("CrossChainMessenger Coverage Tests", function () {
-    let messenger, owner, addr1, mockRouter, mockWETH;
+    let messenger, owner, addr1, mockRouter, mockWETH, emergencyPause;
 
     beforeEach(async function () {
         const contracts = await deployTestContracts();
@@ -23,6 +23,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
         mockRouter = contracts.mockRouter;
         mockWETH = contracts.mockWETH;
         messenger = contracts.crossChainMessenger;
+        emergencyPause = contracts.emergencyPause;
     });
 
     describe("Edge Cases and Error Handling", function () {
@@ -35,7 +36,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
         });
 
         it("Should handle emergency withdrawals correctly", async function () {
-            await messenger.pause();
+            await emergencyPause.pause();
             const amount = ethers.utils.parseEther("1.0");
             await owner.sendTransaction({
                 to: messenger.address,
