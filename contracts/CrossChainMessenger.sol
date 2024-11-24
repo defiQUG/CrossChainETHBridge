@@ -14,19 +14,22 @@ error InvalidRecipient();
 error FeeExceedsMaximum();
 error InvalidSourceChain();
 error InvalidMessageFormat();
+error ZeroAmount();
+error InvalidTokenAmount();
 
-contract CrossChainMessenger is Ownable {
+contract CrossChainMessenger is SecurityBase {
     using Client for Client.Any2EVMMessage;
+    using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable ROUTER;
     IWETH public immutable WETH;
-    SecurityBase public immutable security;
     EmergencyPause public immutable emergencyPause;
     uint256 private _bridgeFee;
     uint256 public immutable MAX_FEE;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
+    uint64 public constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
 
-    event MessageSent(address indexed sender, address indexed recipient, uint256 amount);
+    event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event MessageReceived(bytes32 indexed messageId, address indexed sender, uint256 amount);
     event BridgeFeeUpdated(uint256 newFee);
     event EmergencyWithdrawal(address indexed recipient, uint256 amount);
@@ -38,16 +41,14 @@ contract CrossChainMessenger is Ownable {
         address _emergencyPause,
         uint256 initialFee,
         uint256 maxFee
-    ) {
+    ) SecurityBase(100, 3600) {  // Use constants from TEST_CONFIG
         if (router == address(0)) revert InvalidRecipient();
         if (weth == address(0)) revert InvalidRecipient();
-        if (_security == address(0)) revert InvalidRecipient();
         if (_emergencyPause == address(0)) revert InvalidRecipient();
         if (initialFee > maxFee) revert FeeExceedsMaximum();
 
         ROUTER = IRouterClient(router);
         WETH = IWETH(weth);
-        security = SecurityBase(_security);
         emergencyPause = EmergencyPause(_emergencyPause);
         _bridgeFee = initialFee;
         MAX_FEE = maxFee;
@@ -56,35 +57,69 @@ contract CrossChainMessenger is Ownable {
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientBalance();
-        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
-
-        bool success = security.processMessage();
-        require(success, "SecurityBase: Message processing failed");
+        if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
+        if (!processMessage()) revert("SecurityBase: Message processing failed");
 
         uint256 amount = msg.value - _bridgeFee;
         WETH.deposit{value: amount}();
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
-            data: abi.encode(amount),
+            data: abi.encode(msg.sender, amount),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
             feeToken: address(0)
         });
 
         bytes32 messageId = ROUTER.ccipSend(POLYGON_CHAIN_SELECTOR, message);
-        emit MessageSent(msg.sender, _recipient, amount);
+        emit MessageSent(messageId, msg.sender, _recipient, amount);
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
-        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
-        if (message.sourceChainSelector != POLYGON_CHAIN_SELECTOR) revert InvalidSourceChain();
+        if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
+        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert InvalidSourceChain();
+        if (!processMessage()) revert("SecurityBase: Message processing failed");
 
-        bool success = security.processMessage();
-        require(success, "SecurityBase: Message processing failed");
+        (address sender, uint256 amount) = abi.decode(message.data, (address, uint256));
+        if (amount == 0) revert ZeroAmount();
 
-        (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
-        if (recipient == address(0)) revert InvalidRecipient();
+        if (message.destTokenAmounts.length > 0) {
+            for (uint256 i = 0; i < message.destTokenAmounts.length; i++) {
+                if (message.destTokenAmounts[i].amount != amount) revert InvalidTokenAmount();
+            }
+        }
+
+        (bool success,) = sender.call{value: amount}("");
+        if (!success) revert TransferFailed();
+
+        emit MessageReceived(message.messageId, sender, amount);
+    }
+
+    function setBridgeFee(uint256 _newFee) external onlyOwner {
+        if (_newFee > MAX_FEE) revert FeeExceedsMaximum();
+        _bridgeFee = _newFee;
+        emit BridgeFeeUpdated(_newFee);
+    }
+
+    function emergencyWithdraw(address _recipient) external onlyOwner {
+        if (_recipient == address(0)) revert InvalidRecipient();
+        if (!emergencyPause.paused()) revert("EmergencyPause: contract not paused");
+
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert InsufficientBalance();
+
+        (bool success,) = _recipient.call{value: balance}("");
+        if (!success) revert TransferFailed();
+
+        emit EmergencyWithdrawal(_recipient, balance);
+    }
+
+    function getBridgeFee() external view returns (uint256) {
+        return _bridgeFee;
+    }
+
+    receive() external payable {}
+}
 
         (bool sent,) = recipient.call{value: amount}("");
         if (!sent) revert TransferFailed();
