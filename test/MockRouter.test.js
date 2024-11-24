@@ -38,7 +38,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getSupportedTokens for invalid chain", async function() {
             await expect(mockRouter.getSupportedTokens(999n))
-                .to.be.revertedWith("TestRouter: chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should allow owner to set supported chain", async function() {
@@ -100,7 +100,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getFee for unsupported chain", async function() {
             await expect(mockRouter.getFee(999n, message))
-                .to.be.revertedWith("TestRouter: chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 
@@ -141,7 +141,7 @@ describe("MockRouter Tests", function() {
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
                 value: ethers.parseUnits("0.05", "ether")
-            })).to.be.revertedWith("TestRouter: insufficient fee");
+            })).to.be.revertedWith("MockRouter: insufficient fee");
         });
     });
 });
