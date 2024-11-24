@@ -150,12 +150,33 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         return messageId;
     }
 
-    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
+    function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
         if (!_supportedChains[chainSelector]) {
             revert("Chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
+
+    function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
+        require(token != address(0), "Invalid token address");
+        if (supported) {
+            _supportedTokens[138].push(token); // Add to Defi Oracle Meta Chain
+            _supportedTokens[137].push(token); // Add to Polygon Chain
+        }
+    }
+
+    function _testSupportedTokens(address token) external view virtual returns (bool) {
+        address[] memory tokens = _supportedTokens[138];
+        for (uint i = 0; i < tokens.length; i++) {
+            if (tokens[i] == token) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    receive() external payable virtual {}
+}
 
     function setSupportedTokens(address token, bool supported) external onlyOwner {
         require(token != address(0), "Invalid token address");
