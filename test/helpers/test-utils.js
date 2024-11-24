@@ -5,22 +5,17 @@ async function deployContract(name, args = [], options = {}) {
     let contractName = name;
     if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
         contractName = `contracts/security/${name}.sol:${name}`;
-        // Add default arguments for RateLimiter only if no args provided
-        if (name === "RateLimiter" && (!args || args.length === 0)) {
-            args = [10, 3600]; // 10 messages per hour
-        }
     } else if (name === "TestRouter" || name === "MockRouter") {
         contractName = `contracts/mocks/${name}.sol:${name}`;
-        // Default arguments for Router only if no args provided
-        if (!args || args.length === 0) {
-            args = [10, 3600]; // RateLimiter constructor params
-        }
     }
 
     const Factory = await ethers.getContractFactory(contractName);
 
-    // Clean up and validate arguments
-    const deploymentArgs = args.filter(arg => arg !== undefined).map(arg => {
+    // Ensure args is an array and remove any undefined values
+    const cleanArgs = (Array.isArray(args) ? args : [args]).filter(arg => arg !== undefined);
+
+    // Convert numeric values to BigNumber
+    const deploymentArgs = cleanArgs.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
             return ethers.BigNumber.from(arg.toString());
         }
@@ -30,15 +25,25 @@ async function deployContract(name, args = [], options = {}) {
         return arg;
     });
 
-    console.log(`Deploying ${name} with args:`, deploymentArgs); // Debug log
+    // Debug logging
+    console.log(`Deploying ${name} with args:`, {
+        contractName,
+        args: deploymentArgs,
+        argsLength: deploymentArgs.length,
+        argTypes: deploymentArgs.map(arg => typeof arg)
+    });
 
-    // Deploy with proper options handling
     try {
         const contract = await Factory.deploy(...deploymentArgs);
         await contract.deployed();
         return contract;
     } catch (error) {
-        console.error(`Failed to deploy ${name}:`, error);
+        console.error(`Failed to deploy ${name}:`, {
+            error: error.message,
+            contractName,
+            args: deploymentArgs,
+            argsLength: deploymentArgs.length
+        });
         throw error;
     }
 }
