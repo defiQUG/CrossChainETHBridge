@@ -7,7 +7,6 @@ import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { SecurityBase } from "./security/SecurityBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
 
 error TransferFailed();
 error InsufficientPayment();
@@ -19,7 +18,7 @@ error ZeroAmount();
 error InvalidTokenAmount();
 error MessageAlreadyProcessed();
 
-contract CrossChainMessenger is SecurityBase, Pausable {
+contract CrossChainMessenger is SecurityBase {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -135,7 +134,7 @@ contract CrossChainMessenger is SecurityBase, Pausable {
         uint256 ethBalance = address(this).balance;
         uint256 totalBalance = wethBalance + ethBalance;
 
-        if (totalBalance == 0) revert InsufficientBalance();
+        if (totalBalance == 0) revert InsufficientPayment();
 
         if (wethBalance > 0) {
             WETH.withdraw(wethBalance);
