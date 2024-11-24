@@ -156,6 +156,12 @@ contract CrossChainMessenger is SecurityBase {
         emit EmergencyWithdraw(_recipient, totalBalance);
     }
 
+        (bool success,) = _recipient.call{value: totalBalance}("");
+        if (!success) revert TransferFailed();
+
+        emit EmergencyWithdraw(_recipient, totalBalance);
+    }
+
     function getBridgeFee() external view returns (uint256) {
         return _bridgeFee;
     }
