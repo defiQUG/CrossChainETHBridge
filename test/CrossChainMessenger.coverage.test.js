@@ -48,9 +48,10 @@ describe("CrossChainMessenger Coverage Tests", function () {
         });
 
         it("Should handle invalid chain ID correctly", async function () {
+            const INVALID_CHAIN_SELECTOR = 999n;
             const message = {
                 messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
-                sourceChainSelector: BigInt(POLYGON_CHAIN_SELECTOR),
+                sourceChainSelector: INVALID_CHAIN_SELECTOR,
                 sender: ethers.utils.hexZeroPad(owner.address, 32),
                 data: ethers.utils.defaultAbiCoder.encode(
                     ['address', 'uint256'],
