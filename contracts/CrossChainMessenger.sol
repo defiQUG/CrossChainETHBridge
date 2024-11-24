@@ -6,17 +6,20 @@ import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client
 import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { SecurityBase } from "./security/SecurityBase.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 error TransferFailed();
 error InsufficientBalance();
 error InvalidRecipient();
+error FeeExceedsMaximum();
 
-contract CrossChainMessenger {
+contract CrossChainMessenger is Ownable {
     IRouterClient public immutable ROUTER;
     IWETH public immutable WETH;
     SecurityBase public immutable security;
     EmergencyPause public immutable emergencyPause;
     uint256 private _bridgeFee;
+    uint256 public immutable MAX_FEE;
 
     event MessageSent(address indexed sender, address indexed recipient, uint256 amount);
     event BridgeFeeUpdated(uint256 newFee);
@@ -26,22 +29,28 @@ contract CrossChainMessenger {
         address router,
         address payable weth,
         address _security,
-        address _emergencyPause
+        address _emergencyPause,
+        uint256 initialFee,
+        uint256 maxFee
     ) {
         if (router == address(0)) revert InvalidRecipient();
         if (weth == address(0)) revert InvalidRecipient();
         if (_security == address(0)) revert InvalidRecipient();
         if (_emergencyPause == address(0)) revert InvalidRecipient();
+        if (initialFee > maxFee) revert FeeExceedsMaximum();
 
         ROUTER = IRouterClient(router);
         WETH = IWETH(weth);
         security = SecurityBase(_security);
         emergencyPause = EmergencyPause(_emergencyPause);
+        _bridgeFee = initialFee;
+        MAX_FEE = maxFee;
     }
 
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientBalance();
+        require(!emergencyPause.isPaused(), "EmergencyPause: contract is paused");
 
         bool success = security.processMessage();
         require(success, "SecurityBase: Message processing failed");
@@ -52,13 +61,15 @@ contract CrossChainMessenger {
         emit MessageSent(msg.sender, _recipient, amount);
     }
 
-    function setBridgeFee(uint256 _newFee) external {
+    function setBridgeFee(uint256 _newFee) external onlyOwner {
+        if (_newFee > MAX_FEE) revert FeeExceedsMaximum();
         _bridgeFee = _newFee;
         emit BridgeFeeUpdated(_newFee);
     }
 
-    function emergencyWithdraw(address _recipient) external {
+    function emergencyWithdraw(address _recipient) external onlyOwner {
         if (_recipient == address(0)) revert InvalidRecipient();
+        require(emergencyPause.isPaused(), "EmergencyPause: contract not paused");
 
         uint256 balance = address(this).balance;
         if (balance == 0) revert InsufficientBalance();
