@@ -16,12 +16,14 @@ const {
 describe("MockRouter Extended Tests", function () {
     let router, owner, user1, user2;
     const POLYGON_CHAIN_ID = 137;
+    const MAX_MESSAGES = 10;
+    const RATE_PERIOD = 3600; // 1 hour in seconds
     let defaultMessage;
 
     beforeEach(async function () {
         [owner, user1, user2] = await ethers.getSigners();
         const MockRouter = await ethers.getContractFactory("MockRouter");
-        router = await MockRouter.deploy();
+        router = await MockRouter.deploy(MAX_MESSAGES, RATE_PERIOD);
         await router.waitForDeployment();
 
         defaultMessage = {

@@ -15,11 +15,13 @@ const {
 
 describe("Router Coverage Tests", function () {
     let router, owner, addr1, addr2;
+    const MAX_MESSAGES = 10;
+    const RATE_PERIOD = 3600; // 1 hour in seconds
 
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
         const TestRouter = await ethers.getContractFactory("TestRouter");
-        router = await TestRouter.deploy();
+        router = await TestRouter.deploy(MAX_MESSAGES, RATE_PERIOD);
         await router.waitForDeployment();
     });
 
