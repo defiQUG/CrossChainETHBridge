@@ -1,5 +1,5 @@
 // Import ethers directly instead of from hardhat
-const { parseEther } = require('ethers/lib/utils');
+const { parseEther } = require("ethers");
 const path = require('path');
 
 // Alert configuration
