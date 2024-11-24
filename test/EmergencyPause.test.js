@@ -27,7 +27,7 @@ describe("EmergencyPause", function() {
 
     describe("Value Management", function() {
         it("Should track locked value correctly", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await emergencyPause.lockValue(amount);
             expect(await emergencyPause.totalValueLocked()).to.equal(amount);
         });
@@ -43,7 +43,7 @@ describe("EmergencyPause", function() {
         });
 
         it("Should allow value unlocking", async function() {
-            const amount = ethers.parseEther("2.0");
+            const amount = ethers.utils.parseEther("2.0");
             await emergencyPause.lockValue(amount);
             await expect(emergencyPause.unlockValue(amount))
                 .to.emit(emergencyPause, "ValueUnlocked")
@@ -52,8 +52,8 @@ describe("EmergencyPause", function() {
         });
 
         it("Should prevent unlocking more than locked", async function() {
-            const lockAmount = ethers.parseEther("1.0");
-            const unlockAmount = ethers.parseEther("2.0");
+            const lockAmount = ethers.utils.parseEther("1.0");
+            const unlockAmount = ethers.utils.parseEther("2.0");
             await emergencyPause.lockValue(lockAmount);
             await expect(emergencyPause.unlockValue(unlockAmount))
                 .to.be.revertedWithCustomError(emergencyPause, "InsufficientLockedValue");
@@ -82,16 +82,16 @@ describe("EmergencyPause", function() {
 
         it("Should prevent operations while paused", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
-            await expect(emergencyPause.lockValue(ethers.parseEther("1.0")))
+            await expect(emergencyPause.lockValue(ethers.utils.parseEther("1.0")))
                 .to.be.revertedWithCustomError(emergencyPause, "AlreadyPaused");
-            await expect(emergencyPause.unlockValue(ethers.parseEther("1.0")))
+            await expect(emergencyPause.unlockValue(ethers.utils.parseEther("1.0")))
                 .to.be.revertedWithCustomError(emergencyPause, "AlreadyPaused");
         });
     });
 
     describe("Configuration", function() {
         it("Should allow owner to update pause threshold", async function() {
-            const newThreshold = ethers.parseEther("10.0");
+            const newThreshold = ethers.utils.parseEther("10.0");
             await expect(emergencyPause.setPauseThreshold(newThreshold))
                 .to.emit(emergencyPause, "PauseThresholdUpdated")
                 .withArgs(newThreshold);
@@ -107,7 +107,7 @@ describe("EmergencyPause", function() {
         });
 
         it("Should prevent non-owners from updating configuration", async function() {
-            await expect(emergencyPause.connect(user1).setPauseThreshold(ethers.parseEther("10.0")))
+            await expect(emergencyPause.connect(user1).setPauseThreshold(ethers.utils.parseEther("10.0")))
                 .to.be.revertedWith("Ownable: caller is not the owner");
             await expect(emergencyPause.connect(user1).setPauseDuration(7200))
                 .to.be.revertedWith("Ownable: caller is not the owner");

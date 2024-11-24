@@ -30,7 +30,7 @@ describe("MockRouter Extended Tests", function () {
             receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [user2.address]),
             data: ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
-                [user1.address, ethers.parseEther("1.0")]
+                [user1.address, ethers.utils.parseEther("1.0")]
             ),
             tokenAmounts: [],
             extraArgs: "0x",

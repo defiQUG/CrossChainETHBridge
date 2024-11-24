@@ -67,7 +67,7 @@ describe("Router Coverage Tests", function () {
             const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
 
-            const depositAmount = ethers.parseEther("1.0");
+            const depositAmount = ethers.utils.parseEther("1.0");
             const receiverAddress = await receiver.getAddress();
 
             // Update message with correct receiver and data
@@ -114,7 +114,7 @@ describe("Router Coverage Tests", function () {
                 receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 ),
                 tokenAmounts: [],
                 destTokenAmounts: [],
@@ -130,7 +130,7 @@ describe("Router Coverage Tests", function () {
                 sourceChainSelector: POLYGON_CHAIN_SELECTOR,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 )
             };
 
@@ -149,7 +149,7 @@ describe("Router Coverage Tests", function () {
         });
 
         it("Should handle fee calculations correctly", async function () {
-            const BASE_FEE = ethers.parseEther("0.6"); // 0.6 ETH base fee
+            const BASE_FEE = ethers.utils.parseEther("0.6"); // 0.6 ETH base fee
             const messageFee = await router.getFee(POLYGON_CHAIN_SELECTOR, ccipMessage);
             expect(messageFee).to.equal(BASE_FEE);
 

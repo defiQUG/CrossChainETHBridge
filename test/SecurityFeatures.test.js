@@ -22,7 +22,7 @@ describe("Security Features Integration Tests", function() {
 
     describe("Rate Limiting", function() {
         it("Should enforce rate limits correctly", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await rateLimiter.processMessage();
 
             // Attempt to exceed rate limit
@@ -53,7 +53,7 @@ describe("Security Features Integration Tests", function() {
 
     describe("Emergency Pause", function() {
         it("Should trigger emergency pause when threshold reached", async function() {
-            const amount = ethers.parseEther("100.0"); // Match PAUSE_THRESHOLD
+            const amount = ethers.utils.parseEther("100.0"); // Match PAUSE_THRESHOLD
 
             // Get current block timestamp before the transaction
             const currentBlock = await ethers.provider.getBlock('latest');
@@ -68,18 +68,18 @@ describe("Security Features Integration Tests", function() {
         });
 
         it("Should prevent operations when paused", async function() {
-            const amount = ethers.parseEther("100.0");
+            const amount = ethers.utils.parseEther("100.0");
 
             // Trigger pause
             await emergencyPause.lockValue(amount);
 
             // Should revert when trying to lock value while paused
-            await expect(emergencyPause.lockValue(ethers.parseEther("1.0")))
+            await expect(emergencyPause.lockValue(ethers.utils.parseEther("1.0")))
                 .to.be.revertedWith("Contract is paused");
         });
 
         it("Should allow unpausing after delay", async function() {
-            const amount = ethers.parseEther("100.0");
+            const amount = ethers.utils.parseEther("100.0");
 
             // Trigger pause
             await emergencyPause.lockValue(amount);
@@ -96,7 +96,7 @@ describe("Security Features Integration Tests", function() {
 
     describe("Integration", function() {
         it("Should integrate rate limiting with emergency pause", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             const maxMessages = await rateLimiter.getMaxMessagesPerPeriod();
 
             // Process messages until rate limit
