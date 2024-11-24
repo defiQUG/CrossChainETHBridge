@@ -1,41 +1,40 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
+const { deployTestContracts } = require('./helpers/setup');
 
 describe("Custom Error Test", function () {
-    let messenger, mockRouter;
+    let messenger, mockRouter, owner;
 
     beforeEach(async function () {
-        const MessengerFactory = await ethers.getContractFactory("CrossChainMessenger");
-        const MockRouterFactory = await ethers.getContractFactory("MockRouter");
+        const contracts = await deployTestContracts();
+        messenger = contracts.crossChainMessenger;
+        mockRouter = contracts.mockRouter;
+        owner = contracts.owner;
 
-        mockRouter = await MockRouterFactory.deploy(100, 3600);
-        await mockRouter.deployed();
-
-        const EmergencyPauseFactory = await ethers.getContractFactory("EmergencyPause");
-        const emergencyPause = await EmergencyPauseFactory.deploy();
-        await emergencyPause.deployed();
-
-        const WETHFactory = await ethers.getContractFactory("MockWETH");
-        const weth = await WETHFactory.deploy();
-        await weth.deployed();
-
-        messenger = await MessengerFactory.deploy(
-            mockRouter.address,
-            weth.address,
-            mockRouter.address,
-            emergencyPause.address,
-            ethers.utils.parseEther("0.01"),
-            ethers.utils.parseEther("0.1")
-        );
-        await messenger.deployed();
+        const message = {
+            messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+            sourceChainSelector: 999n,
+            sender: ethers.utils.hexZeroPad(owner.address, 32),
+            data: ethers.utils.defaultAbiCoder.encode(
+                ['address', 'uint256'],
+                [owner.address, ethers.utils.parseEther("1.0")]
+            ),
+            destTokenAmounts: [],
+            feeToken: ethers.constants.AddressZero,
+            feeTokenAmount: BigInt(0),
+            extraArgs: "0x"
+        };
     });
 
     it("Should revert with InvalidSourceChain error", async function () {
         const message = {
             messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
             sourceChainSelector: 999n,
-            sender: ethers.utils.hexZeroPad(ethers.constants.AddressZero, 32),
-            data: "0x",
+            sender: ethers.utils.hexZeroPad(owner.address, 32),
+            data: ethers.utils.defaultAbiCoder.encode(
+                ['address', 'uint256'],
+                [owner.address, ethers.utils.parseEther("1.0")]
+            ),
             destTokenAmounts: [],
             feeToken: ethers.constants.AddressZero,
             feeTokenAmount: BigInt(0),
