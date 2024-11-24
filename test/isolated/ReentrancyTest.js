@@ -39,10 +39,11 @@ describe("Reentrancy Protection Tests", function () {
     crossChainMessenger = await CrossChainMessenger.deploy(
       mockRouter.address,
       mockWETH.address,
-      owner.address,
       mockEmergencyPause.address,
-      ethers.utils.parseEther("0.01"),
-      ethers.utils.parseEther("0.1")
+      ethers.utils.parseEther("0.01"), // initialFee
+      ethers.utils.parseEther("0.1"),  // maxFee
+      10,  // maxMessages
+      3600 // periodDuration
     );
     await crossChainMessenger.deployed();
 
