@@ -89,8 +89,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (message.sourceChainSelector == 0) {
             revert("Invalid chain selector");
         }
-        if (message.sender.length != 20) {
-            revert("Invalid sender length");
+        if (message.sender.length == 0) {
+            revert("Empty sender address");
         }
         if (message.data.length == 0) {
             revert("Empty message data");
