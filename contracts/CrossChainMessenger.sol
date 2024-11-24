@@ -91,7 +91,6 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
     function sendToPolygon(address _recipient) external payable override nonReentrant {
         if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
         if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
-        if (super.paused()) revert CrossChainErrors.EmergencyPaused();
 
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
