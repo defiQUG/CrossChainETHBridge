@@ -18,7 +18,9 @@ async function deployContract(name, args = [], options = {}) {
     }
 
     const Factory = await ethers.getContractFactory(contractName);
-    const deploymentArgs = args.map(arg => {
+
+    // Clean up and validate arguments
+    const deploymentArgs = args.filter(arg => arg !== undefined).map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
             return ethers.BigNumber.from(arg.toString());
         }
@@ -28,7 +30,9 @@ async function deployContract(name, args = [], options = {}) {
         return arg;
     });
 
-    // Deploy with proper options handling - fix the argument spreading
+    console.log(`Deploying ${name} with args:`, deploymentArgs); // Debug log
+
+    // Deploy with proper options handling
     try {
         const contract = await Factory.deploy(...deploymentArgs);
         await contract.deployed();
