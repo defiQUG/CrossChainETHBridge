@@ -1,30 +1,24 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
-const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
+const { deployTestContracts } = require('./helpers/setup');
 
 const {
-    BRIDGE_FEE,
-    MAX_FEE,
     MAX_MESSAGES_PER_PERIOD,
-    PAUSE_THRESHOLD,
-    PAUSE_DURATION,
-    POLYGON_CHAIN_SELECTOR,
-    DEFI_ORACLE_META_CHAIN_SELECTOR
-} = TEST_CONFIG;
+    PERIOD_DURATION
+} = require('./helpers/setup').TEST_CONFIG;
+
 describe("RateLimiter Edge Cases", function () {
     let rateLimiter;
     let owner;
     let user;
-    const MAX_MESSAGES = 5;
-    const RATE_PERIOD = 3600; // 1 hour in seconds
+    const MAX_MESSAGES = MAX_MESSAGES_PER_PERIOD;
+    const RATE_PERIOD = PERIOD_DURATION;
 
     beforeEach(async function () {
+        const contracts = await deployTestContracts();
+        rateLimiter = contracts.rateLimiter;
         [owner, user] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("RateLimiter");
-        rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, RATE_PERIOD);
-        await rateLimiter.deployed();
     });
 
     describe("Period Boundary Tests", function () {
@@ -39,7 +33,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should still be rate limited
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
 
             // Advance time to just after period end
             await time.increase(3);
@@ -77,7 +71,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should enforce new limit immediately
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
 
         it("Should handle multiple rate updates in quick succession", async function () {
@@ -93,7 +87,7 @@ describe("RateLimiter Edge Cases", function () {
 
             // Should enforce latest limit
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
     });
 });

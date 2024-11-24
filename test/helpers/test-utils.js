@@ -5,13 +5,13 @@ async function deployContract(name, args = [], options = {}) {
     let contractName = name;
     if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
         contractName = `contracts/security/${name}.sol:${name}`;
-        // Add default arguments for RateLimiter
+        // Add default arguments for RateLimiter only if no args provided
         if (name === "RateLimiter" && (!args || args.length === 0)) {
             args = [10, 3600]; // 10 messages per hour
         }
     } else if (name === "TestRouter" || name === "MockRouter") {
         contractName = `contracts/mocks/${name}.sol:${name}`;
-        // Default arguments for Router (including rate limiter params)
+        // Default arguments for Router only if no args provided
         if (!args || args.length === 0) {
             args = [10, 3600]; // RateLimiter constructor params
         }
@@ -30,7 +30,7 @@ async function deployContract(name, args = [], options = {}) {
 
     // Deploy with proper options handling
     try {
-        const contract = await Factory.deploy(...deploymentArgs, { ...options });
+        const contract = await Factory.deploy(...deploymentArgs, options);
         await contract.deployed();
         return contract;
     } catch (error) {
