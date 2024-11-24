@@ -16,14 +16,16 @@ describe("Emergency Pause Mechanism (Isolated)", function() {
 
     describe("Pause Threshold Tests", function() {
         it("Should track total value correctly with fees", async function() {
+            // Calculate amount that will result in half threshold after fee subtraction
             const transferAmount = ethers.BigNumber.from(PAUSE_THRESHOLD)
                 .div(2)
-                .add(BRIDGE_FEE);  // Add fee to compensate for fee subtraction
+                .add(BRIDGE_FEE);  // Add fee so after subtraction we get exactly half threshold
 
-            console.log("Test configuration:");
+            console.log("\nTest configuration:");
             console.log("Pause threshold:", ethers.utils.formatEther(PAUSE_THRESHOLD));
             console.log("Bridge fee:", ethers.utils.formatEther(BRIDGE_FEE));
             console.log("Transfer amount (with fee):", ethers.utils.formatEther(transferAmount));
+            console.log("Amount after fee subtraction:", ethers.utils.formatEther(transferAmount.sub(BRIDGE_FEE)));
 
             // First transfer
             await crossChainMessenger.sendToPolygon(user.address, { value: transferAmount });
