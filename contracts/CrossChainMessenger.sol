@@ -90,7 +90,9 @@ contract CrossChainMessenger is SecurityBase {
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
-        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert("Invalid source chain");
+        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) {
+            revert("Invalid source chain");
+        }
         if (_processedMessages[message.messageId]) revert("Message already processed");
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 

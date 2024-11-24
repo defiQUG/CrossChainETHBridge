@@ -36,8 +36,8 @@ describe("CrossChainMessenger Coverage Tests", function () {
         });
 
         it("Should handle emergency withdrawals correctly", async function () {
-            await emergencyPause.pause();
             const amount = ethers.utils.parseEther("1.0");
+            await emergencyPause.checkAndPause(amount);
             await owner.sendTransaction({
                 to: messenger.address,
                 value: amount
