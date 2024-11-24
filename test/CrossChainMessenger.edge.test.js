@@ -118,7 +118,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                 crossChainMessenger.sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWithCustomError(crossChainMessenger, "EmergencyPaused");
 
-            expect(await crossChainMessenger.isPaused()).to.be.true;
+            expect(await crossChainMessenger.paused()).to.be.true;
         });
 
         it("Should handle message replay attempts", async function() {
