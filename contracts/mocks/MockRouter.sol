@@ -128,7 +128,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("MockRouter: chain not supported");
         }
         uint256 totalFee = _baseFee;
         if (message.data.length > 0) {
@@ -141,7 +141,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Unsupported chain");
+        require(_supportedChains[destinationChainSelector], "MockRouter: chain not supported");
         require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
