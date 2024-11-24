@@ -29,12 +29,12 @@ contract TestRouter is MockRouter, IRouterClient {
         address admin,
         address feeToken,
         uint256 baseFee
-    ) external override virtual {
+    ) external override {
         require(!_initialized, "TestRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
         require(feeToken != address(0), "Invalid fee token address");
 
-        // Call parent initialize first
+        // Initialize parent contract first
         super._initialize(100, 3600); // Default values: 100 messages per hour
 
         // Set up router configuration
@@ -43,20 +43,26 @@ contract TestRouter is MockRouter, IRouterClient {
         _extraFee = baseFee / 2;
         _feeToken = feeToken;
 
-        // Initialize chain support (even though constructor sets this, ensure it's set)
-        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
-        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
-
         _initialized = true;
     }
 
-    function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
-        return _supportedChains[destChainSelector];
-    }
+    function ccipSend(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) external payable override returns (bytes32) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(message.data.length > 0, "Empty message data");
 
-    function getSupportedTokens(uint64 chainSelector) external view returns (address[] memory) {
-        require(_supportedChains[chainSelector], "Chain not supported");
-        return new address[](0);
+        // Process message and return mock message ID
+        bytes32 messageId = keccak256(abi.encodePacked(
+            destinationChainSelector,
+            message.receiver,
+            message.data,
+            block.timestamp
+        ));
+
+        emit MessageSent(messageId, destinationChainSelector, message.receiver, message.data);
+        return messageId;
     }
 
     function getFee(

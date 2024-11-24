@@ -20,8 +20,13 @@ async function deployTestContracts() {
     // Deploy MockWETH
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
-    // Deploy TestRouter (concrete implementation of MockRouter)
+    // Deploy TestRouter with proper initialization
     const mockRouter = await deployContract("TestRouter", []);
+    await mockRouter.initialize(
+        owner.address,
+        await mockWETH.getAddress(),
+        TEST_CONFIG.BRIDGE_FEE
+    );
 
     // Deploy RateLimiter with proper constructor arguments
     const rateLimiter = await deployContract("RateLimiter", [
