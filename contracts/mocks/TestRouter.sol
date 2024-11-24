@@ -144,7 +144,7 @@ contract TestRouter is MockRouter, IRouterClient {
         emit ExtraFeeUpdated(newExtraFee);
     }
 
-    function shouldResetPeriod() external view whenInitialized returns (bool) {
+    function shouldResetPeriod() external view returns (bool) {
         uint256 timeLeft = this.getTimeUntilReset();
         return timeLeft == 0;
     }
