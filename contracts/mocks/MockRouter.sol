@@ -117,12 +117,9 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        // Use routeMessage instead of direct call
-        (bool success, bytes memory result,) = this.routeMessage(
-            message,
-            0, // gasForCallExactCheck
-            gasleft(), // gasLimit
-            target
+        // Directly call ccipReceive on the target contract
+        (bool success, bytes memory result) = target.call(
+            abi.encodeWithSignature("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))", message)
         );
 
         if (!success) {
