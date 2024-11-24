@@ -10,10 +10,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
@@ -22,17 +22,30 @@ jobs:
         with:
           version: 8
 
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
       - name: Install dependencies
         run: pnpm install
 
       - name: Compile contracts
-        run: npx hardhat compile
+        run: HARDHAT_IGNORE_NODE_VERSION=true pnpm hardhat compile
 
       - name: Run tests
-        run: npx hardhat test
+        run: HARDHAT_IGNORE_NODE_VERSION=true pnpm hardhat test
 
       - name: Run coverage
-        run: npx hardhat coverage
+        run: HARDHAT_IGNORE_NODE_VERSION=true pnpm hardhat coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -40,10 +53,10 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
@@ -56,15 +69,15 @@ jobs:
         run: pnpm install
 
       - name: Run Solhint
-        run: npx solhint 'contracts/**/*.sol'
+        run: pnpm solhint 'contracts/**/*.sol'
 
       - name: Run ESLint
-        run: npx eslint '**/*.js'
+        run: pnpm eslint '**/*.js'
 
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run Slither
         uses: crytic/slither-action@v0.3.0
@@ -74,10 +87,10 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20.x'
 
@@ -90,7 +103,7 @@ jobs:
         run: pnpm install
 
       - name: Build contracts
-        run: npx hardhat compile
+        run: HARDHAT_IGNORE_NODE_VERSION=true pnpm hardhat compile
 
       - name: Verify contracts
         if: env.ETHERSCAN_API_KEY != ''
@@ -98,5 +111,5 @@ jobs:
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
           POLYGONSCAN_API_KEY: ${{ secrets.POLYGONSCAN_API_KEY }}
         run: |
-          npx hardhat run scripts/verify-contracts.js --network mainnet || true
-          npx hardhat run scripts/verify-contracts.js --network polygon || true
+          pnpm hardhat run scripts/verify-contracts.js --network mainnet || true
+          pnpm hardhat run scripts/verify-contracts.js --network polygon || true
