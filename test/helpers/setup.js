@@ -20,15 +20,17 @@ async function deployTestContracts() {
     // Deploy MockWETH
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
-    // Deploy TestRouter without initialization
-    const mockRouter = await deployContract("TestRouter", []);
-
-    // Deploy RateLimiter
-    const rateLimiter = await deployContract("RateLimiter", []);
-    await rateLimiter.initializeRateLimiter(
+    // Deploy TestRouter with rate limiter params
+    const mockRouter = await deployContract("TestRouter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
-    );
+    ]);
+
+    // Deploy RateLimiter with constructor params
+    const rateLimiter = await deployContract("RateLimiter", [
+        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
+        TEST_CONFIG.PERIOD_DURATION
+    ]);
 
     // Deploy EmergencyPause
     const emergencyPause = await deployContract("EmergencyPause", [

@@ -18,9 +18,7 @@ contract TestRouter is MockRouter, IRouterClient {
     event ExtraFeeUpdated(uint256 newFee);
 
     constructor(uint256 maxMessages, uint256 periodDuration) MockRouter(maxMessages, periodDuration) {
-        // Initialize supported chains immediately
-        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
-        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
+        // Remove duplicate chain initialization since MockRouter handles it
     }
 
     function initialize(
@@ -28,7 +26,10 @@ contract TestRouter is MockRouter, IRouterClient {
         address feeToken,
         uint256 baseFee
     ) public override {
-        super.initialize(admin, feeToken, baseFee);
+        // Call parent initialize only if not already initialized
+        if (!_routerInitialized) {
+            super.initialize(admin, feeToken, baseFee);
+        }
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
