@@ -69,7 +69,7 @@ contract CrossChainMessenger is Ownable {
 
     function emergencyWithdraw(address _recipient) external onlyOwner {
         if (_recipient == address(0)) revert InvalidRecipient();
-        require(emergencyPause.isPaused(), "EmergencyPause: contract not paused");
+        require(emergencyPause.paused(), "EmergencyPause: contract not paused");
 
         uint256 balance = address(this).balance;
         if (balance == 0) revert InsufficientBalance();
