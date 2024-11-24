@@ -5,7 +5,7 @@ require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
 
 // Load environment variables, with fallbacks for local development
-const DEFI_ORACLE_META_RPC_URL = process.env.DEFI_ORACLE_META_RPC_URL;
+const {DEFI_ORACLE_META_RPC_URL} = process.env;
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const {POLYGONSCAN_API_KEY} = process.env;
