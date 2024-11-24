@@ -80,12 +80,12 @@ describe("MockRouter Extended Tests", function () {
     describe("Error Handling", function () {
         it("Should handle zero chain ID", async function () {
             await expect(router.ccipSend(0, defaultMessage))
-                .to.be.revertedWith("TestRouter: invalid chain selector");
+                .to.be.revertedWith("MockRouter: invalid chain selector");
         });
 
         it("Should handle invalid chain ID", async function () {
             await expect(router.ccipSend(999999, defaultMessage))
-                .to.be.revertedWith("TestRouter: chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 });
