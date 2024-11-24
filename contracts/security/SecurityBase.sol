@@ -32,14 +32,12 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         require(!paused(), "SecurityBase: Contract is paused");
 
         uint256 currentTimestamp = block.timestamp;
-        uint256 elapsedTime = currentTimestamp - _lastResetTimestamp;
-        uint256 currentPeriod = elapsedTime / _periodDuration;
+        uint256 currentPeriod = (currentTimestamp - _lastResetTimestamp) / _periodDuration;
 
         // Reset counter if we've moved to a new period
-        if (currentPeriod > 0) {
-            _messagesByPeriod[0] = 0;
-            _lastResetTimestamp = currentTimestamp;
-            currentPeriod = 0;
+        if (currentPeriod > getCurrentPeriod()) {
+            _messagesByPeriod[currentPeriod] = 0;
+            _lastResetTimestamp = currentTimestamp - (currentTimestamp % _periodDuration);
         }
 
         uint256 currentCount = _messagesByPeriod[currentPeriod];
