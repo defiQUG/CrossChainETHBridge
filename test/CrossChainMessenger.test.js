@@ -151,7 +151,7 @@ describe("CrossChainMessenger", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Invalid source chain");
+            ).to.be.revertedWith("CrossChainMessenger: invalid source chain");
         });
 
         it("Should enforce rate limiting on message receiving", async function() {
@@ -366,7 +366,7 @@ describe("CrossChainMessenger", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Invalid message format");
+            ).to.be.revertedWith("CrossChainMessenger: invalid message format");
         });
 
         it("Should handle CCIP fees correctly", async function() {
@@ -408,7 +408,7 @@ describe("CrossChainMessenger", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Invalid token amount");
+            ).to.be.revertedWith("CrossChainMessenger: invalid token amount");
         });
     });
 });
