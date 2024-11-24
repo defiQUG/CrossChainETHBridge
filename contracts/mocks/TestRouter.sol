@@ -26,8 +26,8 @@ contract TestRouter is MockRouter, IRouterClient {
     function initialize(uint256 maxMessages, uint256 periodDuration) external override {
         require(!_initialized, "TestRouter: already initialized");
 
-        // Initialize rate limiter first
-        RateLimiter.initialize(maxMessages, periodDuration);
+        // Initialize rate limiter using public function
+        super.initialize(maxMessages, periodDuration);
 
         // Set up router-specific configuration
         _admin = address(this);
@@ -163,7 +163,7 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function shouldResetPeriod() external view whenInitialized returns (bool) {
-        uint256 timeLeft = super.getTimeUntilReset();
+        uint256 timeLeft = getTimeUntilReset();
         return timeLeft == 0;
     }
 
