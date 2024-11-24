@@ -17,8 +17,6 @@ const {
 describe("EmergencyPause", function() {
     let owner, user1, user, addr1, addr2;
     let emergencyPause;
-    const PAUSE_THRESHOLD = ethers.parseEther("5.0");
-    const PAUSE_DURATION = 3600; // 1 hour
 
     beforeEach(async function() {
         [owner, user1, addr1, addr2] = await ethers.getSigners();
@@ -58,7 +56,7 @@ describe("EmergencyPause", function() {
             const unlockAmount = ethers.parseEther("2.0");
             await emergencyPause.lockValue(lockAmount);
             await expect(emergencyPause.unlockValue(unlockAmount))
-                .to.be.revertedWith("Amount exceeds locked value");
+                .to.be.revertedWithCustomError(emergencyPause, "InsufficientLockedValue");
         });
     });
 
@@ -66,7 +64,7 @@ describe("EmergencyPause", function() {
         it("Should auto-unpause after duration", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
             await time.increase(PAUSE_DURATION + 1);
-            await emergencyPause.checkAndUnpause(); // Explicitly call checkAndUnpause
+            await emergencyPause.checkAndUnpause();
             expect(await emergencyPause.paused()).to.be.false;
         });
 
@@ -85,9 +83,9 @@ describe("EmergencyPause", function() {
         it("Should prevent operations while paused", async function() {
             await emergencyPause.lockValue(PAUSE_THRESHOLD);
             await expect(emergencyPause.lockValue(ethers.parseEther("1.0")))
-                .to.be.revertedWith("Contract is paused");
+                .to.be.revertedWithCustomError(emergencyPause, "AlreadyPaused");
             await expect(emergencyPause.unlockValue(ethers.parseEther("1.0")))
-                .to.be.revertedWith("Contract is paused");
+                .to.be.revertedWithCustomError(emergencyPause, "AlreadyPaused");
         });
     });
 
@@ -96,16 +94,16 @@ describe("EmergencyPause", function() {
             const newThreshold = ethers.parseEther("10.0");
             await expect(emergencyPause.setPauseThreshold(newThreshold))
                 .to.emit(emergencyPause, "PauseThresholdUpdated")
-                .withArgs(PAUSE_THRESHOLD, newThreshold);
-            expect(await emergencyPause.pauseThreshold()).to.equal(newThreshold);
+                .withArgs(newThreshold);
+            expect(await emergencyPause.getPauseThreshold()).to.equal(newThreshold);
         });
 
         it("Should allow owner to update pause duration", async function() {
             const newDuration = 7200;
             await expect(emergencyPause.setPauseDuration(newDuration))
                 .to.emit(emergencyPause, "PauseDurationUpdated")
-                .withArgs(PAUSE_DURATION, newDuration);
-            expect(await emergencyPause.pauseDuration()).to.equal(newDuration);
+                .withArgs(newDuration);
+            expect(await emergencyPause.getPauseDuration()).to.equal(newDuration);
         });
 
         it("Should prevent non-owners from updating configuration", async function() {
@@ -117,9 +115,9 @@ describe("EmergencyPause", function() {
 
         it("Should validate configuration parameters", async function() {
             await expect(emergencyPause.setPauseThreshold(0))
-                .to.be.revertedWith("Pause threshold must be positive");
+                .to.be.revertedWithCustomError(emergencyPause, "InvalidPauseThreshold");
             await expect(emergencyPause.setPauseDuration(0))
-                .to.be.revertedWith("Pause duration must be positive");
+                .to.be.revertedWithCustomError(emergencyPause, "InvalidPauseDuration");
         });
     });
 

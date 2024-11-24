@@ -1,8 +1,9 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("solidity-coverage");
-require("@nomiclabs/hardhat-ethers");
-require("@nomicfoundation/hardhat-verify");
 require("dotenv").config();
+require("@nomicfoundation/hardhat-toolbox");
+require("@nomiclabs/hardhat-ethers");
+require("@typechain/hardhat");
+require("@nomicfoundation/hardhat-chai-matchers");
+require("solidity-coverage");
 
 // Load environment variables, with fallbacks for local development
 const DEFI_ORACLE_META_RPC_URL = process.env.DEFI_ORACLE_META_RPC_URL;
@@ -48,7 +49,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.19",
+        version: "0.8.20",
         settings: {
           optimizer: {
             enabled: true,
