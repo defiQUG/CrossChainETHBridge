@@ -123,6 +123,22 @@ contract CrossChainMessenger is SecurityBase {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (!emergencyPause.paused()) revert("EmergencyPause: contract not paused");
 
+        uint256 wethBalance = WETH.balanceOf(address(this));
+        uint256 ethBalance = address(this).balance;
+        uint256 totalBalance = wethBalance + ethBalance;
+
+        if (totalBalance == 0) revert InsufficientBalance();
+
+        if (wethBalance > 0) {
+            WETH.withdraw(wethBalance);
+        }
+
+        (bool success,) = _recipient.call{value: totalBalance}("");
+        if (!success) revert TransferFailed();
+
+        emit EmergencyWithdraw(_recipient, totalBalance);
+    }
+
         uint256 balance = address(this).balance;
         if (balance == 0) revert InsufficientBalance();
 

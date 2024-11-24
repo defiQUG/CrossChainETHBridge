@@ -30,11 +30,21 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
 
     function processMessage() public virtual override returns (bool) {
         require(!paused(), "SecurityBase: Contract is paused");
-        uint256 currentPeriod = getCurrentPeriod();
+
+        uint256 currentTimestamp = block.timestamp;
+        uint256 currentPeriod = (currentTimestamp - _lastResetTimestamp) / _periodDuration;
+
+        // Reset counter if we've moved to a new period
+        if (currentPeriod > getCurrentPeriod()) {
+            _messagesByPeriod[currentPeriod] = 0;
+            _lastResetTimestamp = currentTimestamp - (currentTimestamp % _periodDuration);
+        }
+
         uint256 currentCount = _messagesByPeriod[currentPeriod];
         require(currentCount < _maxMessagesPerPeriod, "SecurityBase: Rate limit exceeded");
+
         _messagesByPeriod[currentPeriod] = currentCount + 1;
-        emit MessageProcessed(msg.sender, block.timestamp);
+        emit MessageProcessed(msg.sender, currentTimestamp);
         return true;
     }
 
