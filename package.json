@@ -34,11 +34,11 @@
   },
   "overrides": {
     "@chainlink/contracts": {
-      "ethers": "^6.9.0",
+      "ethers": "^5.7.2",
       "@openzeppelin/contracts": "^4.9.6"
     },
     "@chainlink/contracts-ccip": {
-      "ethers": "^6.9.0",
+      "ethers": "^5.7.2",
       "@openzeppelin/contracts": "^4.9.6"
     },
     "hardhat": {
