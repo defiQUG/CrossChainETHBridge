@@ -135,7 +135,7 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
         if (_processedMessages[message.messageId])
             revert CrossChainErrors.MessageAlreadyProcessed(message.messageId);
 
-        if (message.data.length != 64) revert CrossChainErrors.InvalidMessageLength();
+        if (message.data.length != 64) revert CrossChainErrors.InvalidMessageFormat();
         (address recipient, uint256 amount) = abi.decode(
             message.data,
             (address, uint256)
