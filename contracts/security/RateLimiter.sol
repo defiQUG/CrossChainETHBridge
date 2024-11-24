@@ -63,7 +63,8 @@ contract RateLimiter is SecurityBase {
     }
 
     function messageCountByPeriod(uint256 period) external view returns (uint256) {
-        if (period != getCurrentPeriod()) return 0;
+        uint256 currentPeriod = (block.timestamp - _periodStart) / _periodDuration;
+        if (period != currentPeriod) return 0;
         return _currentPeriodMessages;
     }
 
