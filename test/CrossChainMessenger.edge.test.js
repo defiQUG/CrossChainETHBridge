@@ -47,7 +47,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("CrossChainMessenger: invalid message format");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "InvalidMessageFormat");
         });
 
         it("Should handle message with invalid recipient", async function() {
@@ -72,7 +72,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("CrossChainMessenger: invalid recipient");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "InvalidReceiver");
         });
 
         it("Should handle WETH transfer failures", async function() {
@@ -100,7 +100,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("CrossChainMessenger: WETH transfer failed");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "TransferFailed");
         });
     });
 
@@ -115,7 +115,7 @@ describe("CrossChainMessenger Edge Cases", function() {
             // This should trigger pause
             await expect(
                 crossChainMessenger.sendToPolygon(user.address, { value: amount })
-            ).to.be.revertedWith("EmergencyPause: threshold exceeded");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "EmergencyPaused");
 
             expect(await crossChainMessenger.isPaused()).to.be.true;
         });
@@ -149,7 +149,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("CrossChainMessenger: message already processed");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "MessageAlreadyProcessed");
         });
     });
 });
