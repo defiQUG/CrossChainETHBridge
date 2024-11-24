@@ -121,22 +121,11 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        // Use interface call instead of low-level call
-        bytes memory callData = abi.encodeWithSelector(
-            bytes4(keccak256("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))")),
-            message
-        );
+        // Create interface for CrossChainMessenger
+        ICrossChainMessenger messenger = ICrossChainMessenger(target);
 
-        (bool success, bytes memory returnData) = target.call{value: msg.value}(callData);
-
-        if (!success) {
-            // Forward the error data directly
-            assembly {
-                let size := mload(returnData)
-                let ptr := add(returnData, 0x20)
-                revert(ptr, size)
-            }
-        }
+        // Call ccipReceive directly through the interface
+        messenger.ccipReceive(message);
     }
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {

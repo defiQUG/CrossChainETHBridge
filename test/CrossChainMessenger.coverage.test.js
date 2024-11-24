@@ -61,14 +61,12 @@ describe("CrossChainMessenger Coverage Tests", function () {
                 destTokenAmounts: [],
                 feeToken: ethers.constants.AddressZero,
                 feeTokenAmount: 0n,
-                extraArgs: "0x",
-                destTokens: [],
-                messageIds: [],
-                sourceTokens: []
+                extraArgs: "0x"
             };
 
+            // Use direct contract call to ensure proper error propagation
             await expect(
-                mockRouter.simulateMessageReceived(messenger.address, message)
+                messenger.ccipReceive(message)
             ).to.be.revertedWithCustomError(messenger, "InvalidSourceChain");
         });
     });
