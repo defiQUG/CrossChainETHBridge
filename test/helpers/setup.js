@@ -37,15 +37,15 @@ async function deployTestContracts() {
     );
     await emergencyPause.deployed();
 
-    // Deploy TestRouter with rate limiter params
-    const TestRouter = await ethers.getContractFactory("TestRouter");
-    const mockRouter = await TestRouter.deploy(
+    // Deploy MockRouter with rate limiter params
+    const MockRouter = await ethers.getContractFactory("MockRouter");
+    const mockRouter = await MockRouter.deploy(
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
     );
     await mockRouter.deployed();
 
-    // Initialize TestRouter after all dependencies are deployed
+    // Initialize MockRouter after all dependencies are deployed
     await mockRouter.initialize(
         owner.address,
         mockWETH.address,
