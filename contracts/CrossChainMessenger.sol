@@ -96,8 +96,9 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
 
-        // Check emergency pause threshold
-        if (emergencyPause.checkAndUpdateValue(amount)) {
+        // Lock value before checking threshold
+        emergencyPause.lockValue(amount);
+        if (emergencyPause.paused()) {
             revert CrossChainErrors.EmergencyPaused();
         }
 
