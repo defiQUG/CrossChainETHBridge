@@ -5,7 +5,7 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {EmergencyPause} from "./security/EmergencyPause.sol";
-import {SecurityBase, ContractPaused, RateLimitExceeded} from "./security/SecurityBase.sol";
+import {SecurityBase} from "./security/SecurityBase.sol";
 import {ICrossChainMessenger} from "./interfaces/ICrossChainMessenger.sol";
 import {CrossChainErrors} from "./errors/CrossChainErrors.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -59,22 +59,26 @@ contract CrossChainMessenger is
         WETH = IWETH(weth);
         emergencyPause = EmergencyPause(_emergencyPause);
         _bridgeFee = initialFee;
-        MAX_FEE = maxFee;
     }
 
-    function sendToPolygon(address _recipient) external payable nonReentrant {
-        if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
-        if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
-        if (paused()) revert ContractPaused();
+    constructor(
+        address router,
+        address weth,
+        address _emergencyPause,
+        uint256 initialFee,
+        uint256 maxFee,
+        uint256 maxMessages,
+        uint256 periodDuration
+    ) SecurityBase(maxMessages, periodDuration) {
+        if (router == address(0)) revert CrossChainErrors.InvalidRouter(router);
+        if (weth == address(0)) revert CrossChainErrors.InvalidTokenAddress(weth);
+        if (_emergencyPause == address(0)) revert CrossChainErrors.InvalidReceiver(address(0));
+        if (initialFee > maxFee) revert CrossChainErrors.InvalidFeeAmount(maxFee, initialFee);
 
-        uint256 amount = msg.value - _bridgeFee;
-        if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
-
-        if (amount >= emergencyPause.pauseThreshold()) {
-            if (emergencyPause.checkAndUpdateValue(amount)) {
-                revert CrossChainErrors.EmergencyPaused();
-            }
-        }
+        ROUTER = IRouterClient(router);
+        WETH = IWETH(weth);
+        emergencyPause = EmergencyPause(_emergencyPause);
+        _bridgeFee = initialFee;
 
         // Effects before interactions
         bool messageProcessed = processMessage();
