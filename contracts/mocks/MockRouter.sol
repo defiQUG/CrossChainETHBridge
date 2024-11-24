@@ -122,18 +122,16 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         emit MessageSimulated(target, messageId, msg.value);
 
         // Directly call ccipReceive on the target contract
-        (bool success, bytes memory result) = target.call(
+        (bool success,) = target.call(
             abi.encodeWithSignature("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))", message)
         );
 
         if (!success) {
+            // Let any revert reason bubble up directly
             assembly {
-                if gt(returndatasize(), 0) {
-                    let ptr := mload(0x40)
-                    returndatacopy(ptr, 0, returndatasize())
-                    revert(ptr, returndatasize())
-                }
-                revert(0, 0)
+                let ptr := mload(0x40)
+                returndatacopy(ptr, 0, returndatasize())
+                revert(ptr, returndatasize())
             }
         }
     }
