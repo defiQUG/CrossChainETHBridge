@@ -5,12 +5,15 @@ async function deployContract(name, args = [], options = {}) {
     let contractName = name;
     if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
         contractName = `contracts/security/${name}.sol:${name}`;
+        // Add default arguments for RateLimiter
+        if (name === "RateLimiter" && (!args || args.length === 0)) {
+            args = [10, 3600]; // 10 messages per hour
+        }
     } else if (name.includes("MockRouter")) {
         contractName = "TestRouter";
-        // Ensure we have the minimum required arguments for TestRouter
+        // Default arguments for TestRouter (including rate limiter params)
         if (!args || args.length === 0) {
-            const [deployer] = await ethers.getSigners();
-            args = [deployer.address, ethers.ZeroAddress, ethers.parseEther("0.6")];
+            args = [10, 3600]; // RateLimiter constructor params
         }
     }
 
