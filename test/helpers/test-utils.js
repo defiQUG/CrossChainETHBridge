@@ -20,7 +20,7 @@ async function deployContract(name, args = [], options = {}) {
     const Factory = await ethers.getContractFactory(contractName);
     const deploymentArgs = args.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
-            return ethers.getBigInt(arg.toString());
+            return ethers.BigNumber.from(arg.toString());
         }
         if (typeof arg === 'string' && arg.startsWith('0x')) {
             return arg; // Keep hex strings as-is
@@ -31,7 +31,7 @@ async function deployContract(name, args = [], options = {}) {
     // Deploy with proper options handling
     try {
         const contract = await Factory.deploy(...deploymentArgs, { ...options });
-        await contract.waitForDeployment();
+        await contract.deployed();
         return contract;
     } catch (error) {
         console.error(`Failed to deploy ${name}:`, error);
