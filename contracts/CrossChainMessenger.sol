@@ -8,13 +8,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { RateLimiter } from "./security/RateLimiter.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
-
-interface IWETH {
-    function deposit() external payable;
-    function withdraw(uint256) external;
-    function transfer(address to, uint256 value) external returns (bool);
-    receive() external payable;
-}
+import { IWETH } from "./interfaces/IWETH.sol";
 
 contract CrossChainMessenger is Ownable, ReentrancyGuard {
     using Client for Client.EVM2AnyMessage;
@@ -39,7 +33,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
     constructor(
         address _router,
-        address _weth,
+        address payable _weth,
         address _rateLimiter,
         address _emergencyPause,
         uint256 _bridgeFee,
