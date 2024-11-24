@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
 
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "../security/RateLimiter.sol";
+import "../security/SecurityBase.sol";
 
-contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
+contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -28,7 +28,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     constructor(
         uint256 maxMessages,
         uint256 periodDuration
-    ) RateLimiter(maxMessages, periodDuration) {
+    ) SecurityBase(maxMessages, periodDuration) {
         // Initialize supported chains in constructor
         _supportedChains[138] = true; // Defi Oracle Meta Chain
         _supportedChains[137] = true; // Polygon Chain

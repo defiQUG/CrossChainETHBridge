@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
+import "./IRateLimiter.sol";
 
-interface ISecurityBase {
-    event MessageProcessed(address indexed sender, uint256 timestamp);
-    function processMessage() external returns (bool);
+interface ISecurityBase is IRateLimiter {
+    // All required functions are inherited from IRateLimiter
 }

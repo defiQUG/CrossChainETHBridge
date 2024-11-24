@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
 
 import "./MockRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
@@ -79,7 +79,7 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "TestRouter: chain not supported");
         require(validateMessage(message), "TestRouter: invalid message");
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(super.processMessage(), "TestRouter: rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);

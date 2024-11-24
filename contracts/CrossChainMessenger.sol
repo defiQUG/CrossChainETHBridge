@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.19;
+pragma solidity ^0.8.19;
 
 import { IRouterClient } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
 import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
-import { RateLimiter } from "./security/RateLimiter.sol";
+import { SecurityBase } from "./security/SecurityBase.sol";
 
 error TransferFailed();
 error InsufficientBalance();
@@ -14,7 +14,7 @@ error InvalidRecipient();
 contract CrossChainMessenger {
     IRouterClient public immutable ROUTER;
     IWETH public immutable WETH;
-    RateLimiter public immutable rateLimiter;
+    SecurityBase public immutable security;
     EmergencyPause public immutable emergencyPause;
     uint256 private _bridgeFee;
 
@@ -24,18 +24,18 @@ contract CrossChainMessenger {
 
     constructor(
         address router,
-        address weth,
-        address _rateLimiter,
+        address payable weth,
+        address _security,
         address _emergencyPause
     ) {
         if (router == address(0)) revert InvalidRecipient();
         if (weth == address(0)) revert InvalidRecipient();
-        if (_rateLimiter == address(0)) revert InvalidRecipient();
+        if (_security == address(0)) revert InvalidRecipient();
         if (_emergencyPause == address(0)) revert InvalidRecipient();
 
         ROUTER = IRouterClient(router);
         WETH = IWETH(weth);
-        rateLimiter = RateLimiter(_rateLimiter);
+        security = SecurityBase(_security);
         emergencyPause = EmergencyPause(_emergencyPause);
     }
 
@@ -43,8 +43,8 @@ contract CrossChainMessenger {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientBalance();
 
-        bool success = rateLimiter.processMessage();
-        require(success, "RateLimiter: Message processing failed");
+        bool success = security.processMessage();
+        require(success, "SecurityBase: Message processing failed");
 
         uint256 amount = msg.value - _bridgeFee;
         WETH.deposit{value: amount}();
