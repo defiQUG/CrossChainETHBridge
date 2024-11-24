@@ -40,7 +40,8 @@ contract EmergencyPause is Ownable, Pausable {
     }
 
     function checkAndPause(uint256 amount) public returns (bool) {
-        if (amount >= pauseThreshold) {
+        uint256 newTotal = totalValueLocked + amount;
+        if (newTotal >= pauseThreshold) {
             _pause();
             lastPauseTimestamp = block.timestamp;
             emit EmergencyPauseTriggered(lastPauseTimestamp, pauseDuration);
