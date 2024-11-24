@@ -31,7 +31,7 @@ describe("Security Features Integration Tests", function() {
                     await rateLimiter.processMessage();
                 } else {
                     await expect(rateLimiter.processMessage())
-                        .to.be.revertedWith("Rate limit exceeded");
+                        .to.be.revertedWithCustomError(rateLimiter, "RateLimitExceeded");
                 }
             }
         });
@@ -75,7 +75,7 @@ describe("Security Features Integration Tests", function() {
 
             // Should revert when trying to lock value while paused
             await expect(emergencyPause.lockValue(ethers.utils.parseEther("1.0")))
-                .to.be.revertedWith("Contract is paused");
+                .to.be.revertedWithCustomError(emergencyPause, "ContractPaused");
         });
 
         it("Should allow unpausing after delay", async function() {
@@ -107,7 +107,7 @@ describe("Security Features Integration Tests", function() {
                     await emergencyPause.lockValue(amount);
                 } else {
                     await expect(rateLimiter.processMessage())
-                        .to.be.revertedWith("SecurityBase: Rate limit exceeded");
+                        .to.be.revertedWithCustomError(rateLimiter, "RateLimitExceeded");
                 }
             }
 
