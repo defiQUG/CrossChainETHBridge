@@ -46,17 +46,13 @@ if (POLYGON_RPC_URL && PRIVATE_KEY) {
 
 module.exports = {
   solidity: {
-    compilers: [
-      {
-        version: "0.8.19",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200
-          }
-        }
+    version: "0.8.19",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
       }
-    ]
+    }
   },
   networks,
   etherscan: {
