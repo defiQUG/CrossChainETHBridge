@@ -1,14 +1,16 @@
 const { ethers } = require('hardhat');
-const fs = require('fs');
+const fs = require('fs').promises;
 const path = require('path');
+const CircularBuffer = require('./CircularBuffer');
 
 // Metrics collection configuration
 const METRICS_DIR = path.join(__dirname, '../../logs/metrics');
 const COLLECTION_INTERVAL = 60000; // 1 minute
+const GAS_BUFFER_SIZE = 100;
 
 // Ensure metrics directory exists
-if (!fs.existsSync(METRICS_DIR)) {
-    fs.mkdirSync(METRICS_DIR, { recursive: true });
+async function ensureMetricsDir() {
+    await fs.mkdir(METRICS_DIR, { recursive: true });
 }
 
 // Core metrics tracking
@@ -17,11 +19,13 @@ const metrics = {
     messagesReceived: 0,
     averageProcessingTime: 0,
     failedMessages: 0,
-    gasUsed: []
+    gasUsed: new CircularBuffer(GAS_BUFFER_SIZE)
 };
 
 async function collectMetrics(messenger, chainId) {
     try {
+        await ensureMetricsDir();
+
         // Get contract events
         const filter = {
             fromBlock: 'latest',
@@ -51,12 +55,12 @@ async function collectMetrics(messenger, chainId) {
             chainId,
             metrics: {
                 ...metrics,
-                gasUsed: metrics.gasUsed.slice(-100) // Keep last 100 gas measurements
+                gasUsed: metrics.gasUsed.toArray() // Use CircularBuffer's toArray method
             }
         };
 
         const filename = path.join(METRICS_DIR, `metrics_${chainId}_${timestamp.split('T')[0]}.json`);
-        fs.writeFileSync(filename, JSON.stringify(metricsData, null, 2));
+        await fs.writeFile(filename, JSON.stringify(metricsData, null, 2));
 
         console.log(`Metrics collected for chain ${chainId} at ${timestamp}`);
         return metrics;
