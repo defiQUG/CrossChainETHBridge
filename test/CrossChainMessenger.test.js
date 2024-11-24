@@ -35,15 +35,18 @@ describe("CrossChainMessenger", function() {
     });
 
     describe("Message Sending", function() {
-        it("Should send message to Polygon", async function() {
+        it("Should send message to Polygon with specific message ID", async function() {
             const amount = ethers.parseEther("1");
             const transferAmount = amount - BRIDGE_FEE;
+            const expectedMessageId = ethers.id("testMessage");
+            await mockRouter.setNextMessageId(expectedMessageId);
 
             const tx = await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             const receipt = await tx.wait();
 
             const event = receipt.events.find(e => e.event === 'MessageSent');
             expect(event).to.not.be.undefined;
+            expect(event.args.messageId).to.equal(expectedMessageId);
             expect(event.args.sender).to.equal(user.address);
             expect(event.args.recipient).to.equal(user.address);
             expect(event.args.amount).to.equal(transferAmount);
@@ -52,12 +55,10 @@ describe("CrossChainMessenger", function() {
         it("Should enforce rate limiting", async function() {
             const amount = ethers.parseEther("1");
 
-            // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
                 await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             }
 
-            // Next message should fail
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWith("RateLimiter: rate limit exceeded");
@@ -80,14 +81,11 @@ describe("CrossChainMessenger", function() {
                 crossChainMessenger.sendToPolygon(addr1.address, { value: largeAmount })
             ).to.be.revertedWith("EmergencyPause: threshold exceeded");
 
-            // Should be paused now
             expect(await crossChainMessenger.isPaused()).to.be.true;
 
-            // Wait for pause duration
             await ethers.provider.send("evm_increaseTime", [PAUSE_DURATION + 1]);
             await ethers.provider.send("evm_mine");
 
-            // Should be automatically unpaused
             expect(await crossChainMessenger.isPaused()).to.be.false;
         });
 
@@ -164,7 +162,6 @@ describe("CrossChainMessenger", function() {
                 [user.address, amount]
             );
 
-            // Send messages up to the limit
             for (let i = 0; i < MAX_MESSAGES_PER_PERIOD; i++) {
                 const message = {
                     messageId: ethers.randomBytes(32),
@@ -180,7 +177,6 @@ describe("CrossChainMessenger", function() {
                 );
             }
 
-            // Next message should fail
             const message = {
                 messageId: ethers.randomBytes(32),
                 sourceChainSelector: 138,
