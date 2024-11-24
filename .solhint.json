@@ -1,1 +1,17 @@
-{"extends":["solhint:recommended"],"rules":{"compiler-version":["error","^0.8.0"],"func-visibility":["warn",{"ignoreConstructors":true}]}}
+{
+  "extends": "solhint:recommended",
+  "rules": {
+    "compiler-version": ["error", "^0.8.19"],
+    "func-visibility": ["warn", {"ignoreConstructors": true}],
+    "no-empty-blocks": "warn",
+    "no-global-import": "warn",
+    "gas-custom-errors": "warn",
+    "no-inline-assembly": "warn",
+    "reason-string": ["warn", {"maxLength": 64}],
+    "not-rely-on-time": "off",
+    "no-complex-fallback": "warn",
+    "comprehensive-interface": "warn",
+    "named-parameters-mapping": "warn",
+    "private-vars-leading-underscore": ["warn", {"strict": false}]
+  }
+}
