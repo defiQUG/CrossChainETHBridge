@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { loadFixture } = require("@nomicfoundation/hardhat-toolbox/network-helpers");
+const { loadFixture } = require("@nomiclabs/hardhat-waffle");
 
 async function deployContract(contractName, args = []) {
   const Factory = await ethers.getContractFactory(contractName);
