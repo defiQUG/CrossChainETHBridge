@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
-import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
-import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./security/RateLimiter.sol";
-import "./security/EmergencyPause.sol";
+import { IRouterClient } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouterClient.sol";
+import { IRouter } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
+import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { RateLimiter } from "./security/RateLimiter.sol";
+import { EmergencyPause } from "./security/EmergencyPause.sol";
 
 interface IWETH {
     function deposit() external payable;
@@ -19,8 +19,8 @@ interface IWETH {
 contract CrossChainMessenger is Ownable, ReentrancyGuard {
     using Client for Client.EVM2AnyMessage;
 
-    IRouterClient public immutable router;
-    IWETH public immutable weth;
+    IRouterClient public immutable ROUTER;
+    IWETH public immutable WETH;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
     uint64 public constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
     uint256 public bridgeFee;
@@ -51,15 +51,15 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         require(_emergencyPause != address(0), "CrossChainMessenger: zero emergency pause address");
         require(_bridgeFee <= _maxFee, "CrossChainMessenger: fee exceeds maximum");
 
-        router = IRouterClient(_router);
-        weth = IWETH(_weth);
+        ROUTER = IRouterClient(_router);
+        WETH = IWETH(_weth);
         rateLimiter = RateLimiter(_rateLimiter);
         emergencyPause = EmergencyPause(_emergencyPause);
         bridgeFee = _bridgeFee;
     }
 
     function getRouter() external view returns (address) {
-        return address(router);
+        return address(ROUTER);
     }
 
     function getBridgeFee() external view returns (uint256) {
@@ -80,7 +80,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
             feeToken: address(0)
         });
 
-        uint256 requiredFee = router.getFee(POLYGON_CHAIN_SELECTOR, message);
+        uint256 requiredFee = ROUTER.getFee(POLYGON_CHAIN_SELECTOR, message);
         require(msg.value >= requiredFee, "CrossChainMessenger: insufficient payment");
 
         uint256 transferAmount = msg.value - requiredFee;
@@ -90,7 +90,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         rateLimiter.processMessage();
         emergencyPause.checkAndUpdateValue(transferAmount);
 
-        bytes32 messageId = router.ccipSend{value: requiredFee}(
+        bytes32 messageId = ROUTER.ccipSend{value: requiredFee}(
             POLYGON_CHAIN_SELECTOR,
             message
         );
@@ -100,7 +100,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external {
         require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
-        require(msg.sender == address(router), "CrossChainMessenger: caller is not router");
+        require(msg.sender == address(ROUTER), "CrossChainMessenger: caller is not router");
         require(message.sourceChainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR, "CrossChainMessenger: invalid source chain");
         require(!processedMessages[message.messageId], "CrossChainMessenger: message already processed");
 
@@ -118,8 +118,8 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         emergencyPause.checkAndUpdateValue(amount);
 
         // Handle WETH operations with proper error checking
-        try weth.deposit{value: amount}() {
-            bool success = weth.transfer(recipient, amount);
+        try WETH.deposit{value: amount}() {
+            bool success = WETH.transfer(recipient, amount);
             require(success, "CrossChainMessenger: WETH transfer failed");
         } catch {
             revert("CrossChainMessenger: WETH deposit failed");
