@@ -7,9 +7,10 @@ import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { SecurityBase } from "./security/SecurityBase.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 
 error TransferFailed();
-error InsufficientBalance();
+error InsufficientPayment();
 error InvalidRecipient();
 error FeeExceedsMaximum();
 error InvalidSourceChain();
@@ -18,7 +19,7 @@ error ZeroAmount();
 error InvalidTokenAmount();
 error MessageAlreadyProcessed();
 
-contract CrossChainMessenger is SecurityBase {
+contract CrossChainMessenger is SecurityBase, Pausable {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -58,8 +59,8 @@ contract CrossChainMessenger is SecurityBase {
 
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
-        if (msg.value <= _bridgeFee) revert InsufficientBalance();
-        if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
+        if (msg.value <= _bridgeFee) revert InsufficientPayment();
+        if (paused()) revert("CrossChainMessenger: contract is paused");
 
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert ZeroAmount();
