@@ -7,6 +7,8 @@ contract MockWETH is ERC20 {
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
 
+    bool private transferShouldFail;
+
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function deposit() public payable {
@@ -19,6 +21,7 @@ contract MockWETH is ERC20 {
             balanceOf(msg.sender) >= amount,
             "ERC20: burn amount exceeds balance"
         );
+        require(!transferShouldFail, "MockWETH: Transfer failed");
         _burn(msg.sender, amount);
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "MockWETH: ETH transfer failed");
@@ -27,5 +30,10 @@ contract MockWETH is ERC20 {
 
     receive() external payable {
         deposit();
+    }
+
+    // Test helper function to simulate transfer failures
+    function setTransferFail(bool shouldFail) external {
+        transferShouldFail = shouldFail;
     }
 }
