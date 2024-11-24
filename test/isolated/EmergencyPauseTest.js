@@ -4,7 +4,7 @@ const { deployTestContracts, TEST_CONFIG } = require("../helpers/setup");
 
 describe("Emergency Pause Mechanism (Isolated)", function() {
     let owner, user;
-    let crossChainMessenger;
+    let crossChainMessenger, emergencyPause;
     const { BRIDGE_FEE, PAUSE_THRESHOLD } = TEST_CONFIG;
 
     beforeEach(async function() {
@@ -12,6 +12,7 @@ describe("Emergency Pause Mechanism (Isolated)", function() {
         owner = contracts.owner;
         user = contracts.user;
         crossChainMessenger = contracts.crossChainMessenger;
+        emergencyPause = contracts.emergencyPause;
     });
 
     describe("Pause Threshold Tests", function() {
@@ -28,13 +29,19 @@ describe("Emergency Pause Mechanism (Isolated)", function() {
             console.log("Amount after fee subtraction:", ethers.utils.formatEther(transferAmount.sub(BRIDGE_FEE)));
 
             // First transfer
+            console.log("\nBefore first transfer:");
+            console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
             await crossChainMessenger.sendToPolygon(user.address, { value: transferAmount });
             console.log("\nAfter first transfer:");
+            console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
             console.log("Contract paused:", await crossChainMessenger.paused());
 
             // Second transfer
+            console.log("\nBefore second transfer:");
+            console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
             await crossChainMessenger.sendToPolygon(user.address, { value: transferAmount });
             console.log("\nAfter second transfer:");
+            console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
             console.log("Contract paused:", await crossChainMessenger.paused());
 
             // Verify final state
