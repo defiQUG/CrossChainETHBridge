@@ -7,7 +7,7 @@ require("dotenv").config();
 const DEFI_ORACLE_META_RPC_URL = process.env.DEFI_ORACLE_META_RPC_URL;
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL;
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
+const {POLYGONSCAN_API_KEY} = process.env;
 
 // Network configurations
 const networks = {
