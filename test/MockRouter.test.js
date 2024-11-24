@@ -7,7 +7,7 @@ describe("MockRouter Tests", function() {
     let mockRouter, mockWETH, crossChainMessenger;
     const DOM_CHAIN_SELECTOR = 138n;
     const POLYGON_CHAIN_SELECTOR = 137n;
-    const BASE_FEE = ethers.parseUnits("0.6", "ether");
+    const BASE_FEE = ethers.utils.parseUnits("0.6", "ether");
 
     beforeEach(async function() {
         [owner, addr1, addr2, user] = await ethers.getSigners();
@@ -73,7 +73,7 @@ describe("MockRouter Tests", function() {
                 receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ["address", "uint256"],
-                    [addr2.address, ethers.parseUnits("1.0", "ether")]
+                    [addr2.address, ethers.utils.parseUnits("1.0", "ether")]
                 ),
                 tokenAmounts: [],
                 extraArgs: "0x",
@@ -87,14 +87,14 @@ describe("MockRouter Tests", function() {
         });
 
         it("Should calculate fee correctly with extra fee", async function() {
-            const extraFee = ethers.parseUnits("0.5", "ether");
+            const extraFee = ethers.utils.parseUnits("0.5", "ether");
             await mockRouter.setExtraFee(extraFee);
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             expect(fee).to.equal(BASE_FEE + extraFee);
         });
 
         it("Should prevent non-owner from setting extra fee", async function() {
-            await expect(mockRouter.connect(addr1).setExtraFee(ethers.parseEther("0.5")))
+            await expect(mockRouter.connect(addr1).setExtraFee(ethers.utils.parseEther("0.5")))
                 .to.be.revertedWith("Ownable: caller is not the owner");
         });
 
@@ -140,7 +140,7 @@ describe("MockRouter Tests", function() {
             };
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseUnits("0.05", "ether")
+                value: ethers.utils.parseUnits("0.05", "ether")
             })).to.be.revertedWith("MockRouter: insufficient fee");
         });
     });
