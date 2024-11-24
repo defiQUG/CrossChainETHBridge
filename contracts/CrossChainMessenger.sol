@@ -45,7 +45,7 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
         if (initialFee > maxFee) revert CrossChainErrors.InvalidFeeAmount(maxFee, initialFee);
 
         router = IRouterClient(_router);
-        WETH = IWETH(_weth);
+        WETH = IWETH(payable(_weth));
         emergencyPause = EmergencyPause(_emergencyPause);
         _bridgeFee = initialFee;
     }
@@ -108,43 +108,6 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
         try WETH.deposit{value: amount}() {
             bytes32 messageId = router.ccipSend(
                 POLYGON_CHAIN_SELECTOR,
-                Client.EVM2AnyMessage({
-                    receiver: abi.encode(_recipient),
-                    data: abi.encode(_recipient, amount),
-                    tokenAmounts: new Client.EVMTokenAmount[](0),
-                    extraArgs: "",
-                    feeToken: address(0)
-                })
-            );
-            emit MessageSent(messageId, msg.sender, _recipient, amount);
-        } catch {
-            revert CrossChainErrors.TransferFailed();
-        }
-    }
-
-    function sendMessage(
-        address _recipient,
-        uint256 amount
-    ) external payable nonReentrant {
-        if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
-        if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
-        if (super.paused()) revert CrossChainErrors.EmergencyPaused();
-
-        // Check amount validity
-        if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
-
-        // Check emergency pause threshold
-        if (emergencyPause.checkAndUpdateValue(amount)) {
-            revert CrossChainErrors.EmergencyPaused();
-        }
-
-        bool messageProcessed = processMessage();
-        if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(getMaxMessagesPerPeriod(), amount);
-
-        // Wrap ETH to WETH
-        try WETH.deposit{value: amount}() {
-            bytes32 messageId = router.ccipSend(
-                DEFI_ORACLE_META_CHAIN_SELECTOR,
                 Client.EVM2AnyMessage({
                     receiver: abi.encode(_recipient),
                     data: abi.encode(_recipient, amount),
