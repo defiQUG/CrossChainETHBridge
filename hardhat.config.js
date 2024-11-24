@@ -1,8 +1,8 @@
 require("@nomiclabs/hardhat-ethers");
-require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 require("dotenv").config();
+require("@nomicfoundation/hardhat-chai-matchers");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -46,5 +46,3 @@ module.exports = {
     timeout: 40000
   }
 };
-require('@nomicfoundation/hardhat-chai-matchers');
-require('@nomicfoundation/hardhat-chai-matchers');
