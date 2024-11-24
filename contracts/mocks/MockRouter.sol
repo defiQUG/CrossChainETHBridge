@@ -41,6 +41,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         // Initialize rate limiter first using internal function
         _initialize(100, 3600); // Default values: 100 messages per hour
 
+        // Initialize supported chains
+        _supportedChains[138] = true; // Defi Oracle Meta Chain
+        _supportedChains[137] = true; // Polygon Chain
+
         _admin = admin;
         _feeToken = feeToken;
         _baseFee = baseFee;
