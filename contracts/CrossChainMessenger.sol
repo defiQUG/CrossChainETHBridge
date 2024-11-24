@@ -108,16 +108,17 @@ contract CrossChainMessenger is SecurityBase {
         emit BridgeFeeUpdated(_newFee);
     }
 
+    function emergencyWithdraw(address _recipient) external onlyOwner {
+        if (_recipient == address(0)) revert InvalidRecipient();
+        if (!emergencyPause.paused()) revert("EmergencyPause: contract not paused");
+
+        uint256 balance = address(this).balance;
+        if (balance == 0) revert InsufficientBalance();
+
         (bool success,) = _recipient.call{value: balance}("");
         if (!success) revert TransferFailed();
 
         emit EmergencyWithdraw(_recipient, balance);
-    }
-
-        (bool success,) = _recipient.call{value: balance}("");
-        if (!success) revert TransferFailed();
-
-        emit EmergencyWithdrawal(_recipient, balance);
     }
 
     function getBridgeFee() external view returns (uint256) {
