@@ -14,8 +14,8 @@ contract RateLimiter is SecurityBase {
     event PeriodReset(uint256 timestamp);
 
     constructor(uint256 maxMessages, uint256 periodDuration) {
-        require(maxMessages > 0, "Rate limit exceeded");
-        require(periodDuration > 0, "Period duration must be positive");
+        require(maxMessages > 0, "RateLimiter: max messages must be positive");
+        require(periodDuration > 0, "RateLimiter: period duration must be positive");
 
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
@@ -25,8 +25,8 @@ contract RateLimiter is SecurityBase {
     }
 
     function setRateLimit(uint256 maxMessages, uint256 periodDuration) external onlyOwner {
-        require(maxMessages > 0, "Rate limit exceeded");
-        require(periodDuration > 0, "Period duration must be positive");
+        require(maxMessages > 0, "RateLimiter: max messages must be positive");
+        require(periodDuration > 0, "RateLimiter: period duration must be positive");
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
         emit RateLimitUpdated(maxMessages, periodDuration);
@@ -37,7 +37,7 @@ contract RateLimiter is SecurityBase {
             _resetPeriod();
         }
 
-        require(_currentPeriodMessages < _maxMessagesPerPeriod, "Rate limit exceeded");
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
 
         _currentPeriodMessages++;
         emit MessageProcessed(msg.sender, block.timestamp);
