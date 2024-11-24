@@ -47,7 +47,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Invalid message format");
+            ).to.be.revertedWith("CrossChainMessenger: invalid message format");
         });
 
         it("Should handle message with invalid recipient", async function() {
@@ -72,7 +72,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Invalid recipient");
+            ).to.be.revertedWith("CrossChainMessenger: invalid recipient");
         });
 
         it("Should handle WETH transfer failures", async function() {
@@ -100,7 +100,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("WETH transfer failed");
+            ).to.be.revertedWith("CrossChainMessenger: WETH transfer failed");
         });
     });
 
@@ -149,7 +149,7 @@ describe("CrossChainMessenger Edge Cases", function() {
                     await crossChainMessenger.getAddress(),
                     message
                 )
-            ).to.be.revertedWith("Message already processed");
+            ).to.be.revertedWith("CrossChainMessenger: message already processed");
         });
     });
 });

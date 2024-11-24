@@ -5,8 +5,16 @@ async function deployContract(name, args = [], options = {}) {
     let contractName = name;
     if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
         contractName = `contracts/security/${name}.sol:${name}`;
-    } else if (name.includes("MockRouter")) {
-        contractName = "TestRouter";
+        // Add default arguments for RateLimiter
+        if (name === "RateLimiter" && (!args || args.length === 0)) {
+            args = [10, 3600]; // 10 messages per hour
+        }
+    } else if (name === "TestRouter" || name === "MockRouter") {
+        contractName = `contracts/mocks/${name}.sol:${name}`;
+        // Default arguments for Router (including rate limiter params)
+        if (!args || args.length === 0) {
+            args = [10, 3600]; // RateLimiter constructor params
+        }
     }
 
     const Factory = await ethers.getContractFactory(contractName);

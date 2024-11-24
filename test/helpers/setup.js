@@ -20,22 +20,32 @@ async function deployTestContracts() {
     // Deploy MockWETH
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
-    // Deploy TestRouter (concrete implementation of MockRouter)
-    const mockRouter = await deployContract("TestRouter", []);
+    // Deploy TestRouter with rate limiter params
+    const mockRouter = await deployContract("TestRouter", [
+        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
+        TEST_CONFIG.PERIOD_DURATION
+    ]);
 
-    // Deploy RateLimiter with proper constructor arguments
+    // Deploy RateLimiter with constructor params
     const rateLimiter = await deployContract("RateLimiter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
     ]);
 
-    // Deploy EmergencyPause with proper constructor arguments
+    // Deploy EmergencyPause
     const emergencyPause = await deployContract("EmergencyPause", [
         TEST_CONFIG.PAUSE_THRESHOLD,
         TEST_CONFIG.PAUSE_DURATION
     ]);
 
-    // Deploy CrossChainMessenger with pre-deployed contracts
+    // Initialize TestRouter after all dependencies are deployed
+    await mockRouter.initialize(
+        owner.address,
+        await mockWETH.getAddress(),
+        TEST_CONFIG.BRIDGE_FEE
+    );
+
+    // Deploy CrossChainMessenger with initialized contracts
     const crossChainMessenger = await deployContract("CrossChainMessenger", [
         await mockRouter.getAddress(),
         await mockWETH.getAddress(),

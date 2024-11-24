@@ -1,17 +1,13 @@
-/** @type {import('eslint').Linter.Config} */
 module.exports = {
-  root: true,
   env: {
     browser: false,
     es2021: true,
     mocha: true,
     node: true,
   },
-  extends: [
-    "eslint:recommended"
-  ],
+  extends: ["eslint:recommended"],
   parserOptions: {
-    ecmaVersion: 2021,
+    ecmaVersion: 12,
   },
   overrides: [
     {

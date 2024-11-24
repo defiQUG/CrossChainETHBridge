@@ -15,11 +15,13 @@ const {
 
 describe("Router Coverage Tests", function () {
     let router, owner, addr1, addr2;
+    const MAX_MESSAGES = 10;
+    const RATE_PERIOD = 3600; // 1 hour in seconds
 
     beforeEach(async function () {
         [owner, addr1, addr2] = await ethers.getSigners();
         const TestRouter = await ethers.getContractFactory("TestRouter");
-        router = await TestRouter.deploy();
+        router = await TestRouter.deploy(MAX_MESSAGES, RATE_PERIOD);
         await router.waitForDeployment();
     });
 
@@ -36,7 +38,7 @@ describe("Router Coverage Tests", function () {
 
         it("Should revert getSupportedTokens for invalid chain", async function () {
             await expect(router.getSupportedTokens(138)) // Defi Oracle Meta
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 
@@ -92,12 +94,12 @@ describe("Router Coverage Tests", function () {
         it("Should revert simulation with invalid source chain", async function () {
             const invalidMessage = { ...message, sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR };
             await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should revert simulation with zero address target", async function () {
             await expect(router.simulateMessageReceived(ethers.ZeroAddress, message))
-                .to.be.revertedWith("Invalid target address");
+                .to.be.revertedWith("MockRouter: invalid target address");
         });
     });
 
@@ -153,35 +155,35 @@ describe("Router Coverage Tests", function () {
 
             // Test unsupported chain
             await expect(router.getFee(999, ccipMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should validate message data correctly", async function () {
             // Test invalid message ID
             const invalidMessageId = { ...ccipMessage, messageId: ethers.ZeroHash };
             await expect(router.validateMessage(invalidMessageId))
-                .to.be.revertedWith("Invalid message ID");
+                .to.be.revertedWith("MockRouter: invalid message ID");
 
             // Test invalid sender length
             const invalidSender = { ...ccipMessage, sender: ethers.hexlify(ethers.randomBytes(10)) };
             await expect(router.validateMessage(invalidSender))
-                .to.be.revertedWith("Invalid sender length");
+                .to.be.revertedWith("MockRouter: empty sender address");
 
             // Test empty message data
             const emptyData = { ...ccipMessage, data: "0x" };
             await expect(router.validateMessage(emptyData))
-                .to.be.revertedWith("Empty message data");
+                .to.be.revertedWith("MockRouter: empty message data");
 
             // Test invalid token amounts
             const invalidTokens = { ...ccipMessage, destTokenAmounts: [{ token: ethers.ZeroAddress, amount: 1 }] };
             await expect(router.validateMessage(invalidTokens))
-                .to.be.revertedWith("Token transfers not supported");
+                .to.be.revertedWith("MockRouter: token transfers not supported");
         });
 
         it("Should handle message validation errors", async function () {
             const invalidMessage = { ...ccipMessage, sourceChainSelector: 0 };
             await expect(router.validateMessage(invalidMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: invalid chain selector");
         });
 
         it("Should handle routeMessage execution correctly", async function () {
@@ -252,7 +254,7 @@ describe("Router Coverage Tests", function () {
                     tooLowGasLimit,
                     receiverAddress
                 )
-            ).to.be.revertedWith("Gas limit exceeded");
+            ).to.be.revertedWith("MockRouter: gas limit exceeded");
         });
     });
 });

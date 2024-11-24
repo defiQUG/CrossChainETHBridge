@@ -8,11 +8,10 @@ async function deployTestContracts() {
     const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWETH.waitForDeployment();
 
-    // Deploy RateLimiter
+    // Deploy RateLimiter with constructor arguments
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
-    const rateLimiter = await RateLimiter.deploy();
+    const rateLimiter = await RateLimiter.deploy(10, 3600); // 10 messages per hour
     await rateLimiter.waitForDeployment();
-    await rateLimiter.initialize(10, 3600); // 10 messages per hour
 
     // Deploy EmergencyPause
     const EmergencyPause = await ethers.getContractFactory('EmergencyPause');
@@ -24,9 +23,15 @@ async function deployTestContracts() {
 
     // Deploy TestRouter (concrete implementation of MockRouter)
     const TestRouter = await ethers.getContractFactory('TestRouter');
-    const mockRouter = await TestRouter.deploy();
+    const mockRouter = await TestRouter.deploy(10, 3600); // 10 messages per hour
     await mockRouter.waitForDeployment();
-    await mockRouter.initialize(10, 3600); // 10 messages per hour
+
+    // Initialize TestRouter with configuration (removed rate limiter initialization)
+    await mockRouter.initialize(
+        owner.address, // admin
+        await mockWETH.getAddress(), // fee token
+        ethers.parseEther('0.001') // base fee
+    );
 
     // Deploy CrossChainMessenger
     const CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger');

@@ -76,7 +76,8 @@ describe("MockWETH Extended Tests", function () {
             await mockWETH.approve(addr1.address, approveAmount);
             await mockWETH.connect(addr1).transferFrom(owner.address, addr2.address, approveAmount);
             expect(await mockWETH.balanceOf(addr2.address)).to.equal(approveAmount);
-            expect(await mockWETH.balanceOf(owner.address)).to.equal(depositAmount.sub(approveAmount));
+            const expectedBalance = depositAmount - approveAmount;
+            expect(await mockWETH.balanceOf(owner.address)).to.equal(expectedBalance);
         });
     });
 });

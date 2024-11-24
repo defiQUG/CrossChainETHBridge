@@ -16,12 +16,14 @@ const {
 describe("MockRouter Extended Tests", function () {
     let router, owner, user1, user2;
     const POLYGON_CHAIN_ID = 137;
+    const MAX_MESSAGES = 10;
+    const RATE_PERIOD = 3600; // 1 hour in seconds
     let defaultMessage;
 
     beforeEach(async function () {
         [owner, user1, user2] = await ethers.getSigners();
         const MockRouter = await ethers.getContractFactory("MockRouter");
-        router = await MockRouter.deploy();
+        router = await MockRouter.deploy(MAX_MESSAGES, RATE_PERIOD);
         await router.waitForDeployment();
 
         defaultMessage = {
@@ -78,12 +80,12 @@ describe("MockRouter Extended Tests", function () {
     describe("Error Handling", function () {
         it("Should handle zero chain ID", async function () {
             await expect(router.ccipSend(0, defaultMessage))
-                .to.be.revertedWith("Invalid chain selector");
+                .to.be.revertedWith("MockRouter: invalid chain selector");
         });
 
         it("Should handle invalid chain ID", async function () {
             await expect(router.ccipSend(999999, defaultMessage))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 });
