@@ -121,17 +121,22 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        // Directly call ccipReceive on the target contract
-        (bool success,) = target.call(
-            abi.encodeWithSignature("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))", message)
+        // Use interface call instead of low-level call
+        bytes memory callData = abi.encodeWithSelector(
+            bytes4(keccak256("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))")),
+            message
         );
 
+        (bool success, bytes memory returnData) = target.call(callData);
+
         if (!success) {
-            // Let any revert reason bubble up directly
-            assembly {
-                let ptr := mload(0x40)
-                returndatacopy(ptr, 0, returndatasize())
-                revert(ptr, returndatasize())
+            if (returnData.length > 0) {
+                // Forward the revert reason
+                assembly {
+                    revert(add(returnData, 32), mload(returnData))
+                }
+            } else {
+                revert("MockRouter: call failed");
             }
         }
     }
