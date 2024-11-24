@@ -18,6 +18,10 @@ error InvalidMessageFormat();
 error ZeroAmount();
 error InvalidTokenAmount();
 error MessageAlreadyProcessed();
+error ContractPaused();
+error RateLimitExceeded();
+error EmergencyThresholdExceeded();
+error EmergencyNotPaused();
 
 contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
     using Client for Client.Any2EVMMessage;
@@ -60,18 +64,18 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientPayment();
-        if (paused()) revert("CrossChainMessenger: contract is paused");
+        if (paused()) revert ContractPaused();
 
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert ZeroAmount();
 
         if (amount >= emergencyPause.pauseThreshold()) {
             if (emergencyPause.checkAndUpdateValue(amount)) {
-                revert("EmergencyPause: threshold exceeded");
+                revert EmergencyThresholdExceeded();
             }
         }
 
-        if (!processMessage()) revert("RateLimiter: rate limit exceeded");
+        if (!processMessage()) revert RateLimitExceeded();
 
         try WETH.deposit{value: amount}() {
             Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
@@ -90,13 +94,13 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
-        if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
+        if (emergencyPause.paused()) revert ContractPaused();
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR &&
             message.sourceChainSelector != POLYGON_CHAIN_SELECTOR) {
             revert InvalidSourceChain();
         }
         if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
-        if (!processMessage()) revert("RateLimiter: rate limit exceeded");
+        if (!processMessage()) revert RateLimitExceeded();
 
         if (message.data.length != 64) revert InvalidMessageFormat();
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
@@ -140,7 +144,7 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
 
     function emergencyWithdraw(address _recipient) external onlyOwner {
         if (_recipient == address(0)) revert InvalidRecipient();
-        if (!emergencyPause.paused()) revert("EmergencyPause: contract not paused");
+        if (!emergencyPause.paused()) revert EmergencyNotPaused();
 
         uint256 wethBalance = WETH.balanceOf(address(this));
         uint256 ethBalance = address(this).balance;
