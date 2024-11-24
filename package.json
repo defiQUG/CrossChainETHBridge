@@ -1,27 +1,35 @@
 {
-"name": "crosschainethbridge",
-"version": "1.0.0",
-"scripts": {
-  "compile": "hardhat compile",
-  "test": "hardhat test",
-  "lint": "solhint \"contracts/**/*.sol\" && eslint \"**/*.js\"",
-  "lint:fix": "solhint --fix \"contracts/**/*.sol\" && eslint --fix \"**/*.js\"",
-  "security": "pnpm audit"
-},
-"devDependencies": {
-  "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-  "@nomicfoundation/hardhat-verify": "^2.0.0",
-  "@typescript-eslint/eslint-plugin": "^8.15.0",
-  "@typescript-eslint/parser": "^8.15.0",
-  "eslint": "^9.15.0",
-  "hardhat": "^2.19.4",
-  "solhint": "^5.0.3"
-},
-"dependencies": {
-  "@chainlink/contracts": "^1.3.0",
-  "@chainlink/contracts-ccip": "^1.2.1",
-  "@openzeppelin/contracts": "^4.9.3",
-  "chai": "^4.3.10",
-  "ethers": "^6.9.0"
-}
+  "name": "crosschainethbridge",
+  "version": "1.0.0",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "lint": "solhint \"contracts/**/*.sol\" && eslint \"**/*.js\"",
+    "lint:fix": "solhint --fix \"contracts/**/*.sol\" && eslint --fix \"**/*.js\"",
+    "security": "pnpm audit"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@nomicfoundation/hardhat-verify": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.15.0",
+    "@typescript-eslint/parser": "^8.15.0",
+    "eslint": "^9.15.0",
+    "hardhat": "^2.19.4",
+    "solhint": "^5.0.3"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^1.3.0",
+    "@chainlink/contracts-ccip": "^1.2.1",
+    "@openzeppelin/contracts": "^4.9.3",
+    "chai": "^4.3.10",
+    "ethers": "^6.9.0"
+  },
+  "resolutions": {
+    "elliptic": "^6.6.0",
+    "@ethersproject/signing-key": "^5.7.0",
+    "@ethersproject/transactions": "^5.7.0",
+    "web3": "^1.10.0",
+    "lodash": "^4.17.21",
+    "minimist": "^1.2.8"
+  }
 }
