@@ -33,7 +33,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
             const bridgeFee = await messenger.getBridgeFee();
             await expect(
                 messenger.sendToPolygon(recipient, { value: bridgeFee })
-            ).to.be.revertedWith("InsufficientPayment");
+            ).to.be.revertedWithCustomError(messenger, "InsufficientPayment");
         });
 
         it("Should handle emergency withdrawals correctly", async function () {
@@ -64,6 +64,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
                 extraArgs: "0x"
             };
 
+            const messengerInterface = new ethers.utils.Interface(CrossChainMessenger.abi);
             await expect(
                 mockRouter.simulateMessageReceived(messenger.address, message)
             ).to.be.revertedWithCustomError(messenger, "InvalidSourceChain");
