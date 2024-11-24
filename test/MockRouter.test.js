@@ -7,7 +7,7 @@ describe("MockRouter Tests", function() {
     let mockRouter, mockWETH, crossChainMessenger;
     const DOM_CHAIN_SELECTOR = 138n;
     const POLYGON_CHAIN_SELECTOR = 137n;
-    const BASE_FEE = ethers.parseEther("0.6");
+    const BASE_FEE = ethers.parseUnits("0.6", "ether");
 
     beforeEach(async function() {
         [owner, addr1, addr2, user] = await ethers.getSigners();
@@ -16,8 +16,12 @@ describe("MockRouter Tests", function() {
         mockWETH = contracts.mockWETH;
         crossChainMessenger = contracts.messenger;
 
-        // Initialize MockRouter
-        await mockRouter.initialize();
+        // Initialize MockRouter with required parameters
+        await mockRouter.initialize(
+            owner.address,  // admin
+            ethers.ZeroAddress,  // feeToken
+            BASE_FEE  // baseFee
+        );
         await mockRouter.setSupportedChain(POLYGON_CHAIN_SELECTOR, true);
     });
 
@@ -69,7 +73,7 @@ describe("MockRouter Tests", function() {
                 receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ["address", "uint256"],
-                    [addr2.address, ethers.parseEther("1.0")]
+                    [addr2.address, ethers.parseUnits("1.0", "ether")]
                 ),
                 tokenAmounts: [],
                 extraArgs: "0x",
@@ -83,7 +87,7 @@ describe("MockRouter Tests", function() {
         });
 
         it("Should calculate fee correctly with extra fee", async function() {
-            const extraFee = ethers.parseEther("0.5");
+            const extraFee = ethers.parseUnits("0.5", "ether");
             await mockRouter.setExtraFee(extraFee);
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             expect(fee).to.equal(BASE_FEE + extraFee);
@@ -120,8 +124,9 @@ describe("MockRouter Tests", function() {
                 extraArgs: "0x",
                 feeToken: ethers.ZeroAddress
             };
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: BASE_FEE
+                value: fee
             })).to.emit(mockRouter, "MessageSent");
         });
 
@@ -133,8 +138,9 @@ describe("MockRouter Tests", function() {
                 extraArgs: "0x",
                 feeToken: ethers.ZeroAddress
             };
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
             await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseEther("0.05")
+                value: ethers.parseUnits("0.05", "ether")
             })).to.be.revertedWith("Insufficient fee");
         });
     });

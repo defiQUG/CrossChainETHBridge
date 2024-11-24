@@ -15,8 +15,8 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     mapping(uint64 => address) internal _onRamps;
     mapping(uint64 => mapping(address => bool)) internal _offRamps;
 
-    uint256 internal constant _baseFee = 0.001 ether;
-    uint256 internal constant _extraFee = 0.0005 ether;
+    uint256 internal _baseFee;
+    uint256 internal _extraFee;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
@@ -26,8 +26,16 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         // Chain support initialization moved to derived contracts
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual override {
-        _initialize(maxMessages, periodDuration);
+    function initialize(
+        address admin,
+        address feeToken,
+        uint256 baseFee
+    ) external virtual {
+        require(admin != address(0), "Invalid admin address");
+        _transferOwnership(admin);
+        _initialize(100, 3600); // Default values: 100 messages per hour
+        _baseFee = baseFee;
+        _extraFee = baseFee / 2; // Set extra fee to half of base fee
     }
 
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
