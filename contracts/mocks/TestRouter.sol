@@ -23,15 +23,15 @@ contract TestRouter is MockRouter, IRouterClient {
         // Initialization moved to initialize function
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external override {
+    function initialize(
+        address admin,
+        address feeToken,
+        uint256 baseFee
+    ) external override {
         require(!_initialized, "TestRouter: already initialized");
 
-        // Initialize rate limiter using public function
-        super.initialize(maxMessages, periodDuration);
-
-        // Set up router-specific configuration
-        _admin = address(this);
-        _baseFee = 0;
+        // Call parent initialize with proper parameters
+        super.initialize(admin, feeToken, baseFee);
 
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
