@@ -19,14 +19,18 @@ contract CrossChainMessenger is
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
-    IRouterClient public immutable ROUTER;
+    uint64 private constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
+    uint64 private constant POLYGON_CHAIN_SELECTOR = 137;
+    uint256 private constant MAX_FEE = 1 ether;
+
+    IRouterClient public immutable router;
     IWETH public immutable WETH;
     EmergencyPause public immutable emergencyPause;
     uint256 private _bridgeFee;
-    uint256 public immutable MAX_FEE;
-    uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
-    uint64 public constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
     mapping(bytes32 => bool) private _processedMessages;
+
+    event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
+    event MessageReceived(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
 
     event MessageSent(
         bytes32 indexed messageId,
@@ -55,58 +59,76 @@ contract CrossChainMessenger is
         if (_emergencyPause == address(0)) revert CrossChainErrors.InvalidReceiver(address(0));
         if (initialFee > maxFee) revert CrossChainErrors.InvalidFeeAmount(maxFee, initialFee);
 
-        ROUTER = IRouterClient(router);
-        WETH = IWETH(weth);
+        router = IRouterClient(_router);
+        WETH = IWETH(_weth);
         emergencyPause = EmergencyPause(_emergencyPause);
         _bridgeFee = initialFee;
     }
 
     constructor(
-        address router,
-        address weth,
+        address _router,
+        address _weth,
         address _emergencyPause,
         uint256 initialFee,
         uint256 maxFee,
         uint256 maxMessages,
         uint256 periodDuration
     ) SecurityBase(maxMessages, periodDuration) {
-        if (router == address(0)) revert CrossChainErrors.InvalidRouter(router);
-        if (weth == address(0)) revert CrossChainErrors.InvalidTokenAddress(weth);
-        if (_emergencyPause == address(0)) revert CrossChainErrors.InvalidReceiver(address(0));
+        if (_router == address(0)) revert CrossChainErrors.InvalidRouter(_router);
+        if (_weth == address(0)) revert CrossChainErrors.InvalidTokenAddress(_weth);
+        if (_emergencyPause == address(0)) revert CrossChainErrors.InvalidReceiver(_emergencyPause);
         if (initialFee > maxFee) revert CrossChainErrors.InvalidFeeAmount(maxFee, initialFee);
+
+        router = IRouterClient(_router);
+        WETH = IWETH(_weth);
+        emergencyPause = EmergencyPause(_emergencyPause);
+        _bridgeFee = initialFee;
 
         ROUTER = IRouterClient(router);
         WETH = IWETH(weth);
         emergencyPause = EmergencyPause(_emergencyPause);
         _bridgeFee = initialFee;
+    }
 
-        // Effects before interactions
+    function sendMessage(
+        address _recipient,
+        uint256 amount
+    ) external payable nonReentrant override {
+        if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
+        if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
+        if (paused()) revert ContractPaused();
+
+        // Check amount validity
+        if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
+
+        // Check emergency pause threshold
+        if (emergencyPause.checkAndUpdateValue(amount)) {
+            revert CrossChainErrors.EmergencyPaused();
+        }
+
         bool messageProcessed = processMessage();
-        if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(getLimit(), amount);
+        if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(getMaxMessagesPerPeriod(), amount);
 
-        // Interactions
+        // Wrap ETH to WETH
         try WETH.deposit{value: amount}() {
-            Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-                receiver: abi.encode(_recipient),
-                data: abi.encode(_recipient, amount),
-                tokenAmounts: new Client.EVMTokenAmount[](0),
-                extraArgs: "",
-                feeToken: address(0)
-            });
-
-            bytes32 messageId = ROUTER.ccipSend{value: _bridgeFee}(
-                POLYGON_CHAIN_SELECTOR,
-                message
+            bytes32 messageId = router.ccipSend(
+                DEFI_ORACLE_META_CHAIN_SELECTOR,
+                Client.EVM2AnyMessage({
+                    receiver: abi.encode(_recipient),
+                    data: abi.encode(_recipient, amount),
+                    tokenAmounts: new Client.EVMTokenAmount[](0),
+                    extraArgs: "",
+                    feeToken: address(0)
+                })
             );
             emit MessageSent(messageId, msg.sender, _recipient, amount);
         } catch {
             revert CrossChainErrors.TransferFailed();
         }
-    }
 
     function ccipReceive(
         Client.Any2EVMMessage memory message
-    ) external nonReentrant {
+    ) external override nonReentrant {
         if (emergencyPause.paused()) revert CrossChainErrors.EmergencyPaused();
         if (
             message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR &&
