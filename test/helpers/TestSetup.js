@@ -12,7 +12,7 @@ async function deployTestContracts() {
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
     const rateLimiter = await RateLimiter.deploy();
     await rateLimiter.waitForDeployment();
-    await rateLimiter.initialize(10, 3600); // 10 messages per hour
+    await rateLimiter.initializeRateLimiter(10, 3600); // 10 messages per hour
 
     // Deploy EmergencyPause
     const EmergencyPause = await ethers.getContractFactory('EmergencyPause');
@@ -28,10 +28,9 @@ async function deployTestContracts() {
     await mockRouter.waitForDeployment();
 
     // Initialize TestRouter with configuration
-    await mockRouter.initialize(10, 3600); // 10 messages per hour rate limit
-    await mockRouter.setFeeConfig(
-        owner.address,
-        ethers.ZeroAddress,
+    await mockRouter.initialize(
+        owner.address, // admin
+        await mockWETH.getAddress(), // fee token
         ethers.parseEther('0.001') // base fee
     );
 
