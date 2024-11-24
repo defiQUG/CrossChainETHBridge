@@ -28,9 +28,9 @@ async function deployContract(name, args = [], options = {}) {
         return arg;
     });
 
-    // Deploy with proper options handling
+    // Deploy with proper options handling - fix the argument spreading
     try {
-        const contract = await Factory.deploy(...deploymentArgs, options);
+        const contract = await Factory.deploy(...deploymentArgs);
         await contract.deployed();
         return contract;
     } catch (error) {
