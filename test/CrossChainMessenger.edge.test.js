@@ -108,7 +108,7 @@ describe("CrossChainMessenger Edge Cases", function() {
         it("Should handle multiple rapid transfers near threshold", async function() {
             const amount = ethers.BigNumber.from(PAUSE_THRESHOLD)
                 .div(2)  // Split threshold into two parts
-                .sub(ethers.utils.parseEther("0.1"));  // Subtract small amount for fees
+                .add(BRIDGE_FEE);  // Add bridge fee to compensate for fee subtraction in contract
 
             // First transfer should succeed
             await crossChainMessenger.sendToPolygon(addr1.address, { value: amount });
