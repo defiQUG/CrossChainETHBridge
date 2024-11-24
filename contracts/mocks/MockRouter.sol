@@ -67,7 +67,7 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         require(_supportedChains[message.sourceChainSelector], "MockRouter: chain not supported");
         require(validateMessage(message), "MockRouter: invalid message");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        require(super.processMessage(), "MockRouter: rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -104,7 +104,7 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
     ) external virtual payable {
         require(target != address(0), "MockRouter: invalid target address");
         require(validateMessage(message), "MockRouter: message validation failed");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        require(super.processMessage(), "MockRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
@@ -142,7 +142,7 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "MockRouter: chain not supported");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        require(super.processMessage(), "MockRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
