@@ -66,7 +66,8 @@ describe("CrossChainMessenger Coverage Tests", function () {
 
             await expect(
                 mockRouter.simulateMessageReceived(messenger.address, message)
-            ).to.be.revertedWith("Invalid source chain");
+            ).to.be.revertedWithCustomError(messenger, "InvalidSourceChain")
+                .withArgs();
         });
     });
 });
