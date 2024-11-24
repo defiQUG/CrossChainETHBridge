@@ -97,7 +97,7 @@ describe("Security Features Integration Tests", function() {
     describe("Integration", function() {
         it("Should integrate rate limiting with emergency pause", async function() {
             const amount = ethers.parseEther("1.0");
-            const maxMessages = await rateLimiter.maxMessagesPerPeriod();
+            const maxMessages = await rateLimiter.getMaxMessagesPerPeriod();
 
             // Process messages until rate limit
             for(let i = 0n; i < maxMessages; i++) {
