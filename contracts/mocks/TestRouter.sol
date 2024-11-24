@@ -31,33 +31,13 @@ contract TestRouter is MockRouter, IRouterClient {
         require(!_initialized, "TestRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
 
-        // Call parent initialize with proper parameters
-        MockRouter.initialize(admin, feeToken, baseFee);
+        // Call parent initialize using super
+        super.initialize(admin, feeToken, baseFee);
 
         // Initialize test-specific chain support
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
         _initialized = true;
-    }
-
-    // Implement ccipSend function from IRouterClient
-    function ccipSend(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) external payable override returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(message.receiver.length == 20, "Invalid receiver length");
-
-        bytes32 messageId = keccak256(abi.encode(
-            destinationChainSelector,
-            message.receiver,
-            message.data,
-            block.timestamp
-        ));
-
-        emit MessageSent(messageId, destinationChainSelector, message);
-
-        return messageId;
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
