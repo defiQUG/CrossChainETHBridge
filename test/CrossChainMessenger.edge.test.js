@@ -26,12 +26,12 @@ describe("CrossChainMessenger Edge Cases", function() {
 
     describe("Error Handling", function() {
         it("Should handle malformed message data", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const malformedData = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const malformedData = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256", "bytes32"],
-                [user.address, amount, ethers.randomBytes(32)]
+                [user.address, amount, ethers.utils.randomBytes(32)]
             );
 
             const message = {
@@ -44,19 +44,19 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
             ).to.be.revertedWith("CrossChainMessenger: invalid message format");
         });
 
         it("Should handle message with invalid recipient", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const invalidData = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const invalidData = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
-                [ethers.ZeroAddress, amount]
+                [ethers.constants.AddressZero, amount]
             );
 
             const message = {
@@ -69,17 +69,17 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
             ).to.be.revertedWith("CrossChainMessenger: invalid recipient");
         });
 
         it("Should handle WETH transfer failures", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const data = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -97,7 +97,7 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
             ).to.be.revertedWith("CrossChainMessenger: WETH transfer failed");
@@ -106,7 +106,7 @@ describe("CrossChainMessenger Edge Cases", function() {
 
     describe("Security Edge Cases", function() {
         it("Should handle multiple rapid transfers near threshold", async function() {
-            const amount = PAUSE_THRESHOLD - ethers.parseEther("0.1");
+            const amount = PAUSE_THRESHOLD - ethers.utils.parseEther("0.1");
 
             // Send multiple transfers rapidly
             await crossChainMessenger.sendToPolygon(addr1.address, { value: amount });
@@ -121,10 +121,10 @@ describe("CrossChainMessenger Edge Cases", function() {
         });
 
         it("Should handle message replay attempts", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const data = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -139,14 +139,14 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             // First message should succeed
             await mockRouter.simulateMessageReceived(
-                await crossChainMessenger.getAddress(),
+                crossChainMessenger.address,
                 message
             );
 
             // Replay should fail
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
             ).to.be.revertedWith("CrossChainMessenger: message already processed");

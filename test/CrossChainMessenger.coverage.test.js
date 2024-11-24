@@ -36,29 +36,29 @@ describe("CrossChainMessenger Coverage Tests", function () {
 
         it("Should handle emergency withdrawals correctly", async function () {
             await messenger.pause();
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await owner.sendTransaction({
-                to: await messenger.getAddress(),
+                to: messenger.address,
                 value: amount
             });
             await messenger.emergencyWithdraw(owner.address);
-            expect(await ethers.provider.getBalance(await messenger.getAddress())).to.equal(0n);
+            expect(await ethers.provider.getBalance(messenger.address)).to.equal(0n);
         });
 
         it("Should handle invalid chain ID correctly", async function () {
             const message = {
-                messageId: ethers.hexlify(ethers.randomBytes(32)),
+                messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
                 sourceChainSelector: POLYGON_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(owner.address, 32),
-                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                sender: ethers.utils.hexZeroPad(owner.address, 32),
+                data: ethers.utils.defaultAbiCoder.encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 ),
                 destTokenAmounts: []
             };
 
             await expect(
-                mockRouter.simulateMessageReceived(await messenger.getAddress(), message)
+                mockRouter.simulateMessageReceived(messenger.address, message)
             ).to.be.revertedWith("Invalid source chain");
         });
     });
