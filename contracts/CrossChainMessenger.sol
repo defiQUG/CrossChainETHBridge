@@ -16,6 +16,7 @@ error InvalidSourceChain();
 error InvalidMessageFormat();
 error ZeroAmount();
 error InvalidTokenAmount();
+error MessageAlreadyProcessed();
 
 contract CrossChainMessenger is SecurityBase {
     using Client for Client.Any2EVMMessage;
@@ -28,6 +29,7 @@ contract CrossChainMessenger is SecurityBase {
     uint256 public immutable MAX_FEE;
     uint64 public constant POLYGON_CHAIN_SELECTOR = 137;
     uint64 public constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
+    mapping(bytes32 => bool) private _processedMessages;
 
     event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event MessageReceived(bytes32 indexed messageId, address indexed sender, uint256 amount);
@@ -63,30 +65,33 @@ contract CrossChainMessenger is SecurityBase {
         if (amount == 0) revert ZeroAmount();
 
         if (amount >= emergencyPause.pauseThreshold()) {
-            if (emergencyPause.checkAndPause(amount)) {
+            if (emergencyPause.checkAndUpdateValue(amount)) {
                 revert("EmergencyPause: threshold exceeded");
             }
         }
 
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
-        WETH.deposit{value: amount}();
+        try WETH.deposit{value: amount}() {
+            Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+                receiver: abi.encode(_recipient),
+                data: abi.encode(_recipient, amount),
+                tokenAmounts: new Client.EVMTokenAmount[](0),
+                extraArgs: "",
+                feeToken: address(0)
+            });
 
-        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(_recipient),
-            data: abi.encode(_recipient, amount),
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: address(0)
-        });
-
-        bytes32 messageId = ROUTER.ccipSend(POLYGON_CHAIN_SELECTOR, message);
-        emit MessageSent(messageId, msg.sender, _recipient, amount);
+            bytes32 messageId = ROUTER.ccipSend{value: _bridgeFee}(POLYGON_CHAIN_SELECTOR, message);
+            emit MessageSent(messageId, msg.sender, _recipient, amount);
+        } catch {
+            revert("CrossChainMessenger: WETH deposit failed");
+        }
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert InvalidSourceChain();
+        if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
         if (message.data.length != 64) revert InvalidMessageFormat();
@@ -105,6 +110,8 @@ contract CrossChainMessenger is SecurityBase {
             }
             if (!validTokenFound) revert InvalidTokenAmount();
         }
+
+        _processedMessages[message.messageId] = true;
 
         WETH.withdraw(amount);
         (bool success,) = recipient.call{value: amount}("");
