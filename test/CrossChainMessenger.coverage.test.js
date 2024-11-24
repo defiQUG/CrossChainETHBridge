@@ -56,7 +56,10 @@ describe("CrossChainMessenger Coverage Tests", function () {
                     ['address', 'uint256'],
                     [addr1.address, ethers.utils.parseEther("1.0")]
                 ),
-                destTokenAmounts: []
+                destTokenAmounts: [],
+                feeToken: ethers.constants.AddressZero,
+                feeTokenAmount: 0,
+                extraArgs: "0x"
             };
 
             await expect(
