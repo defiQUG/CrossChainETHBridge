@@ -8,6 +8,7 @@ import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { SecurityBase, ContractPaused, RateLimitExceeded } from "./security/SecurityBase.sol";
 import { ICrossChainMessenger } from "./interfaces/ICrossChainMessenger.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 error TransferFailed();
 error InsufficientPayment();
@@ -21,7 +22,7 @@ error MessageAlreadyProcessed();
 error EmergencyThresholdExceeded();
 error EmergencyNotPaused();
 
-contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
+contract CrossChainMessenger is SecurityBase, ICrossChainMessenger, ReentrancyGuard {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -59,7 +60,7 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
         MAX_FEE = maxFee;
     }
 
-    function sendToPolygon(address _recipient) external payable {
+    function sendToPolygon(address _recipient) external payable nonReentrant {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientPayment();
         if (paused()) revert ContractPaused();
@@ -73,8 +74,11 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
             }
         }
 
-        if (!processMessage()) revert RateLimitExceeded();
+        // Effects before interactions
+        bool messageProcessed = processMessage();
+        if (!messageProcessed) revert RateLimitExceeded();
 
+        // Interactions
         try WETH.deposit{value: amount}() {
             Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
                 receiver: abi.encode(_recipient),
@@ -91,14 +95,13 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
         }
     }
 
-    function ccipReceive(Client.Any2EVMMessage memory message) external {
+    function ccipReceive(Client.Any2EVMMessage memory message) external nonReentrant {
         if (emergencyPause.paused()) revert ContractPaused();
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR &&
             message.sourceChainSelector != POLYGON_CHAIN_SELECTOR) {
             revert InvalidSourceChain();
         }
         if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
-        if (!processMessage()) revert RateLimitExceeded();
 
         if (message.data.length != 64) revert InvalidMessageFormat();
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
@@ -117,8 +120,12 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
             if (!validTokenFound) revert InvalidTokenAmount();
         }
 
+        // Effects before interactions
         _processedMessages[message.messageId] = true;
+        bool messageProcessed = processMessage();
+        if (!messageProcessed) revert RateLimitExceeded();
 
+        // Interactions
         WETH.withdraw(amount);
         (bool success,) = recipient.call{value: amount}("");
         if (!success) revert TransferFailed();
@@ -140,7 +147,7 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
         emit BridgeFeeUpdated(_newFee);
     }
 
-    function emergencyWithdraw(address _recipient) external onlyOwner {
+    function emergencyWithdraw(address _recipient) external onlyOwner nonReentrant {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (!emergencyPause.paused()) revert EmergencyNotPaused();
 
@@ -150,6 +157,9 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
 
         if (totalBalance == 0) revert InsufficientPayment();
 
+        // Effects before interactions - none needed for this function
+
+        // Interactions
         if (wethBalance > 0) {
             WETH.withdraw(wethBalance);
         }
