@@ -19,7 +19,7 @@ contract TestRouter is MockRouter, IRouterClient {
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor(address admin, address feeToken) MockRouter(admin, feeToken) {
+    constructor() MockRouter() {
         // Initialization moved to initialize function
     }
 

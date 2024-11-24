@@ -24,11 +24,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
-    constructor(address admin, address feeToken) RateLimiter(100, 3600) {
-        require(admin != address(0), "Invalid admin address");
-        _admin = admin;
-        _feeToken = feeToken;
-        _transferOwnership(admin);
+    constructor() {
+        // Initialization moved to initialize function
     }
 
     function initialize(
