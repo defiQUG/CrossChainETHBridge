@@ -25,7 +25,10 @@ describe("Reentrancy Protection Tests", function () {
 
     // Deploy MockEmergencyPause
     const MockEmergencyPause = await ethers.getContractFactory("EmergencyPause");
-    mockEmergencyPause = await MockEmergencyPause.deploy();
+    mockEmergencyPause = await MockEmergencyPause.deploy(
+      ethers.utils.parseEther("1.0"), // pauseThreshold
+      3600 // pauseDuration (1 hour)
+    );
     await mockEmergencyPause.deployed();
 
     // Deploy CrossChainMessenger with mocks
