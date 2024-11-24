@@ -49,12 +49,12 @@ async function getContractAt(name, address) {
 }
 
 function createCCIPMessage({
-    messageId = ethers.hexlify(ethers.randomBytes(32)),
+    messageId = ethers.utils.hexlify(ethers.utils.randomBytes(32)),
     sourceChainSelector = 138n,
     sender,
     data,
     destTokenAmounts = [],
-    feeToken = ethers.ZeroAddress,
+    feeToken = ethers.constants.AddressZero,
     extraArgs = "0x"
 } = {}) {
     if (!sender) throw new Error("Sender address is required");
@@ -63,7 +63,7 @@ function createCCIPMessage({
     return {
         messageId,
         sourceChainSelector,
-        sender: ethers.zeroPadValue(sender, 20),
+        sender: ethers.utils.hexZeroPad(sender, 20),
         data,
         destTokenAmounts,
         feeToken,
