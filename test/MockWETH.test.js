@@ -23,7 +23,7 @@ describe("MockWETH", function() {
         [owner, user1, user2] = await ethers.getSigners();
         const MockWETH = await ethers.getContractFactory("MockWETH");
         mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.waitForDeployment();
+        await mockWETH.deployed();
     });
 
     describe("Basic Functionality", function() {
@@ -78,7 +78,7 @@ describe("MockWETH", function() {
         it("Should fail on zero address transfers", async function() {
             await mockWETH.connect(user1).deposit({ value: DEPOSIT_AMOUNT });
             await expect(
-                mockWETH.connect(user1).transfer(ethers.ZeroAddress, DEPOSIT_AMOUNT)
+                mockWETH.connect(user1).transfer(ethers.constants.AddressZero, DEPOSIT_AMOUNT)
             ).to.be.revertedWith("ERC20: transfer to the zero address");
         });
 

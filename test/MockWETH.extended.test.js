@@ -20,7 +20,7 @@ describe("MockWETH Extended Tests", function () {
         [owner, addr1, addr2] = await ethers.getSigners();
         const MockWETH = await ethers.getContractFactory("MockWETH");
         mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.waitForDeployment();
+        await mockWETH.deployed();
     });
 
     describe("Token Metadata", function () {
