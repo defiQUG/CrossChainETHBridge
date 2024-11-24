@@ -59,7 +59,7 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
 
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
-        if (msg.value <= _bridgeFee) revert("CrossChainMessenger: insufficient payment");
+        if (msg.value <= _bridgeFee) revert InsufficientPayment();
         if (paused()) revert("CrossChainMessenger: contract is paused");
 
         uint256 amount = msg.value - _bridgeFee;
@@ -85,40 +85,41 @@ contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
             bytes32 messageId = ROUTER.ccipSend{value: _bridgeFee}(POLYGON_CHAIN_SELECTOR, message);
             emit MessageSent(messageId, msg.sender, _recipient, amount);
         } catch {
-            revert("CrossChainMessenger: WETH deposit failed");
+            revert TransferFailed();
         }
     }
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
-        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) {
+        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR &&
+            message.sourceChainSelector != POLYGON_CHAIN_SELECTOR) {
             revert InvalidSourceChain();
         }
         if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
-        if (message.data.length != 64) revert("Invalid message format");
+        if (message.data.length != 64) revert InvalidMessageFormat();
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
-        if (recipient == address(0)) revert("Invalid recipient");
-        if (amount == 0) revert("Zero amount");
+        if (recipient == address(0)) revert InvalidRecipient();
+        if (amount == 0) revert ZeroAmount();
 
         if (message.destTokenAmounts.length > 0) {
             bool validTokenFound = false;
             for (uint256 i = 0; i < message.destTokenAmounts.length; i++) {
                 if (message.destTokenAmounts[i].token == address(WETH)) {
-                    if (message.destTokenAmounts[i].amount != amount) revert("Invalid token amount");
+                    if (message.destTokenAmounts[i].amount != amount) revert InvalidTokenAmount();
                     validTokenFound = true;
                     break;
                 }
             }
-            if (!validTokenFound) revert("Invalid token amount");
+            if (!validTokenFound) revert InvalidTokenAmount();
         }
 
         _processedMessages[message.messageId] = true;
 
         WETH.withdraw(amount);
         (bool success,) = recipient.call{value: amount}("");
-        if (!success) revert("Transfer failed");
+        if (!success) revert TransferFailed();
 
         emit MessageReceived(message.messageId, recipient, amount);
     }

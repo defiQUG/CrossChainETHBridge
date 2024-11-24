@@ -5,25 +5,28 @@ module.exports = {
     mocha: true,
     node: true,
   },
-  extends: ["eslint:recommended"],
+  extends: [
+    "eslint:recommended"
+  ],
   parserOptions: {
     ecmaVersion: 12,
+    sourceType: "module"
   },
   overrides: [
     {
       files: ["hardhat.config.js"],
-      globals: { task: true },
+      globals: { task: true }
     },
     {
       files: ["scripts/**"],
-      rules: { "no-process-exit": "off" },
+      rules: { "no-process-exit": "off" }
     },
     {
       files: ["*.test.js"],
-      env: { mocha: true },
-    },
+      env: { mocha: true }
+    }
   ],
   rules: {
-    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
-  },
-};
+    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }]
+  }
+}
