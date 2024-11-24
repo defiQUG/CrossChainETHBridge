@@ -80,30 +80,35 @@ describe("Coverage Improvement Tests", function () {
             }
             await expect(
                 messenger.emergencyWithdraw(user2.address)
-            ).to.be.revertedWith("Pausable: not paused");
+            ).to.be.revertedWith("EmergencyPause: contract not paused");
         });
 
         it("Should prevent emergency withdraw to zero address", async function () {
             await messenger.emergencyPause();
             await expect(
                 messenger.emergencyWithdraw(constants.AddressZero)
-            ).to.be.revertedWith("CrossChainMessenger: zero recipient address");
+            ).to.be.revertedWith("InvalidRecipient");
         });
     });
 
     describe("MockRouter", function () {
         it("Should handle ccipSend correctly", async function () {
             const amount = ethers.utils.parseEther("1.0");
-            await messenger.sendToPolygon(user1.address, { value: amount });
+            const tx = await messenger.sendToPolygon(user1.address, { value: amount });
+            await tx.wait();
             const events = await router.queryFilter(router.filters.MessageSent());
-            expect(events.length).to.be.above(0);
+            expect(events.length).to.equal(1);
         });
 
         it("Should emit correct events on message send", async function () {
             const amount = ethers.utils.parseEther("1.0");
             await expect(
                 messenger.sendToPolygon(user1.address, { value: amount })
-            ).to.emit(router, "MessageSent");
+            ).to.emit(router, "MessageSent").withArgs(
+                messenger.address,
+                amount,
+                user1.address
+            );
         });
     });
 });
