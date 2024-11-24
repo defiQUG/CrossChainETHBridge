@@ -130,10 +130,11 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         (bool success, bytes memory returnData) = target.call(callData);
 
         if (!success) {
-            // Forward the revert reason without any wrapping
+            // Forward the custom error signature and data
             assembly {
-                let ptr := add(returnData, 32)
-                revert(ptr, mload(returnData))
+                let size := returndatasize()
+                returndatacopy(0, 0, size)
+                revert(0, size)
             }
         }
     }
