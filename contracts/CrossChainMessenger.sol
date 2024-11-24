@@ -60,8 +60,12 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         return bridgeFee;
     }
 
+    function paused() external view returns (bool) {
+        return emergencyPause.paused();
+    }
+
     function sendToPolygon(address _recipient) external payable nonReentrant {
-        require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
+        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
         require(msg.value > 0, "CrossChainMessenger: zero amount");
 
@@ -93,7 +97,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     }
 
     function ccipReceive(Client.Any2EVMMessage calldata message) external {
-        require(!emergencyPause.paused(), "CrossChainMessenger: contract is paused");
+        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
         require(msg.sender == address(ROUTER), "CrossChainMessenger: caller is not router");
         require(message.sourceChainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR, "CrossChainMessenger: invalid source chain");
         require(!processedMessages[message.messageId], "CrossChainMessenger: message already processed");
@@ -129,7 +133,7 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
     }
 
     function emergencyWithdraw(address payable _recipient) external onlyOwner {
-        require(emergencyPause.paused(), "CrossChainMessenger: contract not paused");
+        require(emergencyPause.paused(), "EmergencyPause: contract not paused");
         require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
         uint256 balance = address(this).balance;
         require(balance > 0, "CrossChainMessenger: no balance to withdraw");
