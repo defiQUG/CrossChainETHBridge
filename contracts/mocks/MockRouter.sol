@@ -25,8 +25,13 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
-    constructor(uint256 maxMessages, uint256 periodDuration) RateLimiter(maxMessages, periodDuration) {
-        // Initialization moved to initialize function
+    constructor(
+        uint256 maxMessages,
+        uint256 periodDuration
+    ) RateLimiter(maxMessages, periodDuration) {
+        // Initialize supported chains in constructor
+        _supportedChains[138] = true; // Defi Oracle Meta Chain
+        _supportedChains[137] = true; // Polygon Chain
     }
 
     function initialize(
@@ -37,13 +42,6 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         require(!_routerInitialized, "MockRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
         require(feeToken != address(0), "Invalid fee token address");
-
-        // Initialize rate limiter first using internal function
-        _initialize(100, 3600); // Default values: 100 messages per hour
-
-        // Initialize supported chains
-        _supportedChains[138] = true; // Defi Oracle Meta Chain
-        _supportedChains[137] = true; // Polygon Chain
 
         _admin = admin;
         _feeToken = feeToken;

@@ -9,53 +9,35 @@ contract RateLimiter is SecurityBase {
     uint256 private _periodDuration;
     uint256 private _currentPeriodMessages;
     uint256 private _periodStart;
-    bool private _initialized;
-
-    constructor(uint256 maxMessages, uint256 periodDuration) {
-        _initialize(maxMessages, periodDuration);
-    }
 
     event RateLimitUpdated(uint256 maxMessages, uint256 period);
     event PeriodReset(uint256 timestamp);
 
-    modifier whenInitialized() {
-        require(_initialized, "RateLimiter: not initialized");
-        _;
-    }
-
-    function _initialize(uint256 maxMessages, uint256 periodDuration) internal virtual {
-        require(!_initialized, "RateLimiter: already initialized");
-        require(maxMessages > 0, "RateLimiter: max messages must be positive");
-        require(periodDuration > 0, "RateLimiter: period duration must be positive");
+    constructor(uint256 maxMessages, uint256 periodDuration) {
+        require(maxMessages > 0, "Rate limit exceeded");
+        require(periodDuration > 0, "Period duration must be positive");
 
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
         _periodStart = block.timestamp;
-        _initialized = true;
 
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function initializeRateLimiter(uint256 maxMessages, uint256 periodDuration) external virtual {
-        _initialize(maxMessages, periodDuration);
-    }
-
-    function setRateLimit(uint256 maxMessages, uint256 periodDuration) external onlyOwner whenInitialized {
-        require(maxMessages > 0, "RateLimiter: max messages must be positive");
-        require(periodDuration > 0, "RateLimiter: period duration must be positive");
+    function setRateLimit(uint256 maxMessages, uint256 periodDuration) external onlyOwner {
+        require(maxMessages > 0, "Rate limit exceeded");
+        require(periodDuration > 0, "Period duration must be positive");
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
     function processMessage() public virtual override returns (bool) {
-        require(_initialized, "RateLimiter: not initialized");
-
         if (block.timestamp >= _periodStart + _periodDuration) {
             _resetPeriod();
         }
 
-        require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "Rate limit exceeded");
 
         _currentPeriodMessages++;
         emit MessageProcessed(msg.sender, block.timestamp);
@@ -68,22 +50,26 @@ contract RateLimiter is SecurityBase {
         emit PeriodReset(block.timestamp);
     }
 
-    function getCurrentPeriodMessages() external view whenInitialized returns (uint256) {
+    function getCurrentPeriod() external view returns (uint256) {
+        return (block.timestamp - _periodStart) / _periodDuration;
+    }
+
+    function getCurrentPeriodMessages() external view returns (uint256) {
         return _currentPeriodMessages;
     }
 
-    function getTimeUntilReset() external view whenInitialized returns (uint256) {
+    function getTimeUntilReset() external view returns (uint256) {
         if (block.timestamp >= _periodStart + _periodDuration) {
             return 0;
         }
         return (_periodStart + _periodDuration) - block.timestamp;
     }
 
-    function getMaxMessagesPerPeriod() external view whenInitialized returns (uint256) {
+    function getMaxMessagesPerPeriod() external view returns (uint256) {
         return _maxMessagesPerPeriod;
     }
 
-    function getPeriodDuration() external view whenInitialized returns (uint256) {
+    function getPeriodDuration() external view returns (uint256) {
         return _periodDuration;
     }
 }
