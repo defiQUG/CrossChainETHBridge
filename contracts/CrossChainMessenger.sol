@@ -60,6 +60,8 @@ contract CrossChainMessenger is SecurityBase {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
 
         uint256 amount = msg.value - _bridgeFee;
+        if (amount == 0) revert ZeroAmount();
+
         if (amount >= emergencyPause.pauseThreshold()) {
             if (emergencyPause.checkAndPause(amount)) {
                 revert("EmergencyPause: threshold exceeded");
@@ -72,7 +74,7 @@ contract CrossChainMessenger is SecurityBase {
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
-            data: abi.encode(msg.sender, amount),
+            data: abi.encode(_recipient, amount),
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: "",
             feeToken: address(0)
@@ -87,13 +89,21 @@ contract CrossChainMessenger is SecurityBase {
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert InvalidSourceChain();
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
+        if (message.data.length != 64) revert InvalidMessageFormat();
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
+        if (recipient == address(0)) revert InvalidRecipient();
         if (amount == 0) revert ZeroAmount();
 
         if (message.destTokenAmounts.length > 0) {
+            bool validTokenFound = false;
             for (uint256 i = 0; i < message.destTokenAmounts.length; i++) {
-                if (message.destTokenAmounts[i].amount != amount) revert InvalidTokenAmount();
+                if (message.destTokenAmounts[i].token == address(WETH)) {
+                    if (message.destTokenAmounts[i].amount != amount) revert InvalidTokenAmount();
+                    validTokenFound = true;
+                    break;
+                }
             }
+            if (!validTokenFound) revert InvalidTokenAmount();
         }
 
         WETH.withdraw(amount);
