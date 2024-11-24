@@ -25,7 +25,10 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         _lastResetTimestamp = block.timestamp;
     }
 
-    function setRateLimit(uint256 maxMessages, uint256 periodDuration) external virtual override onlyOwner {
+    function setRateLimit(
+        uint256 maxMessages,
+        uint256 periodDuration
+    ) external virtual override onlyOwner {
         if (maxMessages == 0) revert InvalidMaxMessages();
         if (periodDuration == 0) revert InvalidPeriodDuration();
         _maxMessagesPerPeriod = maxMessages;
@@ -37,12 +40,15 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         if (paused()) revert ContractPaused();
 
         uint256 currentTimestamp = block.timestamp;
-        uint256 currentPeriod = (currentTimestamp - _lastResetTimestamp) / _periodDuration;
+        uint256 currentPeriod = (currentTimestamp - _lastResetTimestamp) /
+            _periodDuration;
 
         // Reset counter if we've moved to a new period
         if (currentPeriod > getCurrentPeriod()) {
             _messagesByPeriod[currentPeriod] = 0;
-            _lastResetTimestamp = currentTimestamp - (currentTimestamp % _periodDuration);
+            _lastResetTimestamp =
+                currentTimestamp -
+                (currentTimestamp % _periodDuration);
         }
 
         uint256 currentCount = _messagesByPeriod[currentPeriod];
@@ -57,25 +63,52 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         return (block.timestamp - _lastResetTimestamp) / _periodDuration;
     }
 
-    function getCurrentPeriodMessages() external view virtual override returns (uint256) {
+    function getCurrentPeriodMessages()
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return _messagesByPeriod[getCurrentPeriod()];
     }
 
-    function messageCountByPeriod(uint256 period) external view virtual override returns (uint256) {
+    function messageCountByPeriod(
+        uint256 period
+    ) external view virtual override returns (uint256) {
         return _messagesByPeriod[period];
     }
 
-    function getTimeUntilReset() external view virtual override returns (uint256) {
+    function getTimeUntilReset()
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         uint256 currentPeriod = getCurrentPeriod();
-        uint256 nextResetTime = _lastResetTimestamp + ((currentPeriod + 1) * _periodDuration);
+        uint256 nextResetTime = _lastResetTimestamp +
+            ((currentPeriod + 1) * _periodDuration);
         return nextResetTime - block.timestamp;
     }
 
-    function getMaxMessagesPerPeriod() external view virtual override returns (uint256) {
+    function getMaxMessagesPerPeriod()
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return _maxMessagesPerPeriod;
     }
 
-    function getPeriodDuration() external view virtual override returns (uint256) {
+    function getPeriodDuration()
+        external
+        view
+        virtual
+        override
+        returns (uint256)
+    {
         return _periodDuration;
     }
 }

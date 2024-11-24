@@ -14,7 +14,9 @@ interface IRateLimiter {
     function processMessage() external returns (bool);
     function getCurrentPeriod() external view returns (uint256);
     function getCurrentPeriodMessages() external view returns (uint256);
-    function messageCountByPeriod(uint256 period) external view returns (uint256);
+    function messageCountByPeriod(
+        uint256 period
+    ) external view returns (uint256);
     function getTimeUntilReset() external view returns (uint256);
     function getMaxMessagesPerPeriod() external view returns (uint256);
     function getPeriodDuration() external view returns (uint256);

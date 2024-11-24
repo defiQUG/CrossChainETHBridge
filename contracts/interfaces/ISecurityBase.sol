@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import { IRateLimiter } from "./IRateLimiter.sol";
+import {IRateLimiter} from "./IRateLimiter.sol";
 
 /**
  * @title ISecurityBase
