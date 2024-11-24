@@ -15,7 +15,7 @@ describe("Reentrancy Protection Tests", function () {
 
     // Deploy MockWETH
     const MockWETH = await ethers.getContractFactory("MockWETH");
-    mockWETH = await MockWETH.deploy();
+    mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWETH.deployed();
 
     // Deploy MockRouter
