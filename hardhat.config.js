@@ -46,3 +46,4 @@ module.exports = {
     timeout: 40000
   }
 };
+require('@nomicfoundation/hardhat-chai-matchers');
