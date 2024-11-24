@@ -57,10 +57,11 @@ async function deployTestContracts() {
     const crossChainMessenger = await CrossChainMessenger.deploy(
         mockRouter.address,
         mockWETH.address,
-        rateLimiter.address,
         emergencyPause.address,
         TEST_CONFIG.BRIDGE_FEE,
-        TEST_CONFIG.MAX_FEE
+        TEST_CONFIG.MAX_FEE,
+        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
+        TEST_CONFIG.PERIOD_DURATION
     );
     await crossChainMessenger.deployed();
 
