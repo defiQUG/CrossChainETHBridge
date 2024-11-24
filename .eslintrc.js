@@ -5,11 +5,7 @@ module.exports = {
     mocha: true,
     node: true,
   },
-  extends: [
-    "standard",
-    "plugin:prettier/recommended",
-    "plugin:node/recommended",
-  ],
+  extends: ["eslint:recommended"],
   parserOptions: {
     ecmaVersion: 12,
   },
@@ -28,9 +24,6 @@ module.exports = {
     },
   ],
   rules: {
-    "node/no-unsupported-features/es-syntax": [
-      "error",
-      { ignores: ["modules"] },
-    ],
+    "no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
   },
 };
