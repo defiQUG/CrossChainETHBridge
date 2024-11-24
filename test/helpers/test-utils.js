@@ -9,9 +9,9 @@ async function deployContract(name, args = [], options = {}) {
         if (name === "RateLimiter" && (!args || args.length === 0)) {
             args = [10, 3600]; // 10 messages per hour
         }
-    } else if (name.includes("MockRouter")) {
-        contractName = "TestRouter";
-        // Default arguments for TestRouter (including rate limiter params)
+    } else if (name === "TestRouter" || name === "MockRouter") {
+        contractName = `contracts/mocks/${name}.sol:${name}`;
+        // Default arguments for Router (including rate limiter params)
         if (!args || args.length === 0) {
             args = [10, 3600]; // RateLimiter constructor params
         }
