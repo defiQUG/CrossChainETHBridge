@@ -53,7 +53,7 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
     function sendMessage(
         address _recipient,
         uint256 amount
-    ) external payable nonReentrant override {
+    ) external payable nonReentrant {
         if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
         if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
         if (paused()) revert ContractPaused();
