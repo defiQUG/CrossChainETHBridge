@@ -58,7 +58,7 @@ contract CrossChainMessenger is SecurityBase {
 
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
-        if (msg.value <= _bridgeFee) revert InsufficientPayment();
+        if (msg.value <= _bridgeFee) revert("CrossChainMessenger: insufficient payment");
         if (paused()) revert("CrossChainMessenger: contract is paused");
 
         uint256 amount = msg.value - _bridgeFee;
@@ -90,7 +90,7 @@ contract CrossChainMessenger is SecurityBase {
 
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
-        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert InvalidSourceChain();
+        if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert("Invalid source chain");
         if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
@@ -118,6 +118,14 @@ contract CrossChainMessenger is SecurityBase {
         if (!success) revert TransferFailed();
 
         emit MessageReceived(message.messageId, recipient, amount);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     function setBridgeFee(uint256 _newFee) external onlyOwner {
