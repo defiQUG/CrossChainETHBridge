@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../errors/CrossChainErrors.sol";
 
 contract MockWETH is ERC20 {
     event Deposit(address indexed dst, uint256 wad);
@@ -18,7 +19,9 @@ contract MockWETH is ERC20 {
 
     function withdraw(uint256 amount) external {
         // Check transfer fail flag first
-        require(!transferShouldFail, "MockWETH: Transfer failed");
+        if (transferShouldFail) {
+            revert CrossChainErrors.TransferFailed();
+        }
 
         // Then check balance
         require(
