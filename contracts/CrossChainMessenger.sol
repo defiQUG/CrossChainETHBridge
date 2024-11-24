@@ -93,7 +93,7 @@ contract CrossChainMessenger is SecurityBase {
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) {
             revert InvalidSourceChain();
         }
-        if (_processedMessages[message.messageId]) revert("Message already processed");
+        if (_processedMessages[message.messageId]) revert MessageAlreadyProcessed();
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
         if (message.data.length != 64) revert("Invalid message format");
