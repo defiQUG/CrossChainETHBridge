@@ -63,7 +63,7 @@ contract EmergencyPause is Ownable, Pausable {
         checkAndUnpause();
         require(!paused(), "Contract is paused");
         // Check pause condition before updating state
-        bool shouldPause = (totalValueLocked + amount) > pauseThreshold;  // Changed >= to > for exact threshold allowance
+        bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;  // Changed back to >= for consistency
         if (shouldPause) {
             _pause();
             lastPauseTimestamp = block.timestamp;
