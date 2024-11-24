@@ -38,7 +38,7 @@ contract TestRouter is MockRouter, IRouterClient {
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
-    ) external payable override returns (bytes32) {
+    ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
         require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
 
