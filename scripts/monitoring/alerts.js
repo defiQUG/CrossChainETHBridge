@@ -1,46 +1,61 @@
-const { ethers } = require("hardhat");
-const fs = require("fs");
+const { ethers } = require('hardhat');
+const { AlertType, AlertSeverity } = require('./types/AlertTypes');
+const { ALERT_THRESHOLDS } = require('./config/AlertConfig');
+const EventHandler = require('./handlers/EventHandler');
+const AlertStorage = require('./storage/AlertStorage');
 
-async function main() {
-  try {
-    const deployment = JSON.parse(fs.readFileSync('./deployments/localhost/CrossChainMessenger.json', 'utf8'));
-    const messengerAddress = deployment.address;
-
-    console.log("Setting up alerts for contract:", messengerAddress);
-    const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
-    const messenger = CrossChainMessenger.attach(messengerAddress);
-
-    // Monitor critical events
-    messenger.on("MessageSent", (messageId, from, to, amount) => {
-      console.log(`ALERT: Message Sent - ID: ${messageId}, From: ${from}, To: ${to}, Amount: ${amount}`);
-      checkThresholds(amount);
-    });
-
-    messenger.on("MessageReceived", (messageId, from, to, amount) => {
-      console.log(`ALERT: Message Received - ID: ${messageId}, From: ${from}, To: ${to}, Amount: ${amount}`);
-      checkThresholds(amount);
-    });
-
-    messenger.on("Paused", () => {
-      console.log("CRITICAL ALERT: Contract has been paused!");
-    });
-
-    messenger.on("Unpaused", () => {
-      console.log("INFO: Contract has been unpaused");
-    });
-
-    function checkThresholds(amount) {
-      const threshold = ethers.utils.parseEther("10.0");
-      if (amount.gt(threshold)) {
-        console.log("HIGH VALUE ALERT: Transfer amount exceeds 10 ETH threshold!");
-      }
+class AlertMonitor {
+    constructor() {
+        this.eventHandler = new EventHandler();
+        this.alertStorage = new AlertStorage();
     }
 
-    console.log("Alert system initialized successfully");
-  } catch (error) {
-    console.error("Error in alert system:", error);
-    process.exit(1);
-  }
+    async monitorBridge(bridgeContract, chainId) {
+        try {
+            // Monitor high value transfers
+            bridgeContract.on('MessageSent', async (messageId, from, to, amount) => {
+                this.eventHandler.handleHighValueTransfer(messageId, from, to, amount);
+                await this.saveCurrentAlerts(chainId);
+            });
+
+            // Monitor contract pause events
+            bridgeContract.on('Paused', async () => {
+                this.eventHandler.handleContractPaused();
+                await this.saveCurrentAlerts(chainId);
+            });
+
+            // Monitor contract unpause events
+            bridgeContract.on('Unpaused', async () => {
+                this.eventHandler.handleContractUnpaused();
+                await this.saveCurrentAlerts(chainId);
+            });
+
+            // Monitor pending messages
+            setInterval(async () => {
+                try {
+                    const pendingCount = await bridgeContract.getPendingMessageCount();
+                    this.eventHandler.handlePendingMessages(pendingCount);
+                    await this.saveCurrentAlerts(chainId);
+                } catch (error) {
+                    console.error('Error checking pending messages:', error);
+                    this.eventHandler.handleChainConnectivityError(error);
+                    await this.saveCurrentAlerts(chainId);
+                }
+            }, 300000); // Check every 5 minutes
+
+            console.log(`Alert monitoring started for chain ${chainId}`);
+        } catch (error) {
+            console.error('Error setting up alert monitoring:', error);
+            this.eventHandler.handleChainConnectivityError(error);
+            await this.saveCurrentAlerts(chainId);
+        }
+    }
+
+    async saveCurrentAlerts(chainId) {
+        const alerts = this.eventHandler.getAlerts();
+        await this.alertStorage.saveAlerts(chainId, alerts);
+        this.eventHandler.clearAlerts();
+    }
 }
 
-main();
+module.exports = AlertMonitor;

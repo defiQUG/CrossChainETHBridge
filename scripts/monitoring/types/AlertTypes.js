@@ -1,0 +1,22 @@
+// Alert types enumeration
+const AlertType = {
+    HIGH_PROCESSING_TIME: 'HIGH_PROCESSING_TIME',
+    PENDING_MESSAGES_THRESHOLD: 'PENDING_MESSAGES_THRESHOLD',
+    HIGH_FAILURE_RATE: 'HIGH_FAILURE_RATE',
+    CHAIN_CONNECTIVITY: 'CHAIN_CONNECTIVITY',
+    HIGH_VALUE_TRANSFER: 'HIGH_VALUE_TRANSFER',
+    CONTRACT_PAUSED: 'CONTRACT_PAUSED',
+    CONTRACT_UNPAUSED: 'CONTRACT_UNPAUSED'
+};
+
+// Alert severity levels
+const AlertSeverity = {
+    INFO: 'INFO',
+    WARNING: 'WARNING',
+    CRITICAL: 'CRITICAL'
+};
+
+module.exports = {
+    AlertType,
+    AlertSeverity
+};

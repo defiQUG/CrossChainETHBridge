@@ -1,0 +1,36 @@
+name: Security
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      - name: Install dependencies
+        run: pnpm install
+      - name: Compile contracts
+        run: HARDHAT_IGNORE_NODE_VERSION=true pnpm hardhat compile
+      - name: Install Slither
+        run: |
+          python3 -m pip install --user pipx
+          python3 -m pipx ensurepath
+          python3 -m pipx install slither-analyzer
+      - name: Run Slither
+        run: slither . --hardhat-ignore-compile
+      - name: Run dependency audit
+        run: pnpm audit
