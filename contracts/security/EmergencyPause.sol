@@ -4,8 +4,9 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "../errors/EmergencyPauseErrors.sol";
+import "../interfaces/IEmergencyPause.sol";
 
-contract EmergencyPause is Ownable, Pausable {
+contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
     uint256 public pauseThreshold;
     uint256 public pauseDuration;
     uint256 public lastPauseTimestamp;
