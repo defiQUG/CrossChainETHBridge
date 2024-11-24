@@ -6,6 +6,7 @@ import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client
 import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { SecurityBase } from "./security/SecurityBase.sol";
+import { ICrossChainMessenger } from "./interfaces/ICrossChainMessenger.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 error TransferFailed();
@@ -18,7 +19,7 @@ error ZeroAmount();
 error InvalidTokenAmount();
 error MessageAlreadyProcessed();
 
-contract CrossChainMessenger is SecurityBase {
+contract CrossChainMessenger is SecurityBase, ICrossChainMessenger {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
