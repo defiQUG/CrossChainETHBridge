@@ -78,12 +78,14 @@ describe("MockRouter Tests", function() {
                 data: "0x"
             };
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, messageWithoutData);
-            expect(fee).to.equal(BASE_FEE);
+            const expectedFee = ethers.utils.parseUnits("1", "ether");  // Contract's _baseFee value
+            expect(fee).to.equal(expectedFee);
         });
 
         it("Should calculate fee correctly for message with data", async function() {
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            expect(fee).to.equal(BASE_FEE.add(BASE_FEE.div(2)));
+            const expectedFee = ethers.utils.parseUnits("1.5", "ether");  // baseFee + extraFee (baseFee/2)
+            expect(fee).to.equal(expectedFee);
         });
 
         it("Should revert getFee for unsupported chain", async function() {

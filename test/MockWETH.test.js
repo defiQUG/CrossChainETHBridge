@@ -54,9 +54,12 @@ describe("MockWETH", function() {
             const initialBalance = await ethers.provider.getBalance(user1.address);
             const tx = await mockWETH.connect(user1).withdraw(DEPOSIT_AMOUNT);
             const receipt = await tx.wait();
-            const gasUsed = receipt.gasUsed * receipt.gasPrice;
+            const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
             const finalBalance = await ethers.provider.getBalance(user1.address);
-            expect(finalBalance + gasUsed - initialBalance).to.equal(-DEPOSIT_AMOUNT);
+
+            // Calculate balance change using BigNumber operations
+            const balanceChange = finalBalance.sub(initialBalance).add(gasUsed);
+            expect(balanceChange).to.equal(DEPOSIT_AMOUNT);
             expect(await mockWETH.balanceOf(user1.address)).to.equal(0);
         });
 
