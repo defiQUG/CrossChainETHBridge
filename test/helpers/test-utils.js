@@ -14,7 +14,7 @@ async function deployContract(name, args = [], options = {}) {
     // Ensure args is an array and remove any undefined values
     const cleanArgs = (Array.isArray(args) ? args : [args]).filter(arg => arg !== undefined);
 
-    // Convert numeric values to BigNumber
+    // Convert numeric values to BigNumber and ensure proper formatting
     const deploymentArgs = cleanArgs.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
             return ethers.BigNumber.from(arg.toString());
@@ -26,23 +26,39 @@ async function deployContract(name, args = [], options = {}) {
     });
 
     // Debug logging
-    console.log(`Deploying ${name} with args:`, {
+    console.log(`Deploying ${name}:`, {
         contractName,
         args: deploymentArgs,
         argsLength: deploymentArgs.length,
-        argTypes: deploymentArgs.map(arg => typeof arg)
+        argTypes: deploymentArgs.map(arg => typeof arg),
+        options
     });
 
     try {
-        const contract = await Factory.deploy(...deploymentArgs);
+        // Deploy with explicit overrides to prevent automatic option injection
+        const deployOverrides = {
+            gasLimit: options.gasLimit || undefined,
+            value: options.value || undefined
+        };
+
+        // Only include non-undefined values in overrides
+        const cleanOverrides = Object.fromEntries(
+            Object.entries(deployOverrides).filter(([_, v]) => v !== undefined)
+        );
+
+        // Deploy with clean arguments and explicit overrides
+        const contract = await Factory.deploy(...deploymentArgs, cleanOverrides);
         await contract.deployed();
+
+        console.log(`Successfully deployed ${name} at ${contract.address}`);
         return contract;
     } catch (error) {
         console.error(`Failed to deploy ${name}:`, {
             error: error.message,
             contractName,
             args: deploymentArgs,
-            argsLength: deploymentArgs.length
+            argsLength: deploymentArgs.length,
+            options
         });
         throw error;
     }
