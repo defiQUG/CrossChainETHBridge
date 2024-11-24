@@ -1,7 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
 
 const {
     BRIDGE_FEE,
@@ -22,27 +21,17 @@ describe("Coverage Improvement Tests", function () {
     let INITIAL_BALANCE;
 
     beforeEach(async function () {
-        [owner, user1, user2] = await ethers.getSigners();
+        const contracts = await deployTestContracts();
+        messenger = contracts.crossChainMessenger;
+        router = contracts.mockRouter;
+        weth = contracts.mockWETH;
+        owner = contracts.owner;
+        [, user1, user2] = await ethers.getSigners();
         INITIAL_BALANCE = ethers.utils.parseEther("10.0");
-
-        // Deploy contracts in correct order
-        router = await deployContract("MockRouter");
-        weth = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
-        const rateLimiter = await deployContract("RateLimiter", [MAX_MESSAGES, RATE_PERIOD]);
-        const emergencyPause = await deployContract("EmergencyPause", [PAUSE_THRESHOLD, PAUSE_DURATION]);
-
-        messenger = await deployContract("CrossChainMessenger", [
-            await router.getAddress(),
-            await weth.getAddress(),
-            await rateLimiter.getAddress(),
-            await emergencyPause.getAddress(),
-            BRIDGE_FEE,
-            MAX_FEE
-        ]);
 
         // Fund the contract
         await owner.sendTransaction({
-            to: await messenger.getAddress(),
+            to: messenger.address,
             value: INITIAL_BALANCE
         });
     });
@@ -72,7 +61,7 @@ describe("Coverage Improvement Tests", function () {
             }
             await expect(
                 messenger.sendToPolygon(user1.address, { value: messageValue })
-            ).to.be.revertedWith("Rate limit exceeded for current period");
+            ).to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
     });
 
@@ -82,7 +71,7 @@ describe("Coverage Improvement Tests", function () {
             const initialBalance = await ethers.provider.getBalance(user2.address);
             await messenger.emergencyWithdraw(user2.address);
             const finalBalance = await ethers.provider.getBalance(user2.address);
-            expect(finalBalance - initialBalance).to.equal(INITIAL_BALANCE);
+            expect(finalBalance.sub(initialBalance)).to.equal(INITIAL_BALANCE);
         });
 
         it("Should prevent emergency withdraw when not paused", async function () {

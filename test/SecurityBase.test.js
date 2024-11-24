@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const { ethers } = require('hardhat');
-const { deployTestContracts } = require('./helpers/TestSetup');
+const { deployTestContracts } = require('./helpers/setup');
 
 describe('SecurityBase', function() {
   let owner, user, rateLimiter, emergencyPause;
