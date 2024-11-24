@@ -36,16 +36,12 @@ describe("Emergency Pause Mechanism (Isolated)", function() {
             console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
             console.log("Contract paused:", await crossChainMessenger.paused());
 
-            // Second transfer
+            // Second transfer should revert due to reaching threshold
             console.log("\nBefore second transfer:");
             console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
-            await crossChainMessenger.sendToPolygon(user.address, { value: transferAmount });
-            console.log("\nAfter second transfer:");
-            console.log("Total value locked:", ethers.utils.formatEther(await emergencyPause.totalValueLocked()));
-            console.log("Contract paused:", await crossChainMessenger.paused());
-
-            // Verify final state
-            expect(await crossChainMessenger.paused()).to.be.true;
+            await expect(
+                crossChainMessenger.sendToPolygon(user.address, { value: transferAmount })
+            ).to.be.revertedWithCustomError(crossChainMessenger, "EmergencyPaused");
         });
 
         it("Should handle transfers just below threshold", async function() {
