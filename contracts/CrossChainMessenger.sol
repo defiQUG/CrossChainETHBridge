@@ -5,10 +5,9 @@ import {IRouterClient} from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/
 import {Client} from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import {IWETH} from "./interfaces/IWETH.sol";
 import {EmergencyPause} from "./security/EmergencyPause.sol";
-import {SecurityBase} from "./security/SecurityBase.sol";
+import {SecurityBase, ContractPaused, RateLimitExceeded} from "./security/SecurityBase.sol";
 import {ICrossChainMessenger} from "./interfaces/ICrossChainMessenger.sol";
 import {CrossChainErrors} from "./errors/CrossChainErrors.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessenger {
@@ -92,7 +91,7 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
     function sendToPolygon(address _recipient) external payable override nonReentrant {
         if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
         if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
-        if (paused()) revert CrossChainErrors.EmergencyPaused();
+        if (super.paused()) revert CrossChainErrors.EmergencyPaused();
 
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
@@ -102,8 +101,8 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
             revert CrossChainErrors.EmergencyPaused();
         }
 
-        bool messageProcessed = processMessage();
-        if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(getMaxMessagesPerPeriod(), amount);
+        bool messageProcessed = super.processMessage();
+        if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(super.getMaxMessagesPerPeriod(), amount);
 
         // Wrap ETH to WETH
         try WETH.deposit{value: amount}() {
@@ -129,7 +128,7 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
     ) external payable nonReentrant {
         if (_recipient == address(0)) revert CrossChainErrors.InvalidReceiver(_recipient);
         if (msg.value <= _bridgeFee) revert CrossChainErrors.InvalidFeeAmount(_bridgeFee, msg.value);
-        if (paused()) revert CrossChainErrors.EmergencyPaused();
+        if (super.paused()) revert CrossChainErrors.EmergencyPaused();
 
         // Check amount validity
         if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);

@@ -93,7 +93,7 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
     }
 
     function getMaxMessagesPerPeriod()
-        external
+        public
         view
         virtual
         override
