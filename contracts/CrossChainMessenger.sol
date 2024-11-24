@@ -61,8 +61,9 @@ contract CrossChainMessenger is SecurityBase {
 
         uint256 amount = msg.value - _bridgeFee;
         if (amount >= emergencyPause.pauseThreshold()) {
-            emergencyPause.triggerPause();
-            revert("EmergencyPause: threshold exceeded");
+            if (emergencyPause.checkAndPause(amount)) {
+                revert("EmergencyPause: threshold exceeded");
+            }
         }
 
         if (!processMessage()) revert("RateLimiter: rate limit exceeded");
