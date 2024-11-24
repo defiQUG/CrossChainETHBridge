@@ -109,10 +109,10 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        bytes4 depositSelector = bytes4(keccak256("deposit()"));
-        bytes memory depositCall = abi.encodeWithSelector(depositSelector);
+        bytes4 ccipReceiveSelector = bytes4(keccak256("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))"));
+        bytes memory ccipReceiveCall = abi.encodeWithSelector(ccipReceiveSelector, message);
 
-        (bool success, bytes memory result) = target.call{value: msg.value}(depositCall);
+        (bool success, bytes memory result) = target.call(ccipReceiveCall);
 
         if (!success) {
             assembly {
