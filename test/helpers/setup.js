@@ -6,10 +6,10 @@ const TEST_CONFIG = {
     DEFI_ORACLE_META_CHAIN_SELECTOR: 138n,
     BRIDGE_FEE: ethers.utils.parseEther("0.001"),  // Aligned with TestRouter default fee
     MAX_FEE: ethers.utils.parseEther("0.1"),
-    MAX_MESSAGES_PER_PERIOD: 100,  // Increased from 10 to 100 for better testing
+    MAX_MESSAGES_PER_PERIOD: 1000,  // Increased to handle more messages in tests
     PAUSE_THRESHOLD: ethers.utils.parseEther("100.0"),  // Increased from 5.0 to 100.0 to match test scenarios
-    PAUSE_DURATION: 3600, // 1 hour
-    PERIOD_DURATION: 3600 // 1 hour
+    PAUSE_DURATION: 7200, // Increased to 2 hours
+    PERIOD_DURATION: 7200 // Increased to 2 hours for more flexibility
 };
 
 // Deploy all contracts needed for testing
