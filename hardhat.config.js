@@ -16,21 +16,15 @@ module.exports = {
           optimizer: {
             enabled: true,
             runs: 200
-          },
-          evmVersion: "paris"
-        }
-      },
-      {
-        version: "0.8.20",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200
-          },
-          evmVersion: "paris"
+          }
         }
       }
-    ]
+    ],
+    overrides: {
+      "@openzeppelin/contracts": {
+        version: "0.8.20"
+      }
+    }
   },
   networks: {
     hardhat: {
@@ -46,12 +40,5 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 138
     }
-  },
-  gasReporter: {
-    enabled: true,
-    currency: "USD"
-  },
-  etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY
   }
 };
