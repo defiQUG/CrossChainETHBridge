@@ -5,10 +5,10 @@ const { deployContract } = require("./test-utils");
 const TEST_CONFIG = {
     POLYGON_CHAIN_SELECTOR: 137n,
     DEFI_ORACLE_META_CHAIN_SELECTOR: 138n,
-    BRIDGE_FEE: ethers.parseEther("0.001"),  // Aligned with TestRouter default fee
-    MAX_FEE: ethers.parseEther("0.1"),
+    BRIDGE_FEE: ethers.utils.parseEther("0.001"),  // Aligned with TestRouter default fee
+    MAX_FEE: ethers.utils.parseEther("0.1"),
     MAX_MESSAGES_PER_PERIOD: 100,  // Increased from 10 to 100 for better testing
-    PAUSE_THRESHOLD: ethers.parseEther("100.0"),  // Increased from 5.0 to 100.0 to match test scenarios
+    PAUSE_THRESHOLD: ethers.utils.parseEther("100.0"),  // Increased from 5.0 to 100.0 to match test scenarios
     PAUSE_DURATION: 3600, // 1 hour
     PERIOD_DURATION: 3600 // 1 hour
 };
@@ -58,7 +58,7 @@ async function deployTestContracts() {
     // Fund the contract for tests
     await owner.sendTransaction({
         to: await crossChainMessenger.getAddress(),
-        value: ethers.parseEther("10.0")
+        value: ethers.utils.parseEther("10.0")
     });
 
     return {
