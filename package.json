@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@chainlink/contracts-ccip": "^1.5.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
     "@nomicfoundation/hardhat-verify": "^1.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
@@ -34,7 +35,6 @@
     "ethereum-waffle": "^4.0.10",
     "ethers": "^5.7.2",
     "hardhat": "2.19.4",
-    "hardhat-chai-matchers": "^0.0.1",
     "hardhat-gas-reporter": "^1.0.10",
     "prettier": "^3.1.0",
     "prettier-plugin-solidity": "^1.2.0",
