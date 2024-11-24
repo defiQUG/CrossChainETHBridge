@@ -27,11 +27,17 @@ contract TestRouter is MockRouter, IRouterClient {
         address admin,
         address feeToken,
         uint256 baseFee
-    ) external override {
+    ) external virtual {
         require(!_initialized, "TestRouter: already initialized");
+        require(admin != address(0), "Invalid admin address");
 
-        // Call parent initialize with proper parameters
-        super.initialize(admin, feeToken, baseFee);
+        // Initialize rate limiter with default values (same as MockRouter)
+        _initialize(100, 3600); // 100 messages per hour
+
+        // Set up router configuration
+        _transferOwnership(admin);
+        _baseFee = baseFee;
+        _extraFee = baseFee / 2;
 
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
