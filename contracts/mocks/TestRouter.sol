@@ -163,7 +163,7 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function shouldResetPeriod() external view whenInitialized returns (bool) {
-        uint256 timeLeft = getTimeUntilReset();
+        uint256 timeLeft = this.getTimeUntilReset();
         return timeLeft == 0;
     }
 
