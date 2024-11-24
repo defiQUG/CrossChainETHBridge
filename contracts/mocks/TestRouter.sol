@@ -27,7 +27,7 @@ contract TestRouter is MockRouter, IRouterClient {
         address admin,
         address feeToken,
         uint256 baseFee
-    ) external override {
+    ) public override {
         super.initialize(admin, feeToken, baseFee);
     }
 
