@@ -1,4 +1,9 @@
 require("@nomicfoundation/hardhat-toolbox");
+require("@typechain/hardhat");
+require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
+require("hardhat-gas-reporter");
+require("solidity-coverage");
 require("dotenv").config();
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -14,20 +19,39 @@ module.exports = {
           },
           evmVersion: "paris"
         }
+      },
+      {
+        version: "0.8.20",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          },
+          evmVersion: "paris"
+        }
       }
     ]
   },
   networks: {
     hardhat: {
-      chainId: 1337
+      chainId: 31337
     },
     ethereum: {
       url: process.env.ETH_MAINNET_RPC_URL || "",
-      accounts: process.env.PRIVATE_KEY ? [`0x${process.env.PRIVATE_KEY}`] : []
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 1
     },
     defiOracleMeta: {
-      url: "http://102.133.148.122:8545",
-      accounts: process.env.PRIVATE_KEY ? [`0x${process.env.PRIVATE_KEY}`] : []
+      url: process.env.DEFI_ORACLE_META_RPC_URL || "http://102.133.148.122:8545",
+      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      chainId: 138
     }
+  },
+  gasReporter: {
+    enabled: true,
+    currency: "USD"
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY
   }
 };
