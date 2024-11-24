@@ -25,7 +25,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
-    constructor() {
+    constructor(uint256 maxMessages, uint256 periodDuration) RateLimiter(maxMessages, periodDuration) {
         // Initialization moved to initialize function
     }
 

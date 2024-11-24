@@ -17,7 +17,7 @@ contract TestRouter is MockRouter, IRouterClient {
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
 
-    constructor() MockRouter() {
+    constructor(uint256 maxMessages, uint256 periodDuration) MockRouter(maxMessages, periodDuration) {
         // Initialize supported chains immediately
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
