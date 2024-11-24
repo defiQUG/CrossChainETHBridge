@@ -6,7 +6,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../security/RateLimiter.sol";
 
-abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
+contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
@@ -17,13 +17,18 @@ abstract contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     uint256 internal _baseFee;
     uint256 internal _extraFee;
+    address internal _admin;
+    address internal _feeToken;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
 
-    constructor() {
-        // Chain support initialization moved to derived contracts
+    constructor(address admin, address feeToken) RateLimiter(100, 3600) {
+        require(admin != address(0), "Invalid admin address");
+        _admin = admin;
+        _feeToken = feeToken;
+        _transferOwnership(admin);
     }
 
     function initialize(
