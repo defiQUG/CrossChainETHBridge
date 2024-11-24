@@ -70,15 +70,23 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         require(super.processMessage(), "MockRouter: rate limit exceeded");
 
         uint256 startGas = gasleft();
-        (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
+
+        // Call ccipReceive on the target contract
+        bytes4 ccipReceiveSelector = bytes4(keccak256("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))"));
+        bytes memory ccipReceiveCall = abi.encodeWithSelector(ccipReceiveSelector, message);
+
+        (success, retBytes) = receiver.call(ccipReceiveCall);
         gasUsed = startGas - gasleft();
 
-        if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "MockRouter: gas limit exceeded");
+        if (!success) {
+            assembly {
+                let ptr := mload(0x40)
+                returndatacopy(ptr, 0, returndatasize())
+                revert(ptr, returndatasize())
+            }
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
-
         return (success, retBytes, gasUsed);
     }
 
@@ -109,10 +117,13 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        bytes4 ccipReceiveSelector = bytes4(keccak256("ccipReceive((bytes32,uint64,bytes,bytes,bytes[],address[],bytes[],bytes32[],bytes[]))"));
-        bytes memory ccipReceiveCall = abi.encodeWithSelector(ccipReceiveSelector, message);
-
-        (bool success, bytes memory result) = target.call(ccipReceiveCall);
+        // Use routeMessage instead of direct call
+        (bool success, bytes memory result,) = this.routeMessage(
+            message,
+            0, // gasForCallExactCheck
+            gasleft(), // gasLimit
+            target
+        );
 
         if (!success) {
             assembly {
