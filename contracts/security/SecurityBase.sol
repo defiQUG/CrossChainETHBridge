@@ -5,6 +5,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "../interfaces/ISecurityBase.sol";
 
+error RateLimitExceeded();
+error ContractPaused();
+error InvalidPeriodDuration();
+error InvalidMaxMessages();
+
 abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
     uint256 private constant SECONDS_PER_DAY = 86400;
     uint256 private _maxMessagesPerPeriod;
@@ -13,23 +18,23 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
     uint256 private _lastResetTimestamp;
 
     constructor(uint256 maxMessages, uint256 periodDuration) {
-        require(maxMessages > 0, "SecurityBase: Max messages must be positive");
-        require(periodDuration > 0, "SecurityBase: Period duration must be positive");
+        if (maxMessages == 0) revert InvalidMaxMessages();
+        if (periodDuration == 0) revert InvalidPeriodDuration();
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
         _lastResetTimestamp = block.timestamp;
     }
 
     function setRateLimit(uint256 maxMessages, uint256 periodDuration) external virtual override onlyOwner {
-        require(maxMessages > 0, "SecurityBase: Max messages must be positive");
-        require(periodDuration > 0, "SecurityBase: Period duration must be positive");
+        if (maxMessages == 0) revert InvalidMaxMessages();
+        if (periodDuration == 0) revert InvalidPeriodDuration();
         _maxMessagesPerPeriod = maxMessages;
         _periodDuration = periodDuration;
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
     function processMessage() public virtual override returns (bool) {
-        require(!paused(), "SecurityBase: Contract is paused");
+        if (paused()) revert ContractPaused();
 
         uint256 currentTimestamp = block.timestamp;
         uint256 currentPeriod = (currentTimestamp - _lastResetTimestamp) / _periodDuration;
@@ -41,7 +46,7 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         }
 
         uint256 currentCount = _messagesByPeriod[currentPeriod];
-        require(currentCount < _maxMessagesPerPeriod, "SecurityBase: Rate limit exceeded");
+        if (currentCount >= _maxMessagesPerPeriod) revert RateLimitExceeded();
 
         _messagesByPeriod[currentPeriod] = currentCount + 1;
         emit MessageProcessed(msg.sender, currentTimestamp);
