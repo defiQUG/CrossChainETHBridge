@@ -33,8 +33,8 @@ importers:
         specifier: ^10.2.1
         version: 10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2)
       '@typechain/hardhat':
-        specifier: ^8.0.3
-        version: 8.0.3(@typechain/ethers-v6@0.4.3(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(hardhat@2.19.4(bufferutil@4.0.5)(ts-node@10.9.2(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))
+        specifier: 6.1.0
+        version: 6.1.0(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(@typechain/ethers-v5@10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(hardhat@2.19.4(bufferutil@4.0.5)(ts-node@10.9.2(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))
       '@types/chai':
         specifier: ^4.2.0
         version: 4.3.20
@@ -784,20 +784,15 @@ packages:
       typechain: ^8.1.1
       typescript: '>=4.3.0'
 
-  '@typechain/ethers-v6@0.4.3':
-    resolution: {integrity: sha512-TrxBsyb4ryhaY9keP6RzhFCviWYApcLCIRMPyWaKp2cZZrfaM3QBoxXTnw/eO4+DAY3l+8O0brNW0WgeQeOiDA==}
+  '@typechain/hardhat@6.1.0':
+    resolution: {integrity: sha512-JoqQTLlVuAWdnIjyw5CVQ6hmZjtvckDtwCyx01suCcPPTYHKDgUYToVmsPnhoCX50oBe+yDmFyzJcKRUagUwvg==}
     peerDependencies:
-      ethers: 6.x
-      typechain: ^8.3.1
-      typescript: '>=4.7.0'
-
-  '@typechain/hardhat@8.0.3':
-    resolution: {integrity: sha512-MytSmJJn+gs7Mqrpt/gWkTCOpOQ6ZDfRrRT2gtZL0rfGe4QrU4x9ZdW15fFbVM/XTa+5EsKiOMYXhRABibNeng==}
-    peerDependencies:
-      '@typechain/ethers-v6': ^0.4.3
-      ethers: ^6.1.0
+      '@ethersproject/abi': ^5.4.7
+      '@ethersproject/providers': ^5.4.7
+      '@typechain/ethers-v5': ^10.1.0
+      ethers: ^5.4.7
       hardhat: ^2.9.9
-      typechain: ^8.3.1
+      typechain: ^8.1.0
 
   '@types/abstract-leveldown@7.2.5':
     resolution: {integrity: sha512-/2B0nQF4UdupuxeKTJA2+Rj1D+uDemo6P4kMwKCpbfpnzeVaWSELTsAw4Lxn3VJD6APtRrZOCuYo+4nHUQfTfg==}
@@ -5207,20 +5202,15 @@ snapshots:
       typechain: 8.3.2(typescript@5.7.2)
       typescript: 5.7.2
 
-  '@typechain/ethers-v6@0.4.3(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2)':
+  '@typechain/hardhat@6.1.0(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(@typechain/ethers-v5@10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(hardhat@2.19.4(bufferutil@4.0.5)(ts-node@10.9.2(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))':
     dependencies:
-      ethers: 5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7)
-      lodash: 4.17.21
-      ts-essentials: 7.0.3(typescript@5.7.2)
-      typechain: 8.3.2(typescript@5.7.2)
-      typescript: 5.7.2
-
-  '@typechain/hardhat@8.0.3(@typechain/ethers-v6@0.4.3(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(hardhat@2.19.4(bufferutil@4.0.5)(ts-node@10.9.2(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))':
-    dependencies:
-      '@typechain/ethers-v6': 0.4.3(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2)
+      '@ethersproject/abi': 5.7.0
+      '@ethersproject/providers': 5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7)
+      '@typechain/ethers-v5': 10.2.1(@ethersproject/abi@5.7.0)(@ethersproject/providers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(ethers@5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7))(typechain@8.3.2(typescript@5.7.2))(typescript@5.7.2)
       ethers: 5.7.2(bufferutil@4.0.5)(utf-8-validate@5.0.7)
       fs-extra: 9.1.0
       hardhat: 2.19.4(bufferutil@4.0.5)(ts-node@10.9.2(@types/node@22.9.3)(typescript@5.7.2))(typescript@5.7.2)(utf-8-validate@5.0.7)
+      lodash: 4.17.21
       typechain: 8.3.2(typescript@5.7.2)
 
   '@types/abstract-leveldown@7.2.5': {}
