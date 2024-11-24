@@ -22,9 +22,9 @@ describe("RateLimiter Edge Cases", function () {
 
     beforeEach(async function () {
         [owner, user] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
+        const RateLimiter = await ethers.getContractFactory("RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, RATE_PERIOD);
-        await rateLimiter.waitForDeployment();
+        await rateLimiter.deployed();
     });
 
     describe("Period Boundary Tests", function () {
