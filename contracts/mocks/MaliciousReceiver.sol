@@ -7,7 +7,7 @@ contract MaliciousReceiver {
     CrossChainMessenger public immutable messenger;
     uint256 public attackCount;
 
-    constructor(address _messenger) {
+    constructor(address payable _messenger) {
         messenger = CrossChainMessenger(_messenger);
     }
 
