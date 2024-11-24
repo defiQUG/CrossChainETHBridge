@@ -1,6 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { deployTestContracts } = require("./helpers/TestSetup");
+const { deployTestContracts } = require("./helpers/setup");
 
 describe("RateLimiter", function () {
     let rateLimiter;
@@ -29,7 +29,7 @@ describe("RateLimiter", function () {
                 await rateLimiter.connect(user).processMessage();
             }
             await expect(rateLimiter.connect(user).processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
 
         it("Should reset period after duration", async function () {

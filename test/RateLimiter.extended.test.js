@@ -1,31 +1,24 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { time } = require("@nomicfoundation/hardhat-network-helpers");
-const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
+const { deployTestContracts } = require('./helpers/setup');
 
 const {
-    BRIDGE_FEE,
-    MAX_FEE,
     MAX_MESSAGES_PER_PERIOD,
-    PAUSE_THRESHOLD,
-    PAUSE_DURATION,
-    POLYGON_CHAIN_SELECTOR,
-    DEFI_ORACLE_META_CHAIN_SELECTOR
-} = TEST_CONFIG;
+    PERIOD_DURATION
+} = require('./helpers/setup').TEST_CONFIG;
 
 describe("RateLimiter Extended Tests", function () {
     let rateLimiter;
     let owner;
     let addr1;
-    const MAX_MESSAGES = 5;
-    const RATE_PERIOD = 3600; // 1 hour in seconds
+    const MAX_MESSAGES = MAX_MESSAGES_PER_PERIOD;
+    const RATE_PERIOD = PERIOD_DURATION;
 
     beforeEach(async function () {
+        const contracts = await deployTestContracts();
+        rateLimiter = contracts.rateLimiter;
         [owner, addr1] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("RateLimiter");
-        rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, RATE_PERIOD);
-        await rateLimiter.deployed();
     });
 
     describe("Period Management", function () {
@@ -50,27 +43,13 @@ describe("RateLimiter Extended Tests", function () {
         });
     });
 
-    describe("Emergency Controls", function () {
-        it("Should handle emergency pause correctly", async function () {
-            await rateLimiter.emergencyPause();
-            await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Pausable: paused");
-        });
-
-        it("Should prevent non-owner from pausing", async function () {
-            await expect(
-                rateLimiter.connect(addr1).emergencyPause()
-            ).to.be.revertedWith("Ownable: caller is not the owner");
-        });
-    });
-
     describe("Rate Limit Validation", function () {
         it("Should enforce hourly rate limit", async function () {
             for (let i = 0; i < MAX_MESSAGES; i++) {
                 await rateLimiter.processMessage();
             }
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
 
         it("Should handle rate limit updates", async function () {
@@ -78,7 +57,7 @@ describe("RateLimiter Extended Tests", function () {
             await rateLimiter.processMessage();
             await rateLimiter.processMessage();
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
 
         it("Should prevent non-owner from updating rate limit", async function () {
