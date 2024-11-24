@@ -22,8 +22,11 @@ describe("CrossChainMessenger Extended Tests", function() {
         const contracts = await deployTestContracts();
         ({ owner, user, addr1, addr2, mockRouter, mockWETH, crossChainMessenger } = contracts);
 
+        const MAX_MESSAGES = 10;
+        const RATE_PERIOD = 3600; // 1 hour in seconds
+
         const MockRouter = await ethers.getContractFactory("MockRouter");
-        router = await MockRouter.deploy();
+        router = await MockRouter.deploy(MAX_MESSAGES, RATE_PERIOD);
 
         const MockWETH = await ethers.getContractFactory("MockWETH");
         weth = await MockWETH.deploy("Wrapped Ether", "WETH");
