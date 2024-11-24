@@ -135,5 +135,18 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         return totalFee;
     }
 
+    function ccipSend(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage calldata message
+    ) external payable virtual returns (bytes32) {
+        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(processMessage(), "Rate limit exceeded");
+
+        bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
+        emit MessageSent(messageId, destinationChainSelector, message);
+
+        return messageId;
+    }
+
     receive() external payable virtual {}
 }
