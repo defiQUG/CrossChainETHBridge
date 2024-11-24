@@ -107,13 +107,16 @@ describe("CrossChainMessenger Edge Cases", function() {
     describe("Security Edge Cases", function() {
         it("Should handle multiple rapid transfers near threshold", async function() {
             const amount = ethers.BigNumber.from(PAUSE_THRESHOLD)
-                .sub(ethers.utils.parseEther("0.1"));
+                .div(2)  // Split threshold into two parts
+                .sub(ethers.utils.parseEther("0.1"));  // Subtract small amount for fees
 
-            // Send multiple transfers rapidly
+            // First transfer should succeed
             await crossChainMessenger.sendToPolygon(addr1.address, { value: amount });
+
+            // Second transfer should succeed
             await crossChainMessenger.sendToPolygon(addr2.address, { value: amount });
 
-            // This should trigger pause
+            // Third transfer should trigger pause
             await expect(
                 crossChainMessenger.sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWithCustomError(crossChainMessenger, "EmergencyPaused");
