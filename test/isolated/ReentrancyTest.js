@@ -26,9 +26,9 @@ describe("Reentrancy Protection Tests", function () {
     );
     await mockRouter.deployed();
 
-    // Deploy MockEmergencyPause
-    const MockEmergencyPause = await ethers.getContractFactory("EmergencyPause");
-    mockEmergencyPause = await MockEmergencyPause.deploy(
+    // Deploy EmergencyPause
+    const EmergencyPause = await ethers.getContractFactory("EmergencyPause");
+    mockEmergencyPause = await EmergencyPause.deploy(
       ethers.utils.parseEther("1.0"), // pauseThreshold
       3600 // pauseDuration (1 hour)
     );
@@ -50,6 +50,9 @@ describe("Reentrancy Protection Tests", function () {
     const MaliciousReceiver = await ethers.getContractFactory("MaliciousReceiver");
     maliciousContract = await MaliciousReceiver.deploy(crossChainMessenger.address);
     await maliciousContract.deployed();
+
+    // Initialize MockRouter
+    await mockRouter.initialize(owner.address, mockWETH.address, ethers.utils.parseEther("0.01"));
   });
 
   it("should prevent reentrancy in ccipReceive", async function () {
@@ -77,7 +80,7 @@ describe("Reentrancy Protection Tests", function () {
     // Attempt reentrancy attack
     await expect(
       crossChainMessenger.ccipReceive(message)
-    ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+    ).to.be.revertedWithCustomError(crossChainMessenger, "ReentrancyGuardReentrantCall");
   });
 
   it("should prevent reentrancy in emergencyWithdraw", async function () {
@@ -88,11 +91,11 @@ describe("Reentrancy Protection Tests", function () {
     await mockWETH.transfer(crossChainMessenger.address, amount);
 
     // Set emergency pause
-    await mockEmergencyPause.pause();
+    await mockEmergencyPause.checkAndPause(ethers.utils.parseEther("1.0"));
 
     // Attempt reentrancy attack through emergencyWithdraw
     await expect(
       crossChainMessenger.connect(owner).emergencyWithdraw(maliciousContract.address)
-    ).to.be.revertedWith("ReentrancyGuard: reentrant call");
+    ).to.be.revertedWithCustomError(crossChainMessenger, "ReentrancyGuardReentrantCall");
   });
 });
