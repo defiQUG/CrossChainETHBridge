@@ -135,7 +135,7 @@ contract TestRouter is MockRouter, IRouterClient {
         emit ChainSupportUpdated(chainSelector, supported);
     }
 
-    function setSupportedTokens(address token, bool supported) external onlyOwner {
+    function setSupportedTokens(address token, bool supported) external override onlyOwner {
         testSupportedTokens[token] = supported;
         emit TokenSupportUpdated(token, supported);
     }
@@ -145,7 +145,7 @@ contract TestRouter is MockRouter, IRouterClient {
         emit ExtraFeeUpdated(newExtraFee);
     }
 
-    function shouldResetPeriod() external view returns (bool) {
+    function shouldResetPeriod() external view override returns (bool) {
         uint256 timeLeft = this.getTimeUntilReset();
         return timeLeft == 0;
     }
