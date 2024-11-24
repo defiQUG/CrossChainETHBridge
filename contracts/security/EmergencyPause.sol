@@ -22,7 +22,9 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         _transferOwnership(msg.sender);
     }
 
-    function setPauseThreshold(uint256 _pauseThreshold) external override onlyOwner {
+    function setPauseThreshold(
+        uint256 _pauseThreshold
+    ) external override onlyOwner {
         if (_pauseThreshold == 0)
             revert EmergencyPauseErrors.InvalidPauseThreshold();
         uint256 oldThreshold = pauseThreshold;
@@ -30,7 +32,9 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         emit PauseThresholdUpdated(oldThreshold, _pauseThreshold);
     }
 
-    function setPauseDuration(uint256 _pauseDuration) external override onlyOwner {
+    function setPauseDuration(
+        uint256 _pauseDuration
+    ) external override onlyOwner {
         if (_pauseDuration == 0)
             revert EmergencyPauseErrors.InvalidPauseDuration();
         uint256 oldDuration = pauseDuration;
@@ -58,7 +62,9 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         }
     }
 
-    function checkAndUpdateValue(uint256 amount) external override returns (bool) {
+    function checkAndUpdateValue(
+        uint256 amount
+    ) external override returns (bool) {
         checkAndUnpause();
         if (paused()) revert EmergencyPauseErrors.ContractPaused();
         bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;
@@ -102,7 +108,12 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         totalValueLocked = 0;
     }
 
-    function getRemainingPauseDuration() external view override returns (uint256) {
+    function getRemainingPauseDuration()
+        external
+        view
+        override
+        returns (uint256)
+    {
         if (!paused()) return 0;
         uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
         if (elapsedTime >= pauseDuration) return 0;
