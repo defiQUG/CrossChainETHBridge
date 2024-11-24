@@ -32,7 +32,7 @@ contract CrossChainMessenger is SecurityBase {
     event MessageSent(bytes32 indexed messageId, address indexed sender, address indexed recipient, uint256 amount);
     event MessageReceived(bytes32 indexed messageId, address indexed sender, uint256 amount);
     event BridgeFeeUpdated(uint256 newFee);
-    event EmergencyWithdrawal(address indexed recipient, uint256 amount);
+    event EmergencyWithdraw(address indexed recipient, uint256 amount);
 
     constructor(
         address router,
@@ -41,7 +41,7 @@ contract CrossChainMessenger is SecurityBase {
         address _emergencyPause,
         uint256 initialFee,
         uint256 maxFee
-    ) SecurityBase(100, 3600) {  // Use constants from TEST_CONFIG
+    ) SecurityBase(100, 3600) {
         if (router == address(0)) revert InvalidRecipient();
         if (weth == address(0)) revert InvalidRecipient();
         if (_emergencyPause == address(0)) revert InvalidRecipient();
@@ -58,9 +58,15 @@ contract CrossChainMessenger is SecurityBase {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientBalance();
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
-        if (!processMessage()) revert("SecurityBase: Message processing failed");
 
         uint256 amount = msg.value - _bridgeFee;
+        if (amount >= emergencyPause.pauseThreshold()) {
+            emergencyPause.triggerPause();
+            revert("EmergencyPause: threshold exceeded");
+        }
+
+        if (!processMessage()) revert("RateLimiter: rate limit exceeded");
+
         WETH.deposit{value: amount}();
 
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
@@ -78,9 +84,9 @@ contract CrossChainMessenger is SecurityBase {
     function ccipReceive(Client.Any2EVMMessage memory message) external {
         if (emergencyPause.paused()) revert("EmergencyPause: contract is paused");
         if (message.sourceChainSelector != DEFI_ORACLE_META_CHAIN_SELECTOR) revert InvalidSourceChain();
-        if (!processMessage()) revert("SecurityBase: Message processing failed");
+        if (!processMessage()) revert("RateLimiter: rate limit exceeded");
 
-        (address sender, uint256 amount) = abi.decode(message.data, (address, uint256));
+        (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
         if (amount == 0) revert ZeroAmount();
 
         if (message.destTokenAmounts.length > 0) {
@@ -89,10 +95,11 @@ contract CrossChainMessenger is SecurityBase {
             }
         }
 
-        (bool success,) = sender.call{value: amount}("");
+        WETH.withdraw(amount);
+        (bool success,) = recipient.call{value: amount}("");
         if (!success) revert TransferFailed();
 
-        emit MessageReceived(message.messageId, sender, amount);
+        emit MessageReceived(message.messageId, recipient, amount);
     }
 
     function setBridgeFee(uint256 _newFee) external onlyOwner {
