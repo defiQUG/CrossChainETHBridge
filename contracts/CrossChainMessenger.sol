@@ -95,12 +95,10 @@ contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessen
         uint256 amount = msg.value - _bridgeFee;
         if (amount == 0) revert CrossChainErrors.InvalidAmount(amount);
 
-        // Check if already paused before attempting to lock value
-        if (emergencyPause.paused()) {
+        // Check emergency pause threshold
+        if (emergencyPause.checkAndUpdateValue(amount)) {
             revert CrossChainErrors.EmergencyPaused();
         }
-        // Lock value and check if it triggers emergency pause
-        emergencyPause.lockValue(amount);
 
         bool messageProcessed = super.processMessage();
         if (!messageProcessed) revert CrossChainErrors.RateLimitExceeded(super.getMaxMessagesPerPeriod(), amount);
