@@ -16,8 +16,8 @@ const {
 describe("MockWETH", function() {
     let owner, user1, user2;
     let mockWETH;
-    const INITIAL_SUPPLY = ethers.parseEther("1000");
-    const DEPOSIT_AMOUNT = ethers.parseEther("1");
+    const INITIAL_SUPPLY = ethers.utils.parseEther("1000");
+    const DEPOSIT_AMOUNT = ethers.utils.parseEther("1");
 
     beforeEach(async function() {
         [owner, user1, user2] = await ethers.getSigners();
