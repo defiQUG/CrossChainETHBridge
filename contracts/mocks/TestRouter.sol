@@ -27,7 +27,7 @@ contract TestRouter is MockRouter, IRouterClient {
         address admin,
         address feeToken,
         uint256 baseFee
-    ) external virtual {
+    ) external virtual override(MockRouter) {
         require(!_initialized, "TestRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
 
