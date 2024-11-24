@@ -28,7 +28,7 @@ abstract contract SecurityBase is ISecurityBase, Ownable, Pausable {
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function processMessage() external virtual override returns (bool) {
+    function processMessage() public virtual override returns (bool) {
         require(!paused(), "SecurityBase: Contract is paused");
         uint256 currentPeriod = getCurrentPeriod();
         uint256 currentCount = _messagesByPeriod[currentPeriod];
