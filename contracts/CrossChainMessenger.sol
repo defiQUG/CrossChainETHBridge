@@ -120,35 +120,3 @@ contract CrossChainMessenger is SecurityBase {
 
     receive() external payable {}
 }
-
-        (bool sent,) = recipient.call{value: amount}("");
-        if (!sent) revert TransferFailed();
-
-        emit MessageReceived(message.messageId, recipient, amount);
-    }
-
-    function setBridgeFee(uint256 _newFee) external onlyOwner {
-        if (_newFee > MAX_FEE) revert FeeExceedsMaximum();
-        _bridgeFee = _newFee;
-        emit BridgeFeeUpdated(_newFee);
-    }
-
-    function emergencyWithdraw(address _recipient) external onlyOwner {
-        if (_recipient == address(0)) revert InvalidRecipient();
-        require(emergencyPause.paused(), "EmergencyPause: contract not paused");
-
-        uint256 balance = address(this).balance;
-        if (balance == 0) revert InsufficientBalance();
-
-        (bool success,) = _recipient.call{value: balance}("");
-        if (!success) revert TransferFailed();
-
-        emit EmergencyWithdrawal(_recipient, balance);
-    }
-
-    function getBridgeFee() external view returns (uint256) {
-        return _bridgeFee;
-    }
-
-    receive() external payable {}
-}
