@@ -62,9 +62,16 @@ contract EmergencyPause is Ownable, Pausable {
     function checkAndUpdateValue(uint256 amount) external returns (bool) {
         checkAndUnpause();
         require(!paused(), "Contract is paused");
+        // Check pause condition before updating state
+        bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;
+        if (shouldPause) {
+            _pause();
+            lastPauseTimestamp = block.timestamp;
+            emit EmergencyPauseTriggered(lastPauseTimestamp, pauseDuration);
+        }
         totalValueLocked += amount;
         emit ValueLocked(amount);
-        return checkAndPause(amount);
+        return shouldPause;
     }
 
     function lockValue(uint256 amount) external {
