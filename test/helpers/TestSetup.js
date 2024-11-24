@@ -26,7 +26,7 @@ async function deployTestContracts() {
     const mockRouter = await TestRouter.deploy(10, 3600); // 10 messages per hour
     await mockRouter.waitForDeployment();
 
-    // Initialize TestRouter with configuration
+    // Initialize TestRouter with configuration (removed rate limiter initialization)
     await mockRouter.initialize(
         owner.address, // admin
         await mockWETH.getAddress(), // fee token
