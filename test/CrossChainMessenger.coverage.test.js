@@ -33,7 +33,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
             const bridgeFee = await messenger.getBridgeFee();
             await expect(
                 messenger.sendToPolygon(recipient, { value: bridgeFee })
-            ).to.be.revertedWithCustomError(messenger, "InsufficientPayment");
+            ).to.be.revertedWithCustomError(messenger, "InvalidFeeAmount");
         });
 
         it("Should handle emergency withdrawals correctly", async function () {
