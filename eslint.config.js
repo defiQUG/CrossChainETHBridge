@@ -1,4 +1,6 @@
+/** @type {import('eslint').Linter.Config} */
 module.exports = {
+  root: true,
   env: {
     browser: false,
     es2021: true,
@@ -9,7 +11,7 @@ module.exports = {
     "eslint:recommended"
   ],
   parserOptions: {
-    ecmaVersion: 12,
+    ecmaVersion: 2021,
   },
   overrides: [
     {

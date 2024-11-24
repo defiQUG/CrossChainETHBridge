@@ -4,9 +4,9 @@
   "description": "Cross-chain ETH bridge using Chainlink CCIP",
   "type": "commonjs",
   "scripts": {
-    "test": "hardhat test",
-    "lint": "eslint . --ext .js",
-    "lint:fix": "eslint . --ext .js --fix",
+    "test": "HARDHAT_IGNORE_NODE_VERSION=true hardhat test",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
   },
   "devDependencies": {
