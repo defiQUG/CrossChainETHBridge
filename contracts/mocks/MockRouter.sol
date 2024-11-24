@@ -65,7 +65,6 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         uint256 gasLimit,
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
-        require(_supportedChains[message.sourceChainSelector], "MockRouter: chain not supported");
         require(validateMessage(message), "MockRouter: invalid message");
         require(super.processMessage(), "MockRouter: rate limit exceeded");
 
@@ -90,12 +89,17 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
         return (success, retBytes, gasUsed);
     }
 
-    function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
+    function validateMessage(Client.Any2EVMMessage memory message) public view virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
             revert("MockRouter: invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
             revert("MockRouter: invalid chain selector");
+        }
+        if (!_supportedChains[message.sourceChainSelector]) {
+            // Let the message through but don't validate it as supported
+            // This allows the target contract to handle invalid chain validation
+            return true;
         }
         if (message.sender.length == 0) {
             revert("MockRouter: empty sender address");
