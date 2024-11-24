@@ -20,7 +20,9 @@ contract TestRouter is MockRouter, IRouterClient {
     event ExtraFeeUpdated(uint256 newFee);
 
     constructor() MockRouter() {
-        // Initialization moved to initialize function
+        // Initialize supported chains immediately
+        _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
+        _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
     }
 
     function initialize(
@@ -30,16 +32,21 @@ contract TestRouter is MockRouter, IRouterClient {
     ) external override virtual {
         require(!_initialized, "TestRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
+        require(feeToken != address(0), "Invalid fee token address");
 
-        // Initialize parent contract state
+        // Call parent initialize first
+        super._initialize(100, 3600); // Default values: 100 messages per hour
+
+        // Set up router configuration
         _transferOwnership(admin);
-        _initialize(100, 3600); // Default values: 100 messages per hour
         _baseFee = baseFee;
         _extraFee = baseFee / 2;
+        _feeToken = feeToken;
 
-        // Initialize test-specific chain support
+        // Initialize chain support (even though constructor sets this, ensure it's set)
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
+
         _initialized = true;
     }
 

@@ -7,6 +7,11 @@ async function deployContract(name, args = [], options = {}) {
         contractName = `contracts/security/${name}.sol:${name}`;
     } else if (name.includes("MockRouter")) {
         contractName = "TestRouter";
+        // Ensure we have the minimum required arguments for TestRouter
+        if (!args || args.length === 0) {
+            const [deployer] = await ethers.getSigners();
+            args = [deployer.address, ethers.ZeroAddress, ethers.parseEther("0.6")];
+        }
     }
 
     const Factory = await ethers.getContractFactory(contractName);
