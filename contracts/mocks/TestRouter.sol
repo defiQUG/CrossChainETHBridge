@@ -156,5 +156,15 @@ contract TestRouter is MockRouter, IRouterClient {
         emit ExtraFeeUpdated(_extraFee);
     }
 
+    function shouldResetPeriod() external view whenInitialized returns (bool) {
+        return getTimeUntilReset() == 0;
+    }
+
+    function setFeeConfig(address admin, address feeToken, uint256 baseFee) external onlyOwner {
+        _admin = admin;
+        _feeToken = feeToken;
+        _baseFee = baseFee;
+    }
+
     receive() external payable override {}
 }

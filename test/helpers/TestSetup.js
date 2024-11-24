@@ -24,13 +24,12 @@ async function deployTestContracts() {
 
     // Deploy TestRouter (concrete implementation of MockRouter)
     const TestRouter = await ethers.getContractFactory('TestRouter');
-    const mockRouter = await TestRouter.deploy(
-        owner.address, // admin
-        ethers.ZeroAddress // feeToken
-    );
+    const mockRouter = await TestRouter.deploy();
     await mockRouter.waitForDeployment();
-    // Initialize with base fee
-    await mockRouter.initialize(
+
+    // Initialize TestRouter with configuration
+    await mockRouter.initialize(10, 3600); // 10 messages per hour rate limit
+    await mockRouter.setFeeConfig(
         owner.address,
         ethers.ZeroAddress,
         ethers.parseEther('0.001') // base fee
