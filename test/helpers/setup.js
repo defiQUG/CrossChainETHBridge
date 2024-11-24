@@ -1,5 +1,4 @@
 const { ethers } = require("hardhat");
-const { deployContract } = require("./test-utils");
 
 // Shared test configuration
 const TEST_CONFIG = {
@@ -18,25 +17,33 @@ async function deployTestContracts() {
     const [owner, user, addr1, addr2] = await ethers.getSigners();
 
     // Deploy MockWETH
-    const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
-
-    // Deploy TestRouter with rate limiter params
-    const mockRouter = await deployContract("TestRouter", [
-        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
-        TEST_CONFIG.PERIOD_DURATION
-    ]);
+    const MockWETH = await ethers.getContractFactory("MockWETH");
+    const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
+    await mockWETH.deployed();
 
     // Deploy RateLimiter with constructor params
-    const rateLimiter = await deployContract("RateLimiter", [
+    const RateLimiter = await ethers.getContractFactory("RateLimiter");
+    const rateLimiter = await RateLimiter.deploy(
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
         TEST_CONFIG.PERIOD_DURATION
-    ]);
+    );
+    await rateLimiter.deployed();
 
     // Deploy EmergencyPause
-    const emergencyPause = await deployContract("EmergencyPause", [
+    const EmergencyPause = await ethers.getContractFactory("EmergencyPause");
+    const emergencyPause = await EmergencyPause.deploy(
         TEST_CONFIG.PAUSE_THRESHOLD,
         TEST_CONFIG.PAUSE_DURATION
-    ]);
+    );
+    await emergencyPause.deployed();
+
+    // Deploy TestRouter with rate limiter params
+    const TestRouter = await ethers.getContractFactory("TestRouter");
+    const mockRouter = await TestRouter.deploy(
+        TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
+        TEST_CONFIG.PERIOD_DURATION
+    );
+    await mockRouter.deployed();
 
     // Initialize TestRouter after all dependencies are deployed
     await mockRouter.initialize(
@@ -46,14 +53,16 @@ async function deployTestContracts() {
     );
 
     // Deploy CrossChainMessenger with initialized contracts
-    const crossChainMessenger = await deployContract("CrossChainMessenger", [
+    const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
+    const crossChainMessenger = await CrossChainMessenger.deploy(
         mockRouter.address,
         mockWETH.address,
         rateLimiter.address,
         emergencyPause.address,
         TEST_CONFIG.BRIDGE_FEE,
         TEST_CONFIG.MAX_FEE
-    ]);
+    );
+    await crossChainMessenger.deployed();
 
     // Fund the contract for tests
     await owner.sendTransaction({
