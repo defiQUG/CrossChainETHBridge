@@ -84,16 +84,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("Invalid message ID");
+            revert("MockRouter: invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("MockRouter: invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("Empty sender address");
+            revert("MockRouter: empty sender address");
         }
         if (message.data.length == 0) {
-            revert("Empty message data");
+            revert("MockRouter: empty message data");
         }
         return true;
     }
