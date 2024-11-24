@@ -32,7 +32,7 @@ contract RateLimiter is SecurityBase {
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function initialize(uint256 maxMessages, uint256 periodDuration) external virtual {
+    function initializeRateLimiter(uint256 maxMessages, uint256 periodDuration) external virtual {
         _initialize(maxMessages, periodDuration);
     }
 
