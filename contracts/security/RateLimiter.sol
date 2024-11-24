@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "../interfaces/IRateLimiter.sol";
-import "./SecurityBase.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { IRateLimiter } from "../interfaces/IRateLimiter.sol";
+import { SecurityBase } from "./SecurityBase.sol";
 
 contract RateLimiter is IRateLimiter, SecurityBase {
     uint256 private _maxMessagesPerPeriod;
@@ -34,7 +34,7 @@ contract RateLimiter is IRateLimiter, SecurityBase {
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function processMessage() public virtual override returns (bool) {
+    function processMessage() public virtual override(SecurityBase, IRateLimiter) returns (bool) {
         if (block.timestamp >= _periodStart + _periodDuration) {
             _resetPeriod();
         }
