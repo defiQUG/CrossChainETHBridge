@@ -25,7 +25,8 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function initialize(uint256 maxMessages, uint256 periodDuration) external override {
         require(!_initialized, "TestRouter: already initialized");
-        _initialize(maxMessages, periodDuration);
+        super.initialize(address(this), address(0), 0); // Call MockRouter's initialize
+        _initialize(maxMessages, periodDuration); // Call RateLimiter's initialize
 
         // Initialize both chains as supported for testing
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true; // Polygon PoS
@@ -157,7 +158,8 @@ contract TestRouter is MockRouter, IRouterClient {
     }
 
     function shouldResetPeriod() external view whenInitialized returns (bool) {
-        return getTimeUntilReset() == 0;
+        uint256 timeLeft = super.getTimeUntilReset();
+        return timeLeft == 0;
     }
 
     function setFeeConfig(address admin, address feeToken, uint256 baseFee) external onlyOwner {
