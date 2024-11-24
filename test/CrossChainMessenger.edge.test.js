@@ -106,7 +106,8 @@ describe("CrossChainMessenger Edge Cases", function() {
 
     describe("Security Edge Cases", function() {
         it("Should handle multiple rapid transfers near threshold", async function() {
-            const amount = PAUSE_THRESHOLD - ethers.utils.parseEther("0.1");
+            const amount = ethers.BigNumber.from(PAUSE_THRESHOLD)
+                .sub(ethers.utils.parseEther("0.1"));
 
             // Send multiple transfers rapidly
             await crossChainMessenger.sendToPolygon(addr1.address, { value: amount });
@@ -129,12 +130,21 @@ describe("CrossChainMessenger Edge Cases", function() {
                 [user.address, amount]
             );
 
+            // Mint WETH tokens to CrossChainMessenger contract
+            await mockWETH.deposit({ value: amount });
+            await mockWETH.transfer(crossChainMessenger.address, amount);
+
             const message = {
                 messageId: messageId,
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
                 sender: sender,
                 data: data,
-                destTokenAmounts: []
+                destTokenAmounts: [
+                    {
+                        token: mockWETH.address,
+                        amount: amount
+                    }
+                ]
             };
 
             // First message should succeed
