@@ -41,23 +41,23 @@ async function deployTestContracts() {
     // Initialize TestRouter after all dependencies are deployed
     await mockRouter.initialize(
         owner.address,
-        await mockWETH.getAddress(),
+        mockWETH.address,
         TEST_CONFIG.BRIDGE_FEE
     );
 
     // Deploy CrossChainMessenger with initialized contracts
     const crossChainMessenger = await deployContract("CrossChainMessenger", [
-        await mockRouter.getAddress(),
-        await mockWETH.getAddress(),
-        await rateLimiter.getAddress(),
-        await emergencyPause.getAddress(),
+        mockRouter.address,
+        mockWETH.address,
+        rateLimiter.address,
+        emergencyPause.address,
         TEST_CONFIG.BRIDGE_FEE,
         TEST_CONFIG.MAX_FEE
     ]);
 
     // Fund the contract for tests
     await owner.sendTransaction({
-        to: await crossChainMessenger.getAddress(),
+        to: crossChainMessenger.address,
         value: ethers.utils.parseEther("10.0")
     });
 
