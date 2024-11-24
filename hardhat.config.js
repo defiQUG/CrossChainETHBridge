@@ -7,7 +7,7 @@ require("dotenv").config();
 // Load environment variables, with fallbacks for local development
 const {DEFI_ORACLE_META_RPC_URL} = process.env;
 const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL;
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const {PRIVATE_KEY} = process.env;
 const {POLYGONSCAN_API_KEY} = process.env;
 
 // Network configurations
