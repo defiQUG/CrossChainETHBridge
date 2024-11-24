@@ -12,13 +12,6 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
     uint256 public lastPauseTimestamp;
     uint256 public totalValueLocked;
 
-    event PauseThresholdUpdated(uint256 oldThreshold, uint256 newThreshold);
-    event PauseDurationUpdated(uint256 oldDuration, uint256 newDuration);
-    event ValueLocked(uint256 amount);
-    event ValueUnlocked(uint256 amount);
-    event EmergencyPauseTriggered(uint256 timestamp, uint256 duration);
-    event EmergencyUnpauseTriggered(uint256 timestamp);
-
     constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
         if (_pauseThreshold == 0) revert EmergencyPauseErrors.InvalidPauseThreshold();
         if (_pauseDuration == 0) revert EmergencyPauseErrors.InvalidPauseDuration();
