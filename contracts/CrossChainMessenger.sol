@@ -50,7 +50,7 @@ contract CrossChainMessenger is Ownable {
     function sendToPolygon(address _recipient) external payable {
         if (_recipient == address(0)) revert InvalidRecipient();
         if (msg.value <= _bridgeFee) revert InsufficientBalance();
-        require(!emergencyPause.isPaused(), "EmergencyPause: contract is paused");
+        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
 
         bool success = security.processMessage();
         require(success, "SecurityBase: Message processing failed");
