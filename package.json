@@ -11,14 +11,15 @@
   },
   "devDependencies": {
     "@chainlink/contracts-ccip": "^0.7.6",
-    "@nomicfoundation/hardhat-chai-matchers": "^1.0.0",
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.2",
+    "@nomicfoundation/hardhat-toolbox": "3.0.0",
     "@nomiclabs/hardhat-ethers": "^2.2.3",
     "@nomiclabs/hardhat-etherscan": "^3.1.7",
     "@openzeppelin/contracts": "^4.9.3",
     "@typechain/ethers-v5": "^10.2.1",
-    "@typechain/hardhat": "^6.1.6",
+    "@typechain/hardhat": "^8.0.3",
     "chai": "^4.3.7",
     "dotenv": "^16.4.5",
     "eslint": "^8.54.0",
@@ -29,12 +30,12 @@
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-promise": "^6.1.1",
     "ethers": "^5.7.2",
-    "hardhat": "^2.19.1",
+    "hardhat": "2.19.4",
     "hardhat-gas-reporter": "^1.0.9",
     "prettier": "^3.1.0",
     "prettier-plugin-solidity": "^1.2.0",
     "solc": "0.8.20",
-    "solidity-coverage": "^0.8.0",
+    "solidity-coverage": "^0.8.13",
     "typechain": "^8.3.0"
   }
 }
