@@ -19,7 +19,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     uint256 internal _extraFee;
     address internal _admin;
     address internal _feeToken;
-    bool private _routerInitialized;
+    bool internal _routerInitialized;
 
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
