@@ -1,1 +1,1 @@
-{"scripts": {"lint": "solhint \"contracts/**/*.sol\" && eslint \"**/*.js\""}}
+{"name":"crosschainethbridge","version":"1.0.0","scripts":{"compile":"hardhat compile","test":"hardhat test","lint":"solhint \"contracts/**/*.sol\" && eslint \"**/*.js\"","lint:fix":"solhint --fix \"contracts/**/*.sol\" && eslint --fix \"**/*.js\"","security":"pnpm audit"},"devDependencies":{"@typescript-eslint/eslint-plugin":"8.15.0","@typescript-eslint/parser":"8.15.0","eslint":"9.15.0","solhint":"5.0.3"}}
