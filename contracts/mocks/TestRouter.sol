@@ -65,7 +65,7 @@ contract TestRouter is MockRouter, IRouterClient {
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         require(message.messageId != bytes32(0), "Invalid message ID");
         require(message.sourceChainSelector != 0, "Chain not supported");
-        require(message.sender.length == 20, "Invalid sender length");
+        require(message.sender.length > 0, "Empty sender address");
         require(message.data.length > 0, "Empty message data");
         require(message.destTokenAmounts.length == 0, "Token transfers not supported");
         return true;
