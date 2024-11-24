@@ -13,7 +13,7 @@ const {
     DEFI_ORACLE_META_CHAIN_SELECTOR
 } = TEST_CONFIG;
 
-const { ZeroAddress } = ethers;
+const { constants } = ethers;
 
 describe("Coverage Improvement Tests", function () {
     let messenger, router, weth, owner, user1, user2;
@@ -23,7 +23,7 @@ describe("Coverage Improvement Tests", function () {
 
     beforeEach(async function () {
         [owner, user1, user2] = await ethers.getSigners();
-        INITIAL_BALANCE = ethers.parseEther("10.0");
+        INITIAL_BALANCE = ethers.utils.parseEther("10.0");
 
         // Deploy contracts in correct order
         router = await deployContract("MockRouter");
@@ -49,7 +49,7 @@ describe("Coverage Improvement Tests", function () {
 
     describe("MockWETH", function () {
         it("Should handle deposit and withdrawal correctly", async function () {
-            const depositAmount = ethers.parseEther("1.0");
+            const depositAmount = ethers.utils.parseEther("1.0");
             await weth.deposit({ value: depositAmount });
             expect(await weth.balanceOf(owner.address)).to.equal(depositAmount);
             await weth.withdraw(depositAmount);
@@ -57,7 +57,7 @@ describe("Coverage Improvement Tests", function () {
         });
 
         it("Should handle transfer correctly", async function () {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await weth.deposit({ value: amount });
             await weth.transfer(user1.address, amount);
             expect(await weth.balanceOf(user1.address)).to.equal(amount);
@@ -66,7 +66,7 @@ describe("Coverage Improvement Tests", function () {
 
     describe("RateLimiter Edge Cases", function () {
         it("Should handle multiple messages within same period", async function () {
-            const messageValue = ethers.parseEther("1.0");
+            const messageValue = ethers.utils.parseEther("1.0");
             for (let i = 0; i < MAX_MESSAGES; i++) {
                 await messenger.sendToPolygon(user1.address, { value: messageValue });
             }
@@ -97,21 +97,21 @@ describe("Coverage Improvement Tests", function () {
         it("Should prevent emergency withdraw to zero address", async function () {
             await messenger.emergencyPause();
             await expect(
-                messenger.emergencyWithdraw(ZeroAddress)
+                messenger.emergencyWithdraw(constants.AddressZero)
             ).to.be.revertedWith("CrossChainMessenger: zero recipient address");
         });
     });
 
     describe("MockRouter", function () {
         it("Should handle ccipSend correctly", async function () {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await messenger.sendToPolygon(user1.address, { value: amount });
             const events = await router.queryFilter(router.filters.MessageSent());
             expect(events.length).to.be.above(0);
         });
 
         it("Should emit correct events on message send", async function () {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await expect(
                 messenger.sendToPolygon(user1.address, { value: amount })
             ).to.emit(router, "MessageSent");
