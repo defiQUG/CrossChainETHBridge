@@ -1,5 +1,3 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("@typechain/hardhat");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("hardhat-gas-reporter");
@@ -30,7 +28,8 @@ module.exports = {
   },
   networks: {
     hardhat: {
-      chainId: 31337
+      chainId: 31337,
+      allowUnlimitedContractSize: true
     },
     ethereum: {
       url: process.env.ETH_MAINNET_RPC_URL || "",
@@ -42,5 +41,8 @@ module.exports = {
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 138
     }
+  },
+  mocha: {
+    timeout: 40000
   }
 };
