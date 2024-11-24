@@ -18,8 +18,6 @@ error InvalidMessageFormat();
 error ZeroAmount();
 error InvalidTokenAmount();
 error MessageAlreadyProcessed();
-error ContractPaused();
-error RateLimitExceeded();
 error EmergencyThresholdExceeded();
 error EmergencyNotPaused();
 
