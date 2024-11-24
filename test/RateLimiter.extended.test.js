@@ -23,9 +23,9 @@ describe("RateLimiter Extended Tests", function () {
 
     beforeEach(async function () {
         [owner, addr1] = await ethers.getSigners();
-        const RateLimiter = await ethers.getContractFactory("contracts/security/RateLimiter.sol:RateLimiter");
+        const RateLimiter = await ethers.getContractFactory("RateLimiter");
         rateLimiter = await RateLimiter.deploy(MAX_MESSAGES, RATE_PERIOD);
-        await rateLimiter.waitForDeployment();
+        await rateLimiter.deployed();
     });
 
     describe("Period Management", function () {
@@ -70,7 +70,7 @@ describe("RateLimiter Extended Tests", function () {
                 await rateLimiter.processMessage();
             }
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded");
+                .to.be.revertedWith("RateLimiter: rate limit exceeded");
         });
 
         it("Should handle rate limit updates", async function () {
@@ -78,7 +78,7 @@ describe("RateLimiter Extended Tests", function () {
             await rateLimiter.processMessage();
             await rateLimiter.processMessage();
             await expect(rateLimiter.processMessage())
-                .to.be.revertedWith("Rate limit exceeded");
+                .to.be.revertedWith("RateLimiter: rate limit exceeded");
         });
 
         it("Should prevent non-owner from updating rate limit", async function () {
