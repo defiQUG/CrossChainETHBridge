@@ -33,7 +33,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address admin,
         address feeToken,
         uint256 baseFee
-    ) external virtual {
+    ) public virtual {
         require(!_routerInitialized, "MockRouter: already initialized");
         require(admin != address(0), "Invalid admin address");
         require(feeToken != address(0), "Invalid fee token address");
