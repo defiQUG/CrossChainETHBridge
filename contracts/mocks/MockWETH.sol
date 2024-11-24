@@ -17,11 +17,15 @@ contract MockWETH is ERC20 {
     }
 
     function withdraw(uint256 amount) external {
+        // Check transfer fail flag first
+        require(!transferShouldFail, "MockWETH: Transfer failed");
+
+        // Then check balance
         require(
             balanceOf(msg.sender) >= amount,
             "ERC20: burn amount exceeds balance"
         );
-        require(!transferShouldFail, "MockWETH: Transfer failed");
+
         _burn(msg.sender, amount);
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "MockWETH: ETH transfer failed");
