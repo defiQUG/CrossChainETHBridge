@@ -5,6 +5,8 @@ describe("Reentrancy Protection Tests", function () {
   let crossChainMessenger;
   let mockWETH;
   let maliciousContract;
+  let mockRouter;
+  let mockEmergencyPause;
   let owner;
   let attacker;
 
@@ -16,12 +18,25 @@ describe("Reentrancy Protection Tests", function () {
     mockWETH = await MockWETH.deploy();
     await mockWETH.deployed();
 
-    // Deploy CrossChainMessenger with mock WETH
+    // Deploy MockRouter
+    const MockRouter = await ethers.getContractFactory("MockRouter");
+    mockRouter = await MockRouter.deploy();
+    await mockRouter.deployed();
+
+    // Deploy MockEmergencyPause
+    const MockEmergencyPause = await ethers.getContractFactory("EmergencyPause");
+    mockEmergencyPause = await MockEmergencyPause.deploy();
+    await mockEmergencyPause.deployed();
+
+    // Deploy CrossChainMessenger with mocks
     const CrossChainMessenger = await ethers.getContractFactory("CrossChainMessenger");
     crossChainMessenger = await CrossChainMessenger.deploy(
+      mockRouter.address,
       mockWETH.address,
-      ethers.constants.AddressZero, // Mock router address
-      0 // Mock chain selector
+      owner.address,
+      mockEmergencyPause.address,
+      ethers.utils.parseEther("0.01"),
+      ethers.utils.parseEther("0.1")
     );
     await crossChainMessenger.deployed();
 
@@ -40,8 +55,8 @@ describe("Reentrancy Protection Tests", function () {
 
     // Create message
     const message = {
-      messageId: ethers.utils.randomBytes(32),
-      sourceChainSelector: 0,
+      messageId: ethers.utils.hexZeroPad(ethers.utils.hexlify(1), 32),
+      sourceChainSelector: 138,
       sender: ethers.constants.AddressZero,
       data: ethers.utils.defaultAbiCoder.encode(
         ["address", "uint256"],
@@ -65,6 +80,9 @@ describe("Reentrancy Protection Tests", function () {
     // Fund contracts
     await mockWETH.deposit({ value: amount });
     await mockWETH.transfer(crossChainMessenger.address, amount);
+
+    // Set emergency pause
+    await mockEmergencyPause.pause();
 
     // Attempt reentrancy attack through emergencyWithdraw
     await expect(
