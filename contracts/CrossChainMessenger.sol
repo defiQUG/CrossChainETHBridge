@@ -11,7 +11,7 @@ import {CrossChainErrors} from "./errors/CrossChainErrors.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
-contract CrossChainMessenger is ICrossChainMessenger, SecurityBase, ReentrancyGuard, Ownable {
+contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessenger {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
 
