@@ -38,8 +38,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         require(admin != address(0), "Invalid admin address");
         require(feeToken != address(0), "Invalid fee token address");
 
-        // Initialize rate limiter first
-        super.initialize(100, 3600); // Default values: 100 messages per hour
+        // Initialize rate limiter first using internal function
+        _initialize(100, 3600); // Default values: 100 messages per hour
 
         _admin = admin;
         _feeToken = feeToken;
