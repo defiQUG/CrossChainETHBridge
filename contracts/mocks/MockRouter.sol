@@ -5,6 +5,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../security/SecurityBase.sol";
+import "../interfaces/ICrossChainMessenger.sol";
 
 contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
     using Client for Client.Any2EVMMessage;
