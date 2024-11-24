@@ -5,7 +5,7 @@ import { IRouterClient } from "@chainlink/contracts-ccip/src/v0.8/ccip/interface
 import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import { IWETH } from "./interfaces/IWETH.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
-import { SecurityBase } from "./security/SecurityBase.sol";
+import { SecurityBase, ContractPaused, RateLimitExceeded } from "./security/SecurityBase.sol";
 import { ICrossChainMessenger } from "./interfaces/ICrossChainMessenger.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
