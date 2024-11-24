@@ -40,8 +40,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         uint256 baseFee
     ) public virtual {
         require(!_routerInitialized, "MockRouter: already initialized");
-        require(admin != address(0), "Invalid admin address");
-        require(feeToken != address(0), "Invalid fee token address");
+        require(admin != address(0), "MockRouter: invalid admin address");
+        require(feeToken != address(0), "MockRouter: invalid fee token address");
 
         _admin = admin;
         _feeToken = feeToken;
@@ -74,7 +74,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         gasUsed = startGas - gasleft();
 
         if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "MockRouter: exceeded gas limit");
+            require(gasUsed <= gasLimit, "MockRouter: gas limit exceeded");
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
@@ -158,7 +158,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
-        require(token != address(0), "Invalid token address");
+        require(token != address(0), "MockRouter: invalid token address");
         if (supported) {
             _supportedTokens[138].push(token); // Add to Defi Oracle Meta Chain
             _supportedTokens[137].push(token); // Add to Polygon Chain
