@@ -80,7 +80,7 @@ describe("Reentrancy Protection Tests", function () {
     // Attempt reentrancy attack
     await expect(
       crossChainMessenger.ccipReceive(message)
-    ).to.be.revertedWithCustomError(crossChainMessenger, "ReentrancyGuardReentrantCall");
+    ).to.be.revertedWith("ReentrancyGuard: reentrant call");
   });
 
   it("should prevent reentrancy in emergencyWithdraw", async function () {
@@ -96,6 +96,6 @@ describe("Reentrancy Protection Tests", function () {
     // Attempt reentrancy attack through emergencyWithdraw
     await expect(
       crossChainMessenger.connect(owner).emergencyWithdraw(maliciousContract.address)
-    ).to.be.revertedWithCustomError(crossChainMessenger, "ReentrancyGuardReentrantCall");
+    ).to.be.revertedWith("ReentrancyGuard: reentrant call");
   });
 });
