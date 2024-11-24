@@ -9,7 +9,6 @@ uint64 constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
 uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
-    uint256 private _extraFee;
     mapping(address => bool) public testSupportedTokens;
     uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
     bool private _initialized;
@@ -18,9 +17,6 @@ contract TestRouter is MockRouter, IRouterClient {
     event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
     event TokenSupportUpdated(address indexed token, bool supported);
     event ExtraFeeUpdated(uint256 newFee);
-    event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
-    event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
-    event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
 
     constructor() MockRouter() {
         // Initialize supported chains immediately
