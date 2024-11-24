@@ -13,28 +13,32 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
     uint256 public totalValueLocked;
 
     constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
-        if (_pauseThreshold == 0) revert EmergencyPauseErrors.InvalidPauseThreshold();
-        if (_pauseDuration == 0) revert EmergencyPauseErrors.InvalidPauseDuration();
+        if (_pauseThreshold == 0)
+            revert EmergencyPauseErrors.InvalidPauseThreshold();
+        if (_pauseDuration == 0)
+            revert EmergencyPauseErrors.InvalidPauseDuration();
         pauseThreshold = _pauseThreshold;
         pauseDuration = _pauseDuration;
         _transferOwnership(msg.sender);
     }
 
-    function setPauseThreshold(uint256 _pauseThreshold) external onlyOwner {
-        if (_pauseThreshold == 0) revert EmergencyPauseErrors.InvalidPauseThreshold();
+    function setPauseThreshold(uint256 _pauseThreshold) external override onlyOwner {
+        if (_pauseThreshold == 0)
+            revert EmergencyPauseErrors.InvalidPauseThreshold();
         uint256 oldThreshold = pauseThreshold;
         pauseThreshold = _pauseThreshold;
         emit PauseThresholdUpdated(oldThreshold, _pauseThreshold);
     }
 
-    function setPauseDuration(uint256 _pauseDuration) external onlyOwner {
-        if (_pauseDuration == 0) revert EmergencyPauseErrors.InvalidPauseDuration();
+    function setPauseDuration(uint256 _pauseDuration) external override onlyOwner {
+        if (_pauseDuration == 0)
+            revert EmergencyPauseErrors.InvalidPauseDuration();
         uint256 oldDuration = pauseDuration;
         pauseDuration = _pauseDuration;
         emit PauseDurationUpdated(oldDuration, _pauseDuration);
     }
 
-    function checkAndPause(uint256 amount) public returns (bool) {
+    function checkAndPause(uint256 amount) public override returns (bool) {
         uint256 newTotal = totalValueLocked + amount;
         if (newTotal >= pauseThreshold) {
             _pause();
@@ -45,7 +49,7 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         return false;
     }
 
-    function checkAndUnpause() public {
+    function checkAndUnpause() public override {
         if (paused() && block.timestamp >= lastPauseTimestamp + pauseDuration) {
             uint256 timestamp = block.timestamp;
             _unpause();
@@ -54,7 +58,7 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         }
     }
 
-    function checkAndUpdateValue(uint256 amount) external returns (bool) {
+    function checkAndUpdateValue(uint256 amount) external override returns (bool) {
         checkAndUnpause();
         if (paused()) revert EmergencyPauseErrors.ContractPaused();
         bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;
@@ -68,7 +72,7 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         return shouldPause;
     }
 
-    function lockValue(uint256 amount) external {
+    function lockValue(uint256 amount) external override {
         checkAndUnpause();
         if (paused()) revert EmergencyPauseErrors.ContractPaused();
         uint256 newTotal = totalValueLocked + amount;
@@ -81,15 +85,16 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         emit ValueLocked(amount);
     }
 
-    function unlockValue(uint256 amount) external {
+    function unlockValue(uint256 amount) external override {
         checkAndUnpause();
         if (paused()) revert EmergencyPauseErrors.ContractPaused();
-        if (amount > totalValueLocked) revert EmergencyPauseErrors.AmountExceedsLockedValue();
+        if (amount > totalValueLocked)
+            revert EmergencyPauseErrors.AmountExceedsLockedValue();
         totalValueLocked -= amount;
         emit ValueUnlocked(amount);
     }
 
-    function emergencyUnpause() external onlyOwner {
+    function emergencyUnpause() external override onlyOwner {
         if (!paused()) revert EmergencyPauseErrors.ContractNotPaused();
         uint256 timestamp = block.timestamp;
         _unpause();
@@ -97,7 +102,7 @@ contract EmergencyPause is IEmergencyPause, Ownable, Pausable {
         totalValueLocked = 0;
     }
 
-    function getRemainingPauseDuration() external view returns (uint256) {
+    function getRemainingPauseDuration() external view override returns (uint256) {
         if (!paused()) return 0;
         uint256 elapsedTime = block.timestamp - lastPauseTimestamp;
         if (elapsedTime >= pauseDuration) return 0;
