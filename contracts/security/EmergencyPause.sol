@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
+import "../errors/EmergencyPauseErrors.sol";
 
 contract EmergencyPause is Ownable, Pausable {
     uint256 public pauseThreshold;
@@ -18,22 +19,22 @@ contract EmergencyPause is Ownable, Pausable {
     event EmergencyUnpauseTriggered(uint256 timestamp);
 
     constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
-        require(_pauseDuration > 0, "Pause duration must be positive");
+        if (_pauseThreshold == 0) revert EmergencyPauseErrors.InvalidPauseThreshold();
+        if (_pauseDuration == 0) revert EmergencyPauseErrors.InvalidPauseDuration();
         pauseThreshold = _pauseThreshold;
         pauseDuration = _pauseDuration;
         _transferOwnership(msg.sender);
     }
 
     function setPauseThreshold(uint256 _pauseThreshold) external onlyOwner {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
+        if (_pauseThreshold == 0) revert EmergencyPauseErrors.InvalidPauseThreshold();
         uint256 oldThreshold = pauseThreshold;
         pauseThreshold = _pauseThreshold;
         emit PauseThresholdUpdated(oldThreshold, _pauseThreshold);
     }
 
     function setPauseDuration(uint256 _pauseDuration) external onlyOwner {
-        require(_pauseDuration > 0, "Pause duration must be positive");
+        if (_pauseDuration == 0) revert EmergencyPauseErrors.InvalidPauseDuration();
         uint256 oldDuration = pauseDuration;
         pauseDuration = _pauseDuration;
         emit PauseDurationUpdated(oldDuration, _pauseDuration);
@@ -61,9 +62,8 @@ contract EmergencyPause is Ownable, Pausable {
 
     function checkAndUpdateValue(uint256 amount) external returns (bool) {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
-        // Check pause condition before updating state
-        bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;  // Changed back to >= for consistency
+        if (paused()) revert EmergencyPauseErrors.ContractPaused();
+        bool shouldPause = (totalValueLocked + amount) >= pauseThreshold;
         if (shouldPause) {
             _pause();
             lastPauseTimestamp = block.timestamp;
@@ -76,7 +76,7 @@ contract EmergencyPause is Ownable, Pausable {
 
     function lockValue(uint256 amount) external {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
+        if (paused()) revert EmergencyPauseErrors.ContractPaused();
         uint256 newTotal = totalValueLocked + amount;
         if (newTotal >= pauseThreshold) {
             _pause();
@@ -89,14 +89,14 @@ contract EmergencyPause is Ownable, Pausable {
 
     function unlockValue(uint256 amount) external {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
-        require(amount <= totalValueLocked, "Amount exceeds locked value");
+        if (paused()) revert EmergencyPauseErrors.ContractPaused();
+        if (amount > totalValueLocked) revert EmergencyPauseErrors.AmountExceedsLockedValue();
         totalValueLocked -= amount;
         emit ValueUnlocked(amount);
     }
 
     function emergencyUnpause() external onlyOwner {
-        require(paused(), "Contract is not paused");
+        if (!paused()) revert EmergencyPauseErrors.ContractNotPaused();
         uint256 timestamp = block.timestamp;
         _unpause();
         emit EmergencyUnpauseTriggered(timestamp);
