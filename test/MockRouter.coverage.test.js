@@ -38,7 +38,7 @@ describe("Router Coverage Tests", function () {
 
         it("Should revert getSupportedTokens for invalid chain", async function () {
             await expect(router.getSupportedTokens(138)) // Defi Oracle Meta
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 
@@ -99,7 +99,7 @@ describe("Router Coverage Tests", function () {
 
         it("Should revert simulation with zero address target", async function () {
             await expect(router.simulateMessageReceived(ethers.ZeroAddress, message))
-                .to.be.revertedWith("Invalid target address");
+                .to.be.revertedWith("MockRouter: invalid target address");
         });
     });
 
@@ -254,7 +254,7 @@ describe("Router Coverage Tests", function () {
                     tooLowGasLimit,
                     receiverAddress
                 )
-            ).to.be.revertedWith("Exceeded gas limit");
+            ).to.be.revertedWith("MockRouter: gas limit exceeded");
         });
     });
 });
