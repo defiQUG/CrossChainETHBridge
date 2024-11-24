@@ -58,9 +58,7 @@ async function deployTestContracts() {
         mockRouter.address,
         mockWETH.address,
         rateLimiter.address,
-        emergencyPause.address,
-        TEST_CONFIG.BRIDGE_FEE,
-        TEST_CONFIG.MAX_FEE
+        emergencyPause.address
     );
     await crossChainMessenger.deployed();
 
