@@ -11,7 +11,6 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 contract TestRouter is MockRouter, IRouterClient {
     mapping(address => bool) public testSupportedTokens;
     uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
-    bool private _initialized;
 
     // Events for state changes
     event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
@@ -29,20 +28,8 @@ contract TestRouter is MockRouter, IRouterClient {
         address feeToken,
         uint256 baseFee
     ) external override {
-        require(!_initialized, "TestRouter: already initialized");
-        require(admin != address(0), "Invalid admin address");
-        require(feeToken != address(0), "Invalid fee token address");
-
-        // Initialize parent contract first
-        super._initialize(100, 3600); // Default values: 100 messages per hour
-
-        // Set up router configuration
-        _transferOwnership(admin);
-        _baseFee = baseFee;
-        _extraFee = baseFee / 2;
-        _feeToken = feeToken;
-
-        _initialized = true;
+        // Call parent initialize with admin, feeToken, and baseFee
+        super.initialize(admin, feeToken, baseFee);
     }
 
     function isChainSupported(uint64 destChainSelector) external view override returns (bool) {
