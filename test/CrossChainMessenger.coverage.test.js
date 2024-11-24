@@ -60,11 +60,13 @@ describe("CrossChainMessenger Coverage Tests", function () {
                 ),
                 destTokenAmounts: [],
                 feeToken: ethers.constants.AddressZero,
-                feeTokenAmount: BigInt(0),
-                extraArgs: "0x"
+                feeTokenAmount: 0n,
+                extraArgs: "0x",
+                destTokens: [],
+                messageIds: [],
+                sourceTokens: []
             };
 
-            const messengerInterface = new ethers.utils.Interface(CrossChainMessenger.abi);
             await expect(
                 mockRouter.simulateMessageReceived(messenger.address, message)
             ).to.be.revertedWithCustomError(messenger, "InvalidSourceChain");

@@ -127,7 +127,7 @@ contract MockRouter is IRouter, ReentrancyGuard, SecurityBase {
             message
         );
 
-        (bool success, bytes memory returnData) = target.call(callData);
+        (bool success, bytes memory returnData) = target.call{value: msg.value}(callData);
 
         if (!success) {
             // Forward the error data directly
