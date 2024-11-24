@@ -14,7 +14,7 @@ async function deployContract(name, args = [], options = {}) {
     // Ensure args is an array and remove any undefined values
     const cleanArgs = (Array.isArray(args) ? args : [args]).filter(arg => arg !== undefined);
 
-    // Convert numeric values to BigNumber and ensure proper formatting
+    // Convert numeric values to BigNumber
     const deploymentArgs = cleanArgs.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
             return ethers.BigNumber.from(arg.toString());
@@ -30,26 +30,13 @@ async function deployContract(name, args = [], options = {}) {
         contractName,
         args: deploymentArgs,
         argsLength: deploymentArgs.length,
-        argTypes: deploymentArgs.map(arg => typeof arg),
-        options
+        argTypes: deploymentArgs.map(arg => typeof arg)
     });
 
     try {
-        // Deploy with explicit overrides to prevent automatic option injection
-        const deployOverrides = {
-            gasLimit: options.gasLimit || undefined,
-            value: options.value || undefined
-        };
-
-        // Only include non-undefined values in overrides
-        const cleanOverrides = Object.fromEntries(
-            Object.entries(deployOverrides).filter(([_, v]) => v !== undefined)
-        );
-
-        // Deploy with clean arguments and explicit overrides
-        const contract = await Factory.deploy(...deploymentArgs, cleanOverrides);
+        // Deploy with proper ethers v5 overrides format
+        const contract = await Factory.deploy(...deploymentArgs);
         await contract.deployed();
-
         console.log(`Successfully deployed ${name} at ${contract.address}`);
         return contract;
     } catch (error) {
@@ -57,8 +44,7 @@ async function deployContract(name, args = [], options = {}) {
             error: error.message,
             contractName,
             args: deploymentArgs,
-            argsLength: deploymentArgs.length,
-            options
+            argsLength: deploymentArgs.length
         });
         throw error;
     }
