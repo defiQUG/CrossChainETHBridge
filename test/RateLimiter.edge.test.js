@@ -34,15 +34,18 @@ describe("RateLimiter Edge Cases", function () {
                 await rateLimiter.processMessage();
             }
 
+            // Get current block timestamp
+            const currentTime = await time.latest();
+
             // Advance time to just before period end
-            await time.increase(RATE_PERIOD - 2);
+            await time.increaseTo(currentTime + RATE_PERIOD - 2);
 
             // Should still be rate limited
             await expect(rateLimiter.processMessage())
                 .to.be.revertedWith("Rate limit exceeded");
 
             // Advance time to just after period end
-            await time.increase(3);
+            await time.increaseTo(currentTime + RATE_PERIOD + 1);
 
             // Should allow message in new period
             await expect(rateLimiter.processMessage()).to.not.be.reverted;

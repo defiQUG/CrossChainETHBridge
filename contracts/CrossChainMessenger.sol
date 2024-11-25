@@ -141,10 +141,21 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
 
     function pause() external onlyOwner {
         _pause();
+        emergencyPause.triggerPause();
     }
 
     function unpause() external onlyOwner {
+        require(emergencyPause.canUnpause(), "Emergency pause still active");
         _unpause();
+        emergencyPause.clearPause();
+    }
+
+    function isEmergencyPaused() external view returns (bool) {
+        return emergencyPause.paused();
+    }
+
+    function emergencyPauseTimeRemaining() external view returns (uint256) {
+        return emergencyPause.timeUntilUnpause();
     }
 
     receive() external payable {}
