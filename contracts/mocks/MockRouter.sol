@@ -142,7 +142,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("Chain not supported");
         }
-        if (msg.value < getFee(destinationChainSelector, message)) {
+        uint256 requiredFee = _baseFee + _extraFee;  // Calculate total required fee
+        if (msg.value < requiredFee) {
             revert("Insufficient fee");
         }
         require(processMessage(), "Rate limit exceeded");
