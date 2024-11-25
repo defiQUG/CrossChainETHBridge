@@ -68,7 +68,7 @@ contract TestRouter is MockRouter, IRouterClient {
         // Calculate gas fee component
         uint256 scaledGasFee = (gasFee * 1 gwei * multiplier) / 100;
 
-        // Scale EXTRA_FEE by chain multiplier
+        // Scale base EXTRA_FEE by chain multiplier
         uint256 scaledExtraFee = (_extraFee * multiplier) / 100;
 
         // Combine all scaled fees
@@ -79,10 +79,12 @@ contract TestRouter is MockRouter, IRouterClient {
             adjustedBaseFee += message.data.length * MESSAGE_SIZE_FEE;
         }
 
-        // Add extra fee if message has extra args
+        // Add additional unscaled extra fee for messages with extraArgs
         if (message.extraArgs.length > 0) {
             adjustedBaseFee += _extraFee;
         }
+
+        return adjustedBaseFee;
 
         return adjustedBaseFee;
     }
