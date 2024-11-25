@@ -73,8 +73,10 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        if (!_supportedChains[destinationChainSelector]) revert("Chain not supported");
-        return _baseFee + (message.data.length > 0 ? _extraFee : 0);  // Add EXTRA_FEE only if message has data
+        if (!_supportedChains[destinationChainSelector]) revert("TestRouter: chain not supported");
+        uint256 baseChainFee = (_baseFee * chainGasMultipliers[destinationChainSelector]) / 100;
+        uint256 messageSizeFee = message.data.length * MESSAGE_SIZE_FEE;
+        return baseChainFee + (message.data.length > 0 ? _extraFee : 0) + messageSizeFee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
