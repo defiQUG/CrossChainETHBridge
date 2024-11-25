@@ -28,23 +28,33 @@ contract MockDefiOracle is IDefiOracle {
         return gasMultipliers[chainId];
     }
 
-    function setGasFee(uint256 chainId, uint256 newFee) external {
+    // Private implementation functions
+    function _setGasFee(uint256 chainId, uint256 newFee) private {
         require(chainId == 137 || chainId == 138, "Unsupported chain");
         gasFees[chainId] = newFee;
         emit GasFeeUpdated(chainId, newFee);
     }
 
-    function setGasMultiplier(uint256 chainId, uint256 newMultiplier) external {
+    function _setGasMultiplier(uint256 chainId, uint256 newMultiplier) private {
         require(chainId == 137 || chainId == 138, "Unsupported chain");
         gasMultipliers[chainId] = newMultiplier;
         emit GasMultiplierUpdated(chainId, newMultiplier);
     }
 
+    // Public interface functions
+    function setGasFee(uint256 chainId, uint256 newFee) external {
+        _setGasFee(chainId, newFee);
+    }
+
+    function setGasMultiplier(uint256 chainId, uint256 newMultiplier) external {
+        _setGasMultiplier(chainId, newMultiplier);
+    }
+
     function updateGasFee(uint256 chainId, uint256 newFee) external override {
-        setGasFee(chainId, newFee);
+        _setGasFee(chainId, newFee);
     }
 
     function updateGasMultiplier(uint256 chainId, uint256 newMultiplier) external override {
-        setGasMultiplier(chainId, newMultiplier);
+        _setGasMultiplier(chainId, newMultiplier);
     }
 }
