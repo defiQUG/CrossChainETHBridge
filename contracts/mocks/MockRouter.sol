@@ -39,17 +39,20 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     function initialize(
         address _admin,
         address _feeToken,
-        uint256 _baseFee
+        uint256 _baseFee,
+        address _oracle
     ) public virtual onlyOwner {
         require(!_routerInitialized, "Already initialized");
         require(_admin != address(0), "Invalid admin address");
         require(_feeToken != address(0), "Invalid fee token address");
         require(_baseFee > 0, "Invalid base fee");
+        require(_oracle != address(0), "Invalid oracle address");
 
         _routerInitialized = true;
         admin = _admin;
         feeToken = _feeToken;
         baseFee = _baseFee;
+        oracle = IDefiOracle(_oracle);
         _transferOwnership(_admin);
 
         emit RouterInitialized(_admin, _feeToken, _baseFee);

@@ -15,12 +15,14 @@ describe("MockRouter Tests", function() {
         mockRouter = contracts.mockRouter;
         mockWETH = contracts.mockWETH;
         crossChainMessenger = contracts.messenger;
+        const mockOracle = contracts.oracle;
 
         // Initialize MockRouter with required parameters
         await mockRouter.initialize(
             owner.address,  // admin
             ethers.ZeroAddress,  // feeToken
-            BASE_FEE  // baseFee
+            BASE_FEE,  // baseFee
+            mockOracle.address  // oracle
         );
         await mockRouter.setSupportedChain(POLYGON_CHAIN_SELECTOR, true);
     });
