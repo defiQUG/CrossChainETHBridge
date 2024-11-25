@@ -67,10 +67,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
-        require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(validateMessage(message), "Invalid message format");
+        require(processMessage(), "RateLimiter: rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -130,10 +130,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("ChainSelector: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("ChainSelector: chain not supported");
         }
         return _baseFee + _extraFee;  // Return total fee including extra fee
     }
@@ -143,14 +143,14 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("ChainSelector: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("ChainSelector: chain not supported");
         }
         uint256 requiredFee = _baseFee + _extraFee;  // Use total fee as the required fee
         if (msg.value < requiredFee) {
-            revert("Insufficient fee");
+            revert("Payment: insufficient fee");
         }
         require(processMessage(), "RateLimiter: rate limit exceeded");
 
