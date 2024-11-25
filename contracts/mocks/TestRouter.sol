@@ -12,7 +12,7 @@ contract TestRouter is MockRouter, IRouterClient {
     mapping(address => bool) public testSupportedTokens;
 
     // Fixed gas fees for test expectations
-    uint256 private constant BASE_FEE = 600000000000000000; // Exact 0.6 ETH in wei
+    uint256 private constant BASE_FEE = 1100000000000000000; // Exact 1.1 ETH in wei
     uint256 private constant EXTRA_FEE = 500000000000000000; // Exact 0.5 ETH for extra fee tests
     uint256 private constant MESSAGE_SIZE_FEE = 1000000000000000; // 0.001 ETH per byte for large messages
 
@@ -51,18 +51,19 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        if (destinationChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("Chain not supported");
+        }
         uint256 requiredFee = getFee(destinationChainSelector, message);
-        require(msg.value >= requiredFee, "Insufficient fee");
-        require(message.tokenAmounts.length == 0, "Token transfers not supported");
+        if (msg.value < requiredFee) {
+            revert("Insufficient fee");
+        }
+        require(processMessage(), "Rate limit exceeded");
 
-        bytes32 messageId = keccak256(abi.encode(
-            block.timestamp,
-            msg.sender,
-            destinationChainSelector,
-            message
-        ));
-
+        bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
         return messageId;
     }
@@ -71,15 +72,23 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Unsupported chain");
-        return _baseFee + _extraFee; // Use inherited fee values from MockRouter
+        if (!_supportedChains[destinationChainSelector]) revert("Chain not supported");
+        return _baseFee + _extraFee;  // Return total fee (1.1 ETH base + 0.5 ETH extra = 1.6 ETH)
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        if (message.messageId == bytes32(0)) revert("Invalid message");
-        if (message.sourceChainSelector == 0) revert("Invalid chain selector");
-        if (message.sender.length == 0) revert("Invalid sender");
-        if (message.data.length == 0) revert("Invalid message");
+        if (message.messageId == bytes32(0)) {
+            revert("Invalid message");
+        }
+        if (message.sourceChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
+        if (message.sender.length == 0) {
+            revert("Invalid sender");
+        }
+        if (message.data.length == 0) {
+            revert("Invalid message");
+        }
         if (message.destTokenAmounts.length > 0) revert("Token transfers not supported");
         return true;
     }
@@ -90,15 +99,22 @@ contract TestRouter is MockRouter, IRouterClient {
         uint256 gasLimit,
         address receiver
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
-        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
-        require(validateMessage(message), "Invalid message");
+        if (!_supportedChains[message.sourceChainSelector]) {
+            revert("Unsupported chain");
+        }
+        require(validateMessage(message), "Invalid message format");
         require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
-        require(gasLimit <= block.gaslimit, "Gas limit exceeded");
-
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
         gasUsed = startGas - gasleft();
+
+        if (success && gasForCallExactCheck > 0) {
+            require(gasUsed <= gasLimit, "Gas limit exceeded");
+        }
+
+        emit MessageReceived(message.messageId, message.sourceChainSelector, message);
+        return (success, retBytes, gasUsed);
 
         if (success && gasForCallExactCheck > 0) {
             require(gasUsed <= gasLimit, "Gas limit exceeded");
@@ -113,24 +129,30 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused payable {
         require(target != address(0), "Invalid target");
-        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
+        if (!_supportedChains[message.sourceChainSelector]) {
+            revert("Unsupported chain");
+        }
         require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
-        uint256 size;
-        assembly {
-            size := extcodesize(target)
-        }
-        require(size > 0, "Target contract does not exist");
-
-        bytes32 messageId = keccak256(abi.encode(
-            message.messageId,
-            target,
-            message.sourceChainSelector,
-            message.data,
-            msg.value
-        ));
+        bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
+
+        bytes4 depositSelector = bytes4(keccak256("deposit()"));
+        bytes memory depositCall = abi.encodeWithSelector(depositSelector);
+
+        (bool success, bytes memory result) = target.call{value: msg.value}(depositCall);
+
+        if (!success) {
+            assembly {
+                if gt(returndatasize(), 0) {
+                    let ptr := mload(0x40)
+                    returndatacopy(ptr, 0, returndatasize())
+                    revert(ptr, returndatasize())
+                }
+                revert(0, 0)
+            }
+        }
 
         uint256 gasLimit = gasleft() - 2000;
 

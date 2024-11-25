@@ -145,7 +145,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
             revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         uint256 requiredFee = _baseFee + _extraFee;  // Use total fee as the required fee
         if (msg.value < requiredFee) {
