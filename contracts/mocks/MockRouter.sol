@@ -66,7 +66,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         require(validateMessage(message), "Invalid message format");
         require(processMessage(), "Rate limit exceeded");
@@ -164,7 +164,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
             revert("Invalid chain selector");
         }
         if (!_supportedChains[chainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
