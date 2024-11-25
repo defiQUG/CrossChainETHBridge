@@ -34,10 +34,11 @@ contract TestRouter is MockRouter, IRouterClient {
     function initialize(
         address admin,
         address feeToken,
-        uint256 _baseFee
-    ) public override {
+        uint256 _baseFee,
+        address _oracle
+    ) public virtual override {
         if (!_routerInitialized) {
-            super.initialize(admin, feeToken, _baseFee);
+            super.initialize(admin, feeToken, _baseFee, _oracle);
             _extraFee = EXTRA_FEE; // Set 0.5 ETH as extra fee during initialization
         }
     }
@@ -57,19 +58,17 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("Chain not supported");
         }
 
-        // Apply chain-specific gas multiplier to base fee
-        uint256 multiplier = chainGasMultipliers[destinationChainSelector];
-        uint256 adjustedBaseFee = (baseFee * multiplier) / 100;
-
-        // Start with adjusted base fee
-        uint256 totalFee = adjustedBaseFee;
+        // Get dynamic gas fee and multiplier from oracle
+        uint256 gasFee = oracle.getGasFee(destinationChainSelector);
+        uint256 multiplier = oracle.getGasMultiplier(destinationChainSelector);
+        uint256 adjustedBaseFee = (baseFee * multiplier * gasFee) / (100 * 1 gwei);
 
         // Add extra fee if message has extra args
         if (message.extraArgs.length > 0) {
-            totalFee += _extraFee;
+            adjustedBaseFee += _extraFee;
         }
 
-        return totalFee;
+        return adjustedBaseFee;
     }
 
     function ccipSend(
