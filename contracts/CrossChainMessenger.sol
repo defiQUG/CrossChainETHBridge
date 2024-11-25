@@ -6,11 +6,12 @@ import { IRouter } from "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRou
 import { Client } from "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
+import { Pausable } from "@openzeppelin/contracts/security/Pausable.sol";
 import { RateLimiter } from "./security/RateLimiter.sol";
 import { EmergencyPause } from "./security/EmergencyPause.sol";
 import { IWETH } from "./interfaces/IWETH.sol";
 
-contract CrossChainMessenger is Ownable, ReentrancyGuard {
+contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
     using Client for Client.EVM2AnyMessage;
 
     IRouterClient public immutable ROUTER;
@@ -39,11 +40,11 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         uint256 _bridgeFee,
         uint256 _maxFee
     ) {
-        require(_router != address(0), "CrossChainMessenger: zero router address");
-        require(_weth != address(0), "CrossChainMessenger: zero WETH address");
-        require(_rateLimiter != address(0), "CrossChainMessenger: zero rate limiter address");
-        require(_emergencyPause != address(0), "CrossChainMessenger: zero emergency pause address");
-        require(_bridgeFee <= _maxFee, "CrossChainMessenger: fee exceeds maximum");
+        require(_router != address(0), "Zero router address");
+        require(_weth != address(0), "Zero WETH address");
+        require(_rateLimiter != address(0), "Zero rate limiter address");
+        require(_emergencyPause != address(0), "Zero emergency pause address");
+        require(_bridgeFee <= _maxFee, "Fee exceeds maximum");
 
         ROUTER = IRouterClient(_router);
         WETH = IWETH(_weth);
@@ -60,14 +61,13 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         return bridgeFee;
     }
 
-    function paused() external view returns (bool) {
-        return emergencyPause.paused();
+    function paused() external view override returns (bool) {
+        return super.paused() || emergencyPause.paused();
     }
 
-    function sendToPolygon(address _recipient) external payable nonReentrant {
-        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
-        require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
-        require(msg.value > 0, "CrossChainMessenger: zero amount");
+    function sendToPolygon(address _recipient) external payable nonReentrant whenNotPaused {
+        require(_recipient != address(0), "Invalid recipient address");
+        require(msg.value > 0, "Zero amount");
 
         bytes memory data = abi.encode(_recipient, msg.value);
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
@@ -78,11 +78,11 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
             feeToken: address(0)
         });
 
-        uint256 requiredFee = ROUTER.getFee(POLYGON_CHAIN_SELECTOR, message);
-        require(msg.value >= requiredFee, "CrossChainMessenger: insufficient payment");
+        uint256 requiredFee = ROUTER.getFee(POLYGON_CHAIN_SELECTOR, message) + bridgeFee;
+        require(msg.value >= requiredFee, "Insufficient payment");
 
         uint256 transferAmount = msg.value - requiredFee;
-        require(transferAmount > 0, "CrossChainMessenger: amount too small");
+        require(transferAmount > 0, "Amount too small");
 
         // Check rate limit and emergency pause before processing
         rateLimiter.processMessage();
@@ -96,17 +96,16 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         emit MessageSent(messageId, msg.sender, _recipient, transferAmount);
     }
 
-    function ccipReceive(Client.Any2EVMMessage calldata message) external {
-        require(!emergencyPause.paused(), "EmergencyPause: contract is paused");
-        require(msg.sender == address(ROUTER), "CrossChainMessenger: caller is not router");
-        require(message.sourceChainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR, "CrossChainMessenger: invalid source chain");
-        require(!processedMessages[message.messageId], "CrossChainMessenger: message already processed");
+    function ccipReceive(Client.Any2EVMMessage calldata message) external whenNotPaused {
+        require(msg.sender == address(ROUTER), "Caller is not router");
+        require(message.sourceChainSelector == DEFI_ORACLE_META_CHAIN_SELECTOR, "Invalid source chain");
+        require(!processedMessages[message.messageId], "Message already processed");
 
         (address recipient, uint256 amount) = abi.decode(message.data, (address, uint256));
 
-        require(recipient != address(0), "CrossChainMessenger: zero recipient address");
-        require(amount > 0, "CrossChainMessenger: zero amount");
-        require(address(this).balance >= amount, "CrossChainMessenger: insufficient balance");
+        require(recipient != address(0), "Invalid recipient address");
+        require(amount > 0, "Zero amount");
+        require(address(this).balance >= amount, "Insufficient balance");
 
         // Mark message as processed before state changes
         processedMessages[message.messageId] = true;
@@ -118,28 +117,35 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard {
         // Handle WETH operations with proper error checking
         try WETH.deposit{value: amount}() {
             bool success = WETH.transfer(recipient, amount);
-            require(success, "CrossChainMessenger: WETH transfer failed");
+            require(success, "WETH transfer failed");
         } catch {
-            revert("CrossChainMessenger: WETH deposit failed");
+            revert("WETH deposit failed");
         }
 
         emit MessageReceived(message.messageId, address(bytes20(message.sender)), recipient, amount);
     }
 
     function setBridgeFee(uint256 _newFee) external onlyOwner {
-        require(_newFee <= MAX_FEE, "CrossChainMessenger: fee exceeds maximum");
+        require(_newFee <= MAX_FEE, "Fee exceeds maximum");
         bridgeFee = _newFee;
         emit BridgeFeeUpdated(_newFee);
     }
 
-    function emergencyWithdraw(address payable _recipient) external onlyOwner {
-        require(emergencyPause.paused(), "EmergencyPause: contract not paused");
-        require(_recipient != address(0), "CrossChainMessenger: zero recipient address");
+    function emergencyWithdraw(address payable _recipient) external onlyOwner whenPaused {
+        require(_recipient != address(0), "Invalid recipient address");
         uint256 balance = address(this).balance;
-        require(balance > 0, "CrossChainMessenger: no balance to withdraw");
+        require(balance > 0, "No balance to withdraw");
         (bool success, ) = _recipient.call{value: balance}("");
-        require(success, "CrossChainMessenger: transfer failed");
+        require(success, "Transfer failed");
         emit EmergencyWithdraw(_recipient, balance);
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 
     receive() external payable {}
