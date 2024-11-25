@@ -5,6 +5,7 @@ import "@chainlink/contracts-ccip/src/v0.8/ccip/interfaces/IRouter.sol";
 import "@chainlink/contracts-ccip/src/v0.8/ccip/libraries/Client.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "../security/RateLimiter.sol";
+import "../interfaces/IDefiOracle.sol";
 
 contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     using Client for Client.Any2EVMMessage;
@@ -19,6 +20,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     uint256 internal _extraFee;
     address public admin;
     address public feeToken;
+    IDefiOracle public oracle;
     bool internal _routerInitialized;
 
     event RouterInitialized(address indexed admin, address indexed feeToken, uint256 baseFee);
@@ -37,17 +39,20 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     function initialize(
         address _admin,
         address _feeToken,
-        uint256 _baseFee
+        uint256 _baseFee,
+        address _oracle
     ) public virtual onlyOwner {
-        require(!_routerInitialized, "TestRouter: already initialized");
-        require(_admin != address(0), "TestRouter: invalid admin address");
-        require(_feeToken != address(0), "TestRouter: invalid fee token address");
-        require(_baseFee > 0, "TestRouter: invalid base fee");
+        require(!_routerInitialized, "Already initialized");
+        require(_admin != address(0), "Invalid admin address");
+        require(_feeToken != address(0), "Invalid fee token address");
+        require(_baseFee > 0, "Invalid base fee");
+        require(_oracle != address(0), "Invalid oracle address");
 
         _routerInitialized = true;
         admin = _admin;
         feeToken = _feeToken;
         baseFee = _baseFee;
+        oracle = IDefiOracle(_oracle);
         _transferOwnership(_admin);
 
         emit RouterInitialized(_admin, _feeToken, _baseFee);
@@ -68,17 +73,17 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("TestRouter: chain not supported");
+            revert("Chain not supported");
         }
-        require(validateMessage(message), "TestRouter: invalid message");
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(validateMessage(message), "Invalid message");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
         gasUsed = startGas - gasleft();
 
         if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "TestRouter: gas limit exceeded");
+            require(gasUsed <= gasLimit, "Gas limit exceeded");
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
@@ -87,16 +92,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("TestRouter: invalid message ID");
+            revert("Invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("TestRouter: invalid sender");
+            revert("Invalid sender");
         }
         if (message.data.length == 0) {
-            revert("TestRouter: invalid message");
+            revert("Invalid message");
         }
         return true;
     }
@@ -105,9 +110,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address target,
         Client.Any2EVMMessage memory message
     ) external virtual payable {
-        require(target != address(0), "TestRouter: invalid target");
-        require(validateMessage(message), "TestRouter: invalid message");
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(target != address(0), "Invalid target");
+        require(validateMessage(message), "Invalid message");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
@@ -131,18 +136,22 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (destinationChainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("TestRouter: chain not supported");
+            revert("Chain not supported");
         }
-        // Base fee is always included
-        uint256 totalFee = baseFee;
+
+        // Get dynamic gas fee and multiplier from oracle
+        uint256 gasFee = oracle.getGasFee(destinationChainSelector);
+        uint256 multiplier = oracle.getGasMultiplier(destinationChainSelector);
+        uint256 adjustedBaseFee = (baseFee * multiplier * gasFee) / (100 * 1 gwei); // Normalize gas fee
+
         // Add extra fee if message has extra args
         if (message.extraArgs.length > 0) {
-            totalFee += 500000000000000000; // 0.5 ETH extra for messages with args
+            adjustedBaseFee += _extraFee;
         }
-        return totalFee;
+        return adjustedBaseFee;
     }
 
     function ccipSend(
@@ -150,16 +159,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("TestRouter: chain not supported");
+            revert("Chain not supported");
         }
         uint256 requiredFee = getFee(destinationChainSelector, message);  // Use getFee() for consistency
         if (msg.value < requiredFee) {
-            revert("TestRouter: insufficient fee");
+            revert("Insufficient fee");
         }
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -169,16 +178,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
         if (chainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[chainSelector]) {
-            revert("TestRouter: chain not supported");
+            revert("Chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
 
     function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
-        require(token != address(0), "TestRouter: invalid token address");
+        require(token != address(0), "Invalid token address");
 
         // Remove existing token if not supported
         if (!supported) {
