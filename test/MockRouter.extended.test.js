@@ -85,7 +85,7 @@ describe("MockRouter Extended Tests", function () {
 
         it("Should handle invalid chain ID", async function () {
             await expect(router.ccipSend(999999, defaultMessage))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("Chain not supported");
         });
     });
 });

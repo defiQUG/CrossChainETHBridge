@@ -38,7 +38,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getSupportedTokens for invalid chain", async function() {
             await expect(mockRouter.getSupportedTokens(999n))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("Chain not supported");
         });
 
         it("Should allow owner to set supported chain", async function() {
@@ -100,7 +100,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getFee for unsupported chain", async function() {
             await expect(mockRouter.getFee(999n, message))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("Chain not supported");
         });
     });
 
