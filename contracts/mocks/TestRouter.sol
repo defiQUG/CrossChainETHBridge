@@ -79,11 +79,15 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: chain not supported");
         }
 
-        // Calculate base fee with chain multiplier first
-        uint256 chainFee = (baseFee * chainGasMultipliers[destinationChainSelector]) / 100;
+        // Call parent implementation first to get base fee calculation
+        uint256 fee = super.getFee(destinationChainSelector, message);
 
-        // Add message size fee and extra fee if applicable
-        return chainFee + (message.data.length * MESSAGE_SIZE_FEE) + (message.extraArgs.length > 0 ? EXTRA_FEE : 0);
+        // Add message size fee for large messages
+        if (message.data.length > 0) {
+            fee += message.data.length * MESSAGE_SIZE_FEE;
+        }
+
+        return fee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
