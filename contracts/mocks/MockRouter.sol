@@ -132,7 +132,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("TestRouter: chain not supported");
         }
-        return message.data.length > 0 ? _baseFee + _extraFee : _baseFee;  // Match ccipSend fee calculation
+        return _baseFee;  // Only return base fee, extra fee is handled separately
     }
 
     function ccipSend(
@@ -140,14 +140,14 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: chain not supported");
         }
-        uint256 requiredFee = _baseFee + _extraFee;  // Use same fee calculation as getFee()
+        uint256 requiredFee = getFee(destinationChainSelector, message);  // Use getFee() for consistency
         if (msg.value < requiredFee) {
-            revert("Insufficient fee");
+            revert("TestRouter: insufficient fee");
         }
         require(processMessage(), "Rate limit exceeded");
 
