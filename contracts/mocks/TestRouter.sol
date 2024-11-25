@@ -43,6 +43,25 @@ contract TestRouter is MockRouter, IRouterClient {
         return _supportedChains[destChainSelector];
     }
 
+    function getFee(
+        uint64 destinationChainSelector,
+        Client.EVM2AnyMessage memory message
+    ) public view override(MockRouter, IRouterClient) returns (uint256) {
+        if (destinationChainSelector == 0) {
+            revert("TestRouter: invalid chain selector");
+        }
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("TestRouter: chain not supported");
+        }
+        // Base fee is always included
+        uint256 totalFee = baseFee;
+        // Add extra fee if message has extra args
+        if (message.extraArgs.length > 0) {
+            totalFee += EXTRA_FEE; // 0.5 ETH extra for messages with args
+        }
+        return totalFee;
+    }
+
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
