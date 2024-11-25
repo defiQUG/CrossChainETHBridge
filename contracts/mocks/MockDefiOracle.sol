@@ -39,4 +39,13 @@ contract MockDefiOracle is IDefiOracle {
         gasMultipliers[chainId] = newMultiplier;
         emit GasMultiplierUpdated(chainId, newMultiplier);
     }
+
+    // Alias functions for test compatibility
+    function setGasFee(uint256 chainId, uint256 newFee) external {
+        updateGasFee(chainId, newFee);
+    }
+
+    function setGasMultiplier(uint256 chainId, uint256 newMultiplier) external {
+        updateGasMultiplier(chainId, newMultiplier);
+    }
 }

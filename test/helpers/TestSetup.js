@@ -8,10 +8,16 @@ async function deployTestContracts() {
     const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWETH.waitForDeployment();
 
-    // Deploy DefiOracle
-    const DefiOracle = await ethers.getContractFactory('DefiOracle');
-    const oracle = await DefiOracle.deploy();
+    // Deploy MockDefiOracle
+    const MockDefiOracle = await ethers.getContractFactory('MockDefiOracle');
+    const oracle = await MockDefiOracle.deploy();
     await oracle.waitForDeployment();
+
+    // Configure oracle with test values
+    await oracle.setGasFee(138, ethers.parseUnits('50', 'gwei')); // 50 gwei for Defi Oracle Meta
+    await oracle.setGasFee(137, ethers.parseUnits('30', 'gwei')); // 30 gwei for Polygon
+    await oracle.setGasMultiplier(138, 150); // 1.5x for Defi Oracle Meta
+    await oracle.setGasMultiplier(137, 100); // 1.0x for Polygon
 
     // Deploy RateLimiter with constructor arguments
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
