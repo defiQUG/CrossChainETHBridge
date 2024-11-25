@@ -37,12 +37,14 @@ contract RateLimiter is SecurityBase {
     }
 
     function processMessage() public virtual override whenNotPaused returns (bool) {
-        if (block.timestamp >= _periodStart + _periodDuration) {
-            _resetPeriod();
-        }
-
+        // Check message count before period reset to prevent edge case exploitation
         if (_currentPeriodMessages >= _maxMessagesPerPeriod) {
             revert("Rate limit exceeded");
+        }
+
+        // Only reset period if we haven't exceeded the limit
+        if (block.timestamp >= _periodStart + _periodDuration) {
+            _resetPeriod();
         }
 
         _currentPeriodMessages++;
