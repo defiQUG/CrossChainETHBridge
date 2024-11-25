@@ -6,11 +6,17 @@ describe("TestRouter", function () {
   let owner;
   let addr1;
   let addr2;
+  let mockToken;
   const maxMessages = 100;
   const periodDuration = 3600; // 1 hour
 
   beforeEach(async function () {
     [owner, addr1, addr2] = await ethers.getSigners();
+
+    // Deploy mock ERC20 token for fees
+    const MockToken = await ethers.getContractFactory("MockToken");
+    mockToken = await MockToken.deploy("Mock Token", "MTK");
+    await mockToken.waitForDeployment();
 
     const TestRouter = await ethers.getContractFactory("TestRouter");
     testRouter = await TestRouter.deploy(maxMessages, periodDuration);
@@ -18,7 +24,7 @@ describe("TestRouter", function () {
 
     // Initialize router with proper values
     const baseFee = ethers.parseEther("1.1"); // 1.1 ETH base fee
-    await testRouter.initialize(owner.address, ethers.ZeroAddress, baseFee);
+    await testRouter.initialize(owner.address, await mockToken.getAddress(), baseFee);
   });
 
   describe("Gas Fee Calculations", function () {
