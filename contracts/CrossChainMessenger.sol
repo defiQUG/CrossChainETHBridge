@@ -146,6 +146,3 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
 
     receive() external payable {}
 }
-
-    receive() external payable {}
-}
