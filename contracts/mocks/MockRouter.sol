@@ -172,10 +172,6 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
         require(token != address(0), "Invalid token address");
 
-    function setExtraFee(uint256 newExtraFee) external onlyOwner {
-        _extraFee = newExtraFee;
-    }
-
         // Remove existing token if not supported
         if (!supported) {
             address[] storage tokens138 = _supportedTokens[138];
@@ -230,11 +226,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         return false;
     }
 
-    function setExtraFee(uint256 newExtraFee) external onlyOwner {
+    function setExtraFee(uint256 newExtraFee) external virtual onlyOwner {
         _extraFee = newExtraFee;
     }
-
-    receive() external payable virtual {}
 
     receive() external payable virtual {}
 }

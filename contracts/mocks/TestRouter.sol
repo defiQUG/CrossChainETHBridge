@@ -156,7 +156,7 @@ contract TestRouter is MockRouter, IRouterClient {
         emit TokenSupportUpdated(token, supported);
     }
 
-    function setExtraFee(uint256 newExtraFee) external onlyOwner {
+    function setExtraFee(uint256 newExtraFee) external override onlyOwner {
         _extraFee = newExtraFee;
         emit ExtraFeeUpdated(newExtraFee);
     }
