@@ -115,13 +115,6 @@ contract TestRouter is MockRouter, IRouterClient {
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
         return (success, retBytes, gasUsed);
-
-        if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "Gas limit exceeded");
-        }
-
-        emit MessageReceived(message.messageId, message.sourceChainSelector, message);
-        return (success, retBytes, gasUsed);
     }
 
     function simulateMessageReceived(
@@ -135,22 +128,19 @@ contract TestRouter is MockRouter, IRouterClient {
         require(validateMessage(message), "Invalid message");
         require(processMessage(), "Rate limit exceeded");
 
+        uint256 size;
+        assembly {
+            size := extcodesize(target)
+        }
+        require(size > 0, "Target contract does not exist");
+
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        bytes4 depositSelector = bytes4(keccak256("deposit()"));
-        bytes memory depositCall = abi.encodeWithSelector(depositSelector);
-
-        (bool success, bytes memory result) = target.call{value: msg.value}(depositCall);
-
+        (bool success, bytes memory result) = target.call{value: msg.value}(message.data);
         if (!success) {
             assembly {
-                if gt(returndatasize(), 0) {
-                    let ptr := mload(0x40)
-                    returndatacopy(ptr, 0, returndatasize())
-                    revert(ptr, returndatasize())
-                }
-                revert(0, 0)
+                revert(add(32, result), mload(result))
             }
         }
 
