@@ -30,7 +30,7 @@ async function deployTestContracts() {
     await mockRouter.initialize(
         owner.address, // admin
         await mockWETH.getAddress(), // fee token
-        ethers.parseEther('0.001') // base fee
+        ethers.parseEther('1.1') // base fee - updated to match test expectations
     );
 
     // Deploy CrossChainMessenger
