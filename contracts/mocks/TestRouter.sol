@@ -62,14 +62,14 @@ contract TestRouter is MockRouter, IRouterClient {
         uint256 gasFee = oracle.getGasFee(destinationChainSelector);
         uint256 multiplier = chainGasMultipliers[destinationChainSelector];
 
-        // Calculate base fee component (1.1 ETH * 1.5 for Defi Oracle Meta)
-        uint256 scaledBaseFee = (baseFee * multiplier) / 100;
+        // Calculate base fee component with higher scaling for Defi Oracle Meta
+        uint256 scaledBaseFee = (baseFee * multiplier * 2) / 100;  // Double the multiplier effect
 
         // Calculate gas fee component
         uint256 scaledGasFee = (gasFee * 1 gwei * multiplier) / 100;
 
-        // Scale base EXTRA_FEE by chain multiplier
-        uint256 scaledExtraFee = (_extraFee * multiplier) / 100;
+        // Scale EXTRA_FEE by chain multiplier
+        uint256 scaledExtraFee = (_extraFee * multiplier * 2) / 100;  // Double the multiplier effect
 
         // Combine all scaled fees
         uint256 adjustedBaseFee = scaledBaseFee + scaledGasFee + scaledExtraFee;
@@ -79,7 +79,7 @@ contract TestRouter is MockRouter, IRouterClient {
             adjustedBaseFee += message.data.length * MESSAGE_SIZE_FEE;
         }
 
-        // Add additional unscaled extra fee for messages with extraArgs
+        // Add extra fee for messages with extraArgs
         if (message.extraArgs.length > 0) {
             adjustedBaseFee += _extraFee;
         }
