@@ -127,12 +127,12 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: chain not supported");
         }
-        return _baseFee + _extraFee;  // Include extra fee in total fee calculation
+        return _baseFee;  // Base implementation only returns base fee
     }
 
     function ccipSend(
