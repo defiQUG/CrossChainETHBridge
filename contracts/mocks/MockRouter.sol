@@ -32,7 +32,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         _supportedChains[138] = true; // Defi Oracle Meta Chain
         _supportedChains[137] = true; // Polygon Chain
         _baseFee = 1100000000000000000; // 1.1 ether
-        _extraFee = 0; // No extra fee, total fee is handled in base fee
+        _extraFee = 500000000000000000; // 0.5 ether, making total fee 1.6 ether
     }
 
     function initialize(
@@ -46,8 +46,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
         _admin = admin;
         _feeToken = feeToken;
-        // Don't override the base fee set in constructor
-        _extraFee = _baseFee / 2; // Set extra fee to half of base fee
+        // Remove fee-related initialization as it's handled in constructor
         _routerInitialized = true;
         _transferOwnership(admin);
     }
@@ -67,10 +66,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Chain not supported");
+            revert("Unsupported chain");
         }
         require(validateMessage(message), "Invalid message format");
-        require(processMessage(), "RateLimiter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -130,10 +129,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (destinationChainSelector == 0) {
-            revert("ChainSelector: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("ChainSelector: chain not supported");
+            revert("Unsupported chain");
         }
         return _baseFee + _extraFee;  // Return total fee including extra fee
     }
@@ -143,16 +142,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("ChainSelector: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("ChainSelector: chain not supported");
+            revert("Unsupported chain");
         }
         uint256 requiredFee = _baseFee + _extraFee;  // Use total fee as the required fee
         if (msg.value < requiredFee) {
-            revert("Payment: insufficient fee");
+            revert("Insufficient fee");
         }
-        require(processMessage(), "RateLimiter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
