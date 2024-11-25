@@ -18,22 +18,22 @@ contract EmergencyPause is Ownable, Pausable {
     event EmergencyUnpauseTriggered(uint256 timestamp);
 
     constructor(uint256 _pauseThreshold, uint256 _pauseDuration) {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
-        require(_pauseDuration > 0, "Pause duration must be positive");
+        require(_pauseThreshold > 0, "EmergencyPause: threshold must be positive");
+        require(_pauseDuration > 0, "EmergencyPause: duration must be positive");
         pauseThreshold = _pauseThreshold;
         pauseDuration = _pauseDuration;
         _transferOwnership(msg.sender);
     }
 
     function setPauseThreshold(uint256 _pauseThreshold) external onlyOwner {
-        require(_pauseThreshold > 0, "Pause threshold must be positive");
+        require(_pauseThreshold > 0, "EmergencyPause: threshold must be positive");
         uint256 oldThreshold = pauseThreshold;
         pauseThreshold = _pauseThreshold;
         emit PauseThresholdUpdated(oldThreshold, _pauseThreshold);
     }
 
     function setPauseDuration(uint256 _pauseDuration) external onlyOwner {
-        require(_pauseDuration > 0, "Pause duration must be positive");
+        require(_pauseDuration > 0, "EmergencyPause: duration must be positive");
         uint256 oldDuration = pauseDuration;
         pauseDuration = _pauseDuration;
         emit PauseDurationUpdated(oldDuration, _pauseDuration);
@@ -60,7 +60,7 @@ contract EmergencyPause is Ownable, Pausable {
 
     function checkAndUpdateValue(uint256 amount) external returns (bool) {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
+        require(!paused(), "EmergencyPause: contract is paused");
         totalValueLocked += amount;
         emit ValueLocked(amount);
         return checkAndPause(amount);
@@ -68,7 +68,7 @@ contract EmergencyPause is Ownable, Pausable {
 
     function lockValue(uint256 amount) external {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
+        require(!paused(), "EmergencyPause: contract is paused");
         totalValueLocked += amount;
         emit ValueLocked(amount);
         checkAndPause(amount);
@@ -76,14 +76,14 @@ contract EmergencyPause is Ownable, Pausable {
 
     function unlockValue(uint256 amount) external {
         checkAndUnpause();
-        require(!paused(), "Contract is paused");
-        require(amount <= totalValueLocked, "Amount exceeds locked value");
+        require(!paused(), "EmergencyPause: contract is paused");
+        require(amount <= totalValueLocked, "EmergencyPause: amount exceeds locked value");
         totalValueLocked -= amount;
         emit ValueUnlocked(amount);
     }
 
     function emergencyUnpause() external onlyOwner {
-        require(paused(), "Contract not paused");
+        require(paused(), "EmergencyPause: contract not paused");
         uint256 timestamp = block.timestamp;
         _unpause();
         emit EmergencyUnpauseTriggered(timestamp);
