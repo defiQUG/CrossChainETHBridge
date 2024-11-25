@@ -37,19 +37,22 @@ contract RateLimiter is SecurityBase {
     }
 
     function processMessage() public virtual override whenNotPaused returns (bool) {
-        // Check if period has ended and reset if needed
-        if (block.timestamp >= _periodStart + _periodDuration) {
-            _resetPeriod();
+        uint256 currentTimestamp = block.timestamp;
+        uint256 periodEnd = _periodStart + _periodDuration;
+
+        // If we're in a new period, reset counters
+        if (currentTimestamp >= periodEnd) {
+            _periodStart = currentTimestamp;
+            _currentPeriodMessages = 0;
+            emit PeriodReset(currentTimestamp);
         }
 
-        // After potential period reset, check message count
-        if (_currentPeriodMessages >= _maxMessagesPerPeriod) {
-            revert("Rate limit exceeded");
-        }
+        // After potential reset, check message count
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "Rate limit exceeded");
 
         _currentPeriodMessages++;
         messageCount++; // Required by SecurityBase
-        emit MessageProcessed(msg.sender, block.timestamp);
+        emit MessageProcessed(msg.sender, currentTimestamp);
         return true;
     }
 
