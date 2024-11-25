@@ -72,7 +72,7 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        return BASE_FEE;
+        return BASE_FEE + EXTRA_FEE; // Return total fee of 1.1 ETH (0.6 + 0.5)
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
