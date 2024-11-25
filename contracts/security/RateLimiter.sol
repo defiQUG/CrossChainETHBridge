@@ -41,7 +41,7 @@ contract RateLimiter is SecurityBase {
             _resetPeriod();
         }
 
-        require(_currentPeriodMessages < _maxMessagesPerPeriod, "Rate limit exceeded");
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
 
         _currentPeriodMessages++;
         messageCount++; // Required by SecurityBase

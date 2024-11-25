@@ -42,7 +42,7 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(_supportedChains[destinationChainSelector], "Unsupported chain");
         require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
 
         bytes32 messageId = keccak256(abi.encode(
@@ -60,16 +60,16 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        require(_supportedChains[destinationChainSelector], "Chain not supported");
+        require(_supportedChains[destinationChainSelector], "Unsupported chain");
         return BASE_FEE + _extraFee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
-        require(message.messageId != bytes32(0), "Invalid message ID");
-        require(message.sourceChainSelector != 0, "Chain not supported");
-        require(message.sender.length > 0, "Empty sender address");
-        require(message.data.length > 0, "Invalid message format");
-        require(message.destTokenAmounts.length == 0, "Invalid token amount");
+        require(message.messageId != bytes32(0), "TestRouter: invalid message");
+        require(message.sourceChainSelector != 0, "Unsupported chain");
+        require(message.sender.length > 0, "Invalid sender length");
+        require(message.data.length > 0, "TestRouter: invalid message");
+        require(message.destTokenAmounts.length == 0, "TestRouter: token transfers not supported");
         return true;
     }
 
@@ -79,11 +79,13 @@ contract TestRouter is MockRouter, IRouterClient {
         uint256 gasLimit,
         address receiver
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
-        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
-        require(validateMessage(message), "Invalid message format");
+        require(_supportedChains[message.sourceChainSelector], "Unsupported chain");
+        require(validateMessage(message), "TestRouter: invalid message");
         require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
+        require(gasLimit <= gasleft(), "Gas limit exceeded");
+
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
         gasUsed = startGas - gasleft();
 
@@ -100,8 +102,8 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused payable {
         require(target != address(0), "Invalid target address");
-        require(_supportedChains[message.sourceChainSelector], "Chain not supported");
-        require(validateMessage(message), "Invalid message format");
+        require(_supportedChains[message.sourceChainSelector], "Unsupported chain");
+        require(validateMessage(message), "TestRouter: invalid message");
         require(processMessage(), "Rate limit exceeded");
 
         // Validate target contract exists
@@ -122,6 +124,7 @@ contract TestRouter is MockRouter, IRouterClient {
 
         // Calculate safe gas limit
         uint256 gasLimit = gasleft() - 2000; // Reserve 2000 gas for post-call operations
+        require(gasLimit <= gasleft(), "Gas limit exceeded");
 
         (bool success, bytes memory result) = target.call{
             gas: gasLimit,
