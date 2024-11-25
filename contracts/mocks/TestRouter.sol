@@ -73,7 +73,7 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         if (!_supportedChains[destinationChainSelector]) revert("Chain not supported");
-        return _baseFee + _extraFee;  // Return total fee (1.1 ETH base + 0.5 ETH extra = 1.6 ETH)
+        return _baseFee + (_extraFee > 0 ? _extraFee : 0);  // Only add extra fee if it's set
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
@@ -100,7 +100,7 @@ contract TestRouter is MockRouter, IRouterClient {
         address receiver
     ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         require(validateMessage(message), "Invalid message format");
         require(processMessage(), "Rate limit exceeded");
