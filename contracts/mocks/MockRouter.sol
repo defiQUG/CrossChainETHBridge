@@ -142,15 +142,32 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
             revert("Chain not supported");
         }
 
-        // Get dynamic gas fee and multiplier from oracle
-        uint256 gasFee = oracle.getGasFee(destinationChainSelector);
-        uint256 multiplier = oracle.getGasMultiplier(destinationChainSelector);
-        uint256 adjustedBaseFee = (baseFee * multiplier * gasFee) / (100 * 1 gwei); // Normalize gas fee
+        // Convert uint64 chain selector to uint256 for oracle calls
+        uint256 chainId = uint256(destinationChainSelector);
+        uint256 adjustedBaseFee;
 
-        // Add extra fee if message has extra args
-        if (message.extraArgs.length > 0) {
-            adjustedBaseFee += _extraFee;
+        try oracle.getGasFee(chainId) returns (uint256 gasFee) {
+            try oracle.getGasMultiplier(chainId) returns (uint256 multiplier) {
+                // Calculate adjusted base fee with proper scaling
+                // multiplier is in basis points (100 = 1x, 150 = 1.5x)
+                // gasFee is in wei, need to scale appropriately
+                adjustedBaseFee = (baseFee * multiplier * gasFee) / (100 * 1e9);
+
+                // Add message size fee if needed
+                if (message.extraArgs.length > 0) {
+                    adjustedBaseFee += _extraFee;
+                }
+            } catch Error(string memory reason) {
+                revert(string(abi.encodePacked("Gas multiplier error: ", reason)));
+            } catch {
+                revert("Failed to get gas multiplier");
+            }
+        } catch Error(string memory reason) {
+            revert(string(abi.encodePacked("Gas fee error: ", reason)));
+        } catch {
+            revert("Failed to get gas fee");
         }
+
         return adjustedBaseFee;
     }
 

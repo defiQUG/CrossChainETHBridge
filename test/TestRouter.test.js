@@ -7,6 +7,7 @@ describe("TestRouter", function () {
   let addr1;
   let addr2;
   let mockToken;
+  let oracle;
   const maxMessages = 100;
   const periodDuration = 3600; // 1 hour
 
@@ -18,13 +19,23 @@ describe("TestRouter", function () {
     mockToken = await MockToken.deploy("Mock Token", "MTK");
     await mockToken.waitForDeployment();
 
+    // Deploy DefiOracle
+    const DefiOracle = await ethers.getContractFactory("DefiOracle");
+    oracle = await DefiOracle.deploy();
+    await oracle.waitForDeployment();
+
     const TestRouter = await ethers.getContractFactory("TestRouter");
     testRouter = await TestRouter.deploy(maxMessages, periodDuration);
     await testRouter.waitForDeployment();
 
     // Initialize router with proper values
     const baseFee = ethers.parseEther("1.1"); // 1.1 ETH base fee
-    await testRouter.initialize(owner.address, await mockToken.getAddress(), baseFee);
+    await testRouter.initialize(
+      owner.address,
+      await mockToken.getAddress(),
+      baseFee,
+      await oracle.getAddress()
+    );
   });
 
   describe("Gas Fee Calculations", function () {

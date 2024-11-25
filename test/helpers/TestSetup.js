@@ -8,6 +8,11 @@ async function deployTestContracts() {
     const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
     await mockWETH.waitForDeployment();
 
+    // Deploy DefiOracle
+    const DefiOracle = await ethers.getContractFactory('DefiOracle');
+    const oracle = await DefiOracle.deploy();
+    await oracle.waitForDeployment();
+
     // Deploy RateLimiter with constructor arguments
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
     const rateLimiter = await RateLimiter.deploy(10, 3600); // 10 messages per hour
@@ -30,7 +35,8 @@ async function deployTestContracts() {
     await mockRouter.initialize(
         owner.address, // admin
         await mockWETH.getAddress(), // fee token
-        ethers.parseEther('1.1') // base fee - updated to match test expectations
+        ethers.parseEther('1.1'), // base fee - updated to match test expectations
+        await oracle.getAddress() // oracle address
     );
 
     // Deploy CrossChainMessenger
@@ -54,7 +60,8 @@ async function deployTestContracts() {
         rateLimiter,
         emergencyPause,
         mockRouter,
-        messenger
+        messenger,
+        oracle
     };
 }
 

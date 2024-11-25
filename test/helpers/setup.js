@@ -20,6 +20,9 @@ async function deployTestContracts() {
     // Deploy MockWETH
     const mockWETH = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
 
+    // Deploy DefiOracle
+    const oracle = await deployContract("DefiOracle", []);
+
     // Deploy TestRouter with rate limiter params
     const mockRouter = await deployContract("TestRouter", [
         TEST_CONFIG.MAX_MESSAGES_PER_PERIOD,
@@ -42,7 +45,8 @@ async function deployTestContracts() {
     await mockRouter.initialize(
         owner.address,
         await mockWETH.getAddress(),
-        TEST_CONFIG.BRIDGE_FEE
+        TEST_CONFIG.BRIDGE_FEE,
+        await oracle.getAddress()
     );
 
     // Deploy CrossChainMessenger with initialized contracts
@@ -71,6 +75,7 @@ async function deployTestContracts() {
         rateLimiter,
         emergencyPause,
         crossChainMessenger,
+        oracle,
         TEST_CONFIG
     };
 }
