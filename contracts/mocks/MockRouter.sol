@@ -29,10 +29,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         uint256 maxMessages,
         uint256 periodDuration
     ) RateLimiter(maxMessages, periodDuration) {
-        // Initialize supported chains in constructor
         _supportedChains[138] = true; // Defi Oracle Meta Chain
         _supportedChains[137] = true; // Polygon Chain
         _baseFee = 600000000000000000; // 0.6 ether
+        _extraFee = 500000000000000000; // 0.5 ether
     }
 
     function initialize(
@@ -40,9 +40,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address feeToken,
         uint256 baseFee
     ) public virtual {
-        require(!_routerInitialized, "MockRouter: already initialized");
-        require(admin != address(0), "MockRouter: invalid admin address");
-        require(feeToken != address(0), "MockRouter: invalid fee token address");
+        require(!_routerInitialized, "Already initialized");
+        require(admin != address(0), "Invalid admin address");
+        require(feeToken != address(0), "Invalid fee token address");
 
         _admin = admin;
         _feeToken = feeToken;
@@ -66,16 +66,18 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         uint256 gasLimit,
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
-        require(_supportedChains[message.sourceChainSelector], "MockRouter: chain not supported");
-        require(validateMessage(message), "MockRouter: invalid message");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        if (!_supportedChains[message.sourceChainSelector]) {
+            revert("Chain not supported");
+        }
+        require(validateMessage(message), "Invalid message");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
         gasUsed = startGas - gasleft();
 
         if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "MockRouter: gas limit exceeded");
+            require(gasUsed <= gasLimit, "Gas limit exceeded");
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
@@ -84,16 +86,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("MockRouter: invalid message");
+            revert("Invalid message");
         }
         if (message.sourceChainSelector == 0) {
-            revert("MockRouter: chain not supported");
+            revert("Invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("MockRouter: invalid sender");
+            revert("Invalid sender");
         }
         if (message.data.length == 0) {
-            revert("MockRouter: invalid message");
+            revert("Invalid message");
         }
         return true;
     }
@@ -102,9 +104,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address target,
         Client.Any2EVMMessage memory message
     ) external virtual payable {
-        require(target != address(0), "MockRouter: invalid target");
-        require(validateMessage(message), "MockRouter: invalid message");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        require(target != address(0), "Invalid target");
+        require(validateMessage(message), "Invalid message");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
@@ -128,18 +130,22 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (!_supportedChains[destinationChainSelector]) {
-            revert("MockRouter: chain not supported");
+            revert("Chain not supported");
         }
-        return _baseFee;
+        return _baseFee + _extraFee;
     }
 
     function ccipSend(
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
-        require(_supportedChains[destinationChainSelector], "MockRouter: chain not supported");
-        require(msg.value >= getFee(destinationChainSelector, message), "MockRouter: insufficient fee");
-        require(processMessage(), "MockRouter: rate limit exceeded");
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("Chain not supported");
+        }
+        if (msg.value < getFee(destinationChainSelector, message)) {
+            revert("Insufficient fee");
+        }
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -149,16 +155,55 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
         if (!_supportedChains[chainSelector]) {
-            revert("MockRouter: chain not supported");
+            revert("Chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
 
     function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
-        require(token != address(0), "MockRouter: invalid token address");
-        if (supported) {
-            _supportedTokens[138].push(token); // Add to Defi Oracle Meta Chain
-            _supportedTokens[137].push(token); // Add to Polygon Chain
+        require(token != address(0), "Invalid token address");
+
+        // Remove existing token if not supported
+        if (!supported) {
+            address[] storage tokens138 = _supportedTokens[138];
+            address[] storage tokens137 = _supportedTokens[137];
+
+            for (uint i = 0; i < tokens138.length; i++) {
+                if (tokens138[i] == token) {
+                    tokens138[i] = tokens138[tokens138.length - 1];
+                    tokens138.pop();
+                    break;
+                }
+            }
+
+            for (uint i = 0; i < tokens137.length; i++) {
+                if (tokens137[i] == token) {
+                    tokens137[i] = tokens137[tokens137.length - 1];
+                    tokens137.pop();
+                    break;
+                }
+            }
+        } else {
+            // Add token if not already present
+            bool exists138 = false;
+            bool exists137 = false;
+
+            for (uint i = 0; i < _supportedTokens[138].length; i++) {
+                if (_supportedTokens[138][i] == token) {
+                    exists138 = true;
+                    break;
+                }
+            }
+
+            for (uint i = 0; i < _supportedTokens[137].length; i++) {
+                if (_supportedTokens[137][i] == token) {
+                    exists137 = true;
+                    break;
+                }
+            }
+
+            if (!exists138) _supportedTokens[138].push(token);
+            if (!exists137) _supportedTokens[137].push(token);
         }
     }
 
