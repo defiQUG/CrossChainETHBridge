@@ -46,8 +46,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
         _admin = admin;
         _feeToken = feeToken;
-        _baseFee = baseFee;
-        _extraFee = baseFee / 2; // Set extra fee to half of base fee
+        // Don't override the base fee set in constructor
+        _extraFee = _baseFee / 2; // Set extra fee to half of base fee
         _routerInitialized = true;
         _transferOwnership(admin);
     }
