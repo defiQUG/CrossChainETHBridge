@@ -15,6 +15,10 @@ describe("TestRouter", function () {
     const TestRouter = await ethers.getContractFactory("TestRouter");
     testRouter = await TestRouter.deploy(maxMessages, periodDuration);
     await testRouter.waitForDeployment();
+
+    // Initialize router with proper values
+    const baseFee = ethers.parseEther("1.1"); // 1.1 ETH base fee
+    await testRouter.initialize(owner.address, ethers.ZeroAddress, baseFee);
   });
 
   describe("Gas Fee Calculations", function () {
