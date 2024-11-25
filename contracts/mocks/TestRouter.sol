@@ -26,6 +26,9 @@ contract TestRouter is MockRouter, IRouterClient {
     constructor(uint256 maxMessages, uint256 periodDuration) MockRouter(maxMessages, periodDuration) {
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
+        // Set chain-specific gas multipliers
+        chainGasMultipliers[DEFI_ORACLE_META_CHAIN_SELECTOR] = 150; // 1.5x multiplier for Defi Oracle Meta
+        chainGasMultipliers[POLYGON_CHAIN_SELECTOR] = 100; // Base multiplier for Polygon
     }
 
     function initialize(
@@ -53,12 +56,19 @@ contract TestRouter is MockRouter, IRouterClient {
         if (!_supportedChains[destinationChainSelector]) {
             revert("TestRouter: chain not supported");
         }
-        // Base fee is always included
-        uint256 totalFee = baseFee;
+
+        // Apply chain-specific gas multiplier to base fee
+        uint256 multiplier = chainGasMultipliers[destinationChainSelector];
+        uint256 adjustedBaseFee = (baseFee * multiplier) / 100;
+
+        // Start with adjusted base fee
+        uint256 totalFee = adjustedBaseFee;
+
         // Add extra fee if message has extra args
         if (message.extraArgs.length > 0) {
-            totalFee += _extraFee; // Use _extraFee from parent contract instead of constant
+            totalFee += _extraFee;
         }
+
         return totalFee;
     }
 
