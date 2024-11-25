@@ -31,8 +31,8 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     ) RateLimiter(maxMessages, periodDuration) {
         _supportedChains[138] = true; // Defi Oracle Meta Chain
         _supportedChains[137] = true; // Polygon Chain
-        _baseFee = 600000000000000000; // 0.6 ether
-        _extraFee = 500000000000000000; // 0.5 ether
+        _baseFee = 1100000000000000000; // 1.1 ether
+        _extraFee = 0; // No extra fee, total fee is handled in base fee
     }
 
     function initialize(
@@ -148,11 +148,11 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("Unsupported chain");
         }
-        uint256 requiredFee = _baseFee + _extraFee;  // Calculate total required fee
+        uint256 requiredFee = _baseFee;  // Use only base fee as the total required fee
         if (msg.value < requiredFee) {
             revert("Insufficient fee");
         }
-        require(processMessage(), "Rate limit exceeded");
+        require(processMessage(), "RateLimiter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
