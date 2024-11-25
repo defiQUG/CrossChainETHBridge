@@ -132,7 +132,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("TestRouter: chain not supported");
         }
-        return _baseFee;  // Base implementation only returns base fee
+        return message.data.length > 0 ? _baseFee + _extraFee : _baseFee;  // Match ccipSend fee calculation
     }
 
     function ccipSend(
