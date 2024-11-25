@@ -10,7 +10,14 @@ uint64 constant POLYGON_CHAIN_SELECTOR = 137;
 
 contract TestRouter is MockRouter, IRouterClient {
     mapping(address => bool) public testSupportedTokens;
-    uint256 private constant BASE_FEE = 600000000000000000; // 0.6 ETH base fee
+
+    // Adjusted gas fees for different networks
+    uint256 private constant BASE_FEE = 0.01 ether; // 0.01 ETH base fee
+    uint256 private constant GAS_PRICE_MULTIPLIER = 110; // 10% buffer for gas price fluctuations
+    uint256 private constant MIN_GAS_LIMIT = 21000; // Minimum gas required for basic transaction
+
+    // Network-specific gas multipliers (base 100)
+    mapping(uint64 => uint256) private chainGasMultipliers;
 
     // Events for state changes
     event ChainSupportUpdated(uint64 indexed chainSelector, bool supported);
@@ -21,6 +28,10 @@ contract TestRouter is MockRouter, IRouterClient {
         // Initialize supported chains
         _supportedChains[DEFI_ORACLE_META_CHAIN_SELECTOR] = true;
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
+
+        // Initialize gas multipliers for different chains
+        chainGasMultipliers[DEFI_ORACLE_META_CHAIN_SELECTOR] = 120; // 20% higher for Defi Oracle Meta
+        chainGasMultipliers[POLYGON_CHAIN_SELECTOR] = 80;  // 20% lower for Polygon
     }
 
     function initialize(
@@ -43,8 +54,9 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        require(msg.value >= getFee(destinationChainSelector, message), "Insufficient fee");
-        require(message.destTokenAmounts.length == 0, "TestRouter: token transfers not supported");
+        uint256 requiredFee = getFee(destinationChainSelector, message);
+        require(msg.value >= requiredFee, "Insufficient fee");
+        require(message.tokenAmounts.length == 0, "TestRouter: token transfers not supported");
 
         bytes32 messageId = keccak256(abi.encode(
             block.timestamp,
@@ -62,7 +74,16 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
         require(_supportedChains[destinationChainSelector], "Chain not supported");
-        return BASE_FEE + _extraFee;
+
+        // Calculate dynamic fee based on chain and message size
+        uint256 baseGasFee = BASE_FEE;
+        uint256 chainMultiplier = chainGasMultipliers[destinationChainSelector];
+        uint256 messageGas = MIN_GAS_LIMIT + (message.data.length * 68); // 68 gas per byte of data
+
+        uint256 totalFee = (baseGasFee * chainMultiplier * GAS_PRICE_MULTIPLIER) / 10000; // Divide by 100^2
+        totalFee += (messageGas * tx.gasprice * chainMultiplier) / 100; // Add dynamic message gas cost
+
+        return totalFee + _extraFee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
