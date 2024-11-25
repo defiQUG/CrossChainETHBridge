@@ -47,14 +47,46 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
-        return super.ccipSend(destinationChainSelector, message);
+        if (destinationChainSelector == 0) {
+            revert("TestRouter: invalid chain selector");
+        }
+        if (!_supportedChains[destinationChainSelector]) {
+            revert("TestRouter: chain not supported");
+        }
+        uint256 requiredFee = getFee(destinationChainSelector, message);
+        if (msg.value < requiredFee) {
+            revert("TestRouter: insufficient fee");
+        }
+        require(processMessage(), "TestRouter: rate limit exceeded");
+
+        bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
+        emit MessageSent(messageId, destinationChainSelector, message);
+
+        return messageId;
     }
 
-    function getFee(
-        uint64 destinationChainSelector,
-        Client.EVM2AnyMessage memory message
-    ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        return super.getFee(destinationChainSelector, message);
+    function routeMessage(
+        Client.Any2EVMMessage calldata message,
+        uint16 gasForCallExactCheck,
+        uint256 gasLimit,
+        address receiver
+    ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
+        if (!_supportedChains[message.sourceChainSelector]) {
+            revert("TestRouter: chain not supported");
+        }
+        require(validateMessage(message), "TestRouter: invalid message");
+        require(processMessage(), "TestRouter: rate limit exceeded");
+
+        uint256 startGas = gasleft();
+        (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
+        gasUsed = startGas - gasleft();
+
+        if (success && gasForCallExactCheck > 0) {
+            require(gasUsed <= gasLimit, "TestRouter: gas limit exceeded");
+        }
+
+        emit MessageReceived(message.messageId, message.sourceChainSelector, message);
+        return (success, retBytes, gasUsed);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
@@ -74,15 +106,6 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: token transfers not supported");
         }
         return true;
-    }
-
-    function routeMessage(
-        Client.Any2EVMMessage calldata message,
-        uint16 gasForCallExactCheck,
-        uint256 gasLimit,
-        address receiver
-    ) external override returns (bool success, bytes memory retBytes, uint256 gasUsed) {
-        return super.routeMessage(message, gasForCallExactCheck, gasLimit, receiver);
     }
 
     function simulateMessageReceived(
