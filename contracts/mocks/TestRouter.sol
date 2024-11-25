@@ -12,7 +12,6 @@ contract TestRouter is MockRouter, IRouterClient {
     mapping(address => bool) public testSupportedTokens;
 
     // Fixed gas fees for test expectations
-    uint256 private constant BASE_FEE = 1100000000000000000; // Exact 1.1 ETH in wei
     uint256 private constant EXTRA_FEE = 500000000000000000; // Exact 0.5 ETH for extra fee tests
     uint256 private constant MESSAGE_SIZE_FEE = 1000000000000000; // 0.001 ETH per byte for large messages
 
@@ -29,7 +28,7 @@ contract TestRouter is MockRouter, IRouterClient {
         _supportedChains[POLYGON_CHAIN_SELECTOR] = true;
         chainGasMultipliers[DEFI_ORACLE_META_CHAIN_SELECTOR] = 100;
         chainGasMultipliers[POLYGON_CHAIN_SELECTOR] = 80;
-        _baseFee = BASE_FEE;
+        baseFee = 1100000000000000000; // Set initial base fee to 1.1 ETH
         _extraFee = EXTRA_FEE;
     }
 
@@ -53,16 +52,16 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("TestRouter: chain not supported");
+            revert("Chain not supported");
         }
         uint256 requiredFee = getFee(destinationChainSelector, message);
         if (msg.value < requiredFee) {
-            revert("TestRouter: insufficient fee");
+            revert("Insufficient fee");
         }
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -79,23 +78,26 @@ contract TestRouter is MockRouter, IRouterClient {
         if (!_supportedChains[destinationChainSelector]) {
             revert("TestRouter: chain not supported");
         }
-        return BASE_FEE;  // Always return exactly 1.1 ETH for test consistency
+        uint256 multiplier = chainGasMultipliers[destinationChainSelector];
+        uint256 messageSizeFee = message.data.length * MESSAGE_SIZE_FEE;
+        uint256 extraFee = message.extraArgs.length > 0 ? EXTRA_FEE : 0;
+        return baseFee + ((baseFee * (multiplier - 100) / 100) + messageSizeFee + extraFee);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("TestRouter: invalid message");
+            revert("Invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
-            revert("TestRouter: invalid chain selector");
+            revert("Invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("TestRouter: invalid sender");
+            revert("Invalid sender");
         }
         if (message.data.length == 0) {
-            revert("TestRouter: invalid message");
+            revert("Invalid message");
         }
-        if (message.destTokenAmounts.length > 0) revert("TestRouter: token transfers not supported");
+        if (message.destTokenAmounts.length > 0) revert("Token transfers not supported");
         return true;
     }
 
@@ -109,7 +111,7 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: chain not supported");
         }
         require(validateMessage(message), "TestRouter: invalid message");
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -132,7 +134,7 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: chain not supported");
         }
         require(validateMessage(message), "TestRouter: invalid message");
-        require(processMessage(), "TestRouter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 size;
         assembly {
@@ -176,10 +178,10 @@ contract TestRouter is MockRouter, IRouterClient {
         return timeLeft == 0;
     }
 
-    function setFeeConfig(address admin, address feeToken, uint256 baseFee) external onlyOwner {
-        _admin = admin;
-        _feeToken = feeToken;
-        _baseFee = baseFee;
+    function setFeeConfig(address _admin, address _feeToken, uint256 _baseFee) external onlyOwner {
+        admin = _admin;
+        feeToken = _feeToken;
+        baseFee = _baseFee;
     }
 
     receive() external payable override {}

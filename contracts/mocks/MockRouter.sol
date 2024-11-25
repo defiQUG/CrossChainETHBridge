@@ -15,12 +15,13 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     mapping(uint64 => address) internal _onRamps;
     mapping(uint64 => mapping(address => bool)) internal _offRamps;
 
-    uint256 internal _baseFee;
+    uint256 public baseFee;
     uint256 internal _extraFee;
-    address internal _admin;
-    address internal _feeToken;
+    address public admin;
+    address public feeToken;
     bool internal _routerInitialized;
 
+    event RouterInitialized(address indexed admin, address indexed feeToken, uint256 baseFee);
     event MessageReceived(bytes32 indexed messageId, uint64 indexed sourceChainSelector, Client.Any2EVMMessage message);
     event MessageSimulated(address indexed target, bytes32 indexed messageId, uint256 value);
     event MessageSent(bytes32 indexed messageId, uint64 indexed destinationChainSelector, Client.EVM2AnyMessage message);
@@ -34,20 +35,22 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function initialize(
-        address admin,
-        address feeToken,
-        uint256 baseFee
-    ) public virtual {
+        address _admin,
+        address _feeToken,
+        uint256 _baseFee
+    ) public virtual onlyOwner {
         require(!_routerInitialized, "TestRouter: already initialized");
-        require(admin != address(0), "TestRouter: invalid admin address");
-        require(feeToken != address(0), "TestRouter: invalid fee token address");
-        require(baseFee > 0, "TestRouter: invalid base fee");
+        require(_admin != address(0), "TestRouter: invalid admin address");
+        require(_feeToken != address(0), "TestRouter: invalid fee token address");
+        require(_baseFee > 0, "TestRouter: invalid base fee");
 
-        _admin = admin;
-        _feeToken = feeToken;
-        _baseFee = baseFee;  // Set the base fee
         _routerInitialized = true;
-        _transferOwnership(admin);
+        admin = _admin;
+        feeToken = _feeToken;
+        baseFee = _baseFee;
+        _transferOwnership(_admin);
+
+        emit RouterInitialized(_admin, _feeToken, _baseFee);
     }
 
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
@@ -84,7 +87,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("TestRouter: invalid message");
+            revert("TestRouter: invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
             revert("TestRouter: invalid chain selector");
@@ -133,7 +136,13 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("TestRouter: chain not supported");
         }
-        return _baseFee;  // Only return base fee, extra fee is handled separately
+        // Base fee is always included
+        uint256 totalFee = baseFee;
+        // Add extra fee if message has extra args
+        if (message.extraArgs.length > 0) {
+            totalFee += 500000000000000000; // 0.5 ETH extra for messages with args
+        }
+        return totalFee;
     }
 
     function ccipSend(
@@ -150,7 +159,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (msg.value < requiredFee) {
             revert("TestRouter: insufficient fee");
         }
-        require(processMessage(), "Rate limit exceeded");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -169,7 +178,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function setSupportedTokens(address token, bool supported) external virtual onlyOwner {
-        require(token != address(0), "Invalid token address");
+        require(token != address(0), "TestRouter: invalid token address");
 
         // Remove existing token if not supported
         if (!supported) {
