@@ -52,16 +52,16 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: chain not supported");
         }
         uint256 requiredFee = getFee(destinationChainSelector, message);
         if (msg.value < requiredFee) {
-            revert("Insufficient fee");
+            revert("TestRouter: insufficient fee");
         }
-        require(processMessage(), "Rate limit exceeded");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -81,23 +81,25 @@ contract TestRouter is MockRouter, IRouterClient {
         uint256 multiplier = chainGasMultipliers[destinationChainSelector];
         uint256 messageSizeFee = message.data.length * MESSAGE_SIZE_FEE;
         uint256 extraFee = message.extraArgs.length > 0 ? EXTRA_FEE : 0;
-        return baseFee + ((baseFee * (multiplier - 100) / 100) + messageSizeFee + extraFee);
+        return (baseFee * multiplier / 100) + messageSizeFee + extraFee;
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("Invalid message ID");
+            revert("TestRouter: invalid message ID");
         }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("Invalid sender");
+            revert("TestRouter: invalid sender");
         }
         if (message.data.length == 0) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
-        if (message.destTokenAmounts.length > 0) revert("Token transfers not supported");
+        if (message.destTokenAmounts.length > 0) {
+            revert("TestRouter: token transfers not supported");
+        }
         return true;
     }
 
