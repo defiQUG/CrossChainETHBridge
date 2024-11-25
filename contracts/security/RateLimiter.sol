@@ -42,7 +42,7 @@ contract RateLimiter is SecurityBase {
         }
 
         if (_currentPeriodMessages >= _maxMessagesPerPeriod) {
-            revert("RateLimiter: rate limit exceeded");
+            revert("Rate limit exceeded");
         }
 
         _currentPeriodMessages++;

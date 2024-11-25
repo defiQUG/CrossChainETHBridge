@@ -29,7 +29,7 @@ describe("RateLimiter", function () {
                 await rateLimiter.connect(user).processMessage();
             }
             await expect(rateLimiter.connect(user).processMessage())
-                .to.be.revertedWith("RateLimiter: rate limit exceeded");
+                .to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should reset period after duration", async function () {
