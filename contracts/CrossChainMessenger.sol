@@ -65,6 +65,9 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
         require(_recipient != address(0), "Invalid recipient address");
         require(msg.value > 0, "Zero amount");
 
+        // Check emergency pause state first
+        require(!emergencyPause.paused(), "Contract is paused");
+
         bytes memory data = abi.encode(_recipient, msg.value);
         Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
             receiver: abi.encode(_recipient),
