@@ -52,16 +52,16 @@ contract TestRouter is MockRouter, IRouterClient {
         Client.EVM2AnyMessage memory message
     ) external payable override(IRouterClient, MockRouter) returns (bytes32) {
         if (destinationChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: unsupported chain");
         }
         uint256 requiredFee = getFee(destinationChainSelector, message);
         if (msg.value < requiredFee) {
-            revert("Insufficient fee");
+            revert("TestRouter: insufficient fee");
         }
-        require(processMessage(), "Rate limit exceeded");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -72,24 +72,24 @@ contract TestRouter is MockRouter, IRouterClient {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage memory message
     ) public view override(MockRouter, IRouterClient) returns (uint256) {
-        if (!_supportedChains[destinationChainSelector]) revert("Chain not supported");
-        return _baseFee + _extraFee;  // Return total fee (1.1 ETH base + 0.5 ETH extra = 1.6 ETH)
+        if (!_supportedChains[destinationChainSelector]) revert("TestRouter: unsupported chain");
+        return _baseFee;  // Return only base fee (1.1 ETH) without extra fee
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("Invalid sender");
+            revert("TestRouter: invalid sender");
         }
         if (message.data.length == 0) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
-        if (message.destTokenAmounts.length > 0) revert("Token transfers not supported");
+        if (message.destTokenAmounts.length > 0) revert("TestRouter: token transfers not supported");
         return true;
     }
 
@@ -121,18 +121,18 @@ contract TestRouter is MockRouter, IRouterClient {
         address target,
         Client.Any2EVMMessage memory message
     ) external override whenNotPaused payable {
-        require(target != address(0), "Invalid target");
+        require(target != address(0), "TestRouter: invalid target");
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Unsupported chain");
+            revert("TestRouter: unsupported chain");
         }
-        require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(validateMessage(message), "TestRouter: invalid message");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         uint256 size;
         assembly {
             size := extcodesize(target)
         }
-        require(size > 0, "Target contract does not exist");
+        require(size > 0, "TestRouter: target contract does not exist");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
