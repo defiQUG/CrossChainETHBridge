@@ -79,7 +79,7 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: chain not supported");
         }
 
-        // Use parent implementation only - no additional fees
+        // Use parent implementation which handles both base fee and extra args fee
         return super.getFee(destinationChainSelector, message);
     }
 
