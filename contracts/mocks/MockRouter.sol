@@ -38,13 +38,14 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address feeToken,
         uint256 baseFee
     ) public virtual {
-        require(!_routerInitialized, "Already initialized");
-        require(admin != address(0), "Invalid admin address");
-        require(feeToken != address(0), "Invalid fee token address");
+        require(!_routerInitialized, "TestRouter: already initialized");
+        require(admin != address(0), "TestRouter: invalid admin address");
+        require(feeToken != address(0), "TestRouter: invalid fee token address");
+        require(baseFee > 0, "TestRouter: invalid base fee");
 
         _admin = admin;
         _feeToken = feeToken;
-        // Remove fee-related initialization as it's handled in constructor
+        _baseFee = baseFee;  // Set the base fee
         _routerInitialized = true;
         _transferOwnership(admin);
     }
@@ -64,17 +65,17 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: chain not supported");
         }
-        require(validateMessage(message), "Invalid message format");
-        require(processMessage(), "Rate limit exceeded");
+        require(validateMessage(message), "TestRouter: invalid message");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
         gasUsed = startGas - gasleft();
 
         if (success && gasForCallExactCheck > 0) {
-            require(gasUsed <= gasLimit, "Gas limit exceeded");
+            require(gasUsed <= gasLimit, "TestRouter: gas limit exceeded");
         }
 
         emit MessageReceived(message.messageId, message.sourceChainSelector, message);
@@ -83,16 +84,16 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure virtual returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("Invalid sender");
+            revert("TestRouter: invalid sender");
         }
         if (message.data.length == 0) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
         return true;
     }
@@ -101,9 +102,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address target,
         Client.Any2EVMMessage memory message
     ) external virtual payable {
-        require(target != address(0), "Invalid target");
-        require(validateMessage(message), "Invalid message");
-        require(processMessage(), "Rate limit exceeded");
+        require(target != address(0), "TestRouter: invalid target");
+        require(validateMessage(message), "TestRouter: invalid message");
+        require(processMessage(), "TestRouter: rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
@@ -159,10 +160,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
         if (chainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (!_supportedChains[chainSelector]) {
-            revert("Chain not supported");
+            revert("TestRouter: chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
