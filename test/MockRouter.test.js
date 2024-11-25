@@ -7,7 +7,7 @@ describe("MockRouter Tests", function() {
     let mockRouter, mockWETH, crossChainMessenger;
     const DOM_CHAIN_SELECTOR = 138n;
     const POLYGON_CHAIN_SELECTOR = 137n;
-    const BASE_FEE = ethers.parseUnits("0.6", "ether");
+    const BASE_FEE = ethers.parseUnits("1.1", "ether");
 
     beforeEach(async function() {
         [owner, addr1, addr2, user] = await ethers.getSigners();
@@ -38,7 +38,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getSupportedTokens for invalid chain", async function() {
             await expect(mockRouter.getSupportedTokens(999n))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("Unsupported chain");
         });
 
         it("Should allow owner to set supported chain", async function() {
@@ -100,7 +100,7 @@ describe("MockRouter Tests", function() {
 
         it("Should revert getFee for unsupported chain", async function() {
             await expect(mockRouter.getFee(999n, message))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("Unsupported chain");
         });
     });
 
