@@ -78,18 +78,18 @@ contract TestRouter is MockRouter, IRouterClient {
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
         if (message.messageId == bytes32(0)) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
         if (message.sourceChainSelector == 0) {
-            revert("Invalid chain selector");
+            revert("TestRouter: invalid chain selector");
         }
         if (message.sender.length == 0) {
-            revert("Invalid sender");
+            revert("TestRouter: invalid sender");
         }
         if (message.data.length == 0) {
-            revert("Invalid message");
+            revert("TestRouter: invalid message");
         }
-        if (message.destTokenAmounts.length > 0) revert("Token transfers not supported");
+        if (message.destTokenAmounts.length > 0) revert("TestRouter: token transfers not supported");
         return true;
     }
 

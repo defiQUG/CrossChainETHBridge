@@ -21,8 +21,8 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
     uint256 public bridgeFee;
     uint256 public constant MAX_FEE = 1 ether;
 
-    RateLimiter private rateLimiter;
-    EmergencyPause private emergencyPause;
+    RateLimiter public rateLimiter;
+    EmergencyPause public emergencyPause;
 
     // Track processed messages to prevent replay attacks
     mapping(bytes32 => bool) private processedMessages;
