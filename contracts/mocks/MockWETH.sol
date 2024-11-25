@@ -10,15 +10,22 @@ contract MockWETH is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
     function deposit() public payable {
+        require(msg.value > 0, "MockWETH: zero deposit amount");
         _mint(msg.sender, msg.value);
         emit Deposit(msg.sender, msg.value);
     }
 
     function withdraw(uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "ERC20: burn amount exceeds balance");
+        require(amount > 0, "MockWETH: zero withdrawal amount");
+        require(balanceOf(msg.sender) >= amount, "insufficient balance");
+
+        // Burn tokens before transfer to prevent reentrancy
         _burn(msg.sender, amount);
+
+        // Transfer ETH
         (bool success,) = msg.sender.call{value: amount}("");
         require(success, "MockWETH: ETH transfer failed");
+
         emit Withdrawal(msg.sender, amount);
     }
 

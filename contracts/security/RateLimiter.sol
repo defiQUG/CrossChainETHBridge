@@ -36,14 +36,15 @@ contract RateLimiter is SecurityBase {
         emit RateLimitUpdated(maxMessages, periodDuration);
     }
 
-    function processMessage() public virtual override returns (bool) {
+    function processMessage() public virtual override whenNotPaused returns (bool) {
         if (block.timestamp >= _periodStart + _periodDuration) {
             _resetPeriod();
         }
 
-        require(_currentPeriodMessages < _maxMessagesPerPeriod, "RateLimiter: rate limit exceeded");
+        require(_currentPeriodMessages < _maxMessagesPerPeriod, "Rate limit exceeded");
 
         _currentPeriodMessages++;
+        messageCount++; // Required by SecurityBase
         emit MessageProcessed(msg.sender, block.timestamp);
         return true;
     }
@@ -75,6 +76,11 @@ contract RateLimiter is SecurityBase {
         return (_periodStart + _periodDuration) - block.timestamp;
     }
 
+    function maxMessagesPerPeriod() external view returns (uint256) {
+        return _maxMessagesPerPeriod;
+    }
+
+    // Alias for compatibility
     function getMaxMessagesPerPeriod() external view returns (uint256) {
         return _maxMessagesPerPeriod;
     }
