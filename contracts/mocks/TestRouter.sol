@@ -57,7 +57,7 @@ contract TestRouter is MockRouter, IRouterClient {
         uint256 totalFee = baseFee;
         // Add extra fee if message has extra args
         if (message.extraArgs.length > 0) {
-            totalFee += EXTRA_FEE; // 0.5 ETH extra for messages with args
+            totalFee += _extraFee; // Use _extraFee from parent contract instead of constant
         }
         return totalFee;
     }
