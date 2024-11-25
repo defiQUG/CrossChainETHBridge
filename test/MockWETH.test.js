@@ -85,7 +85,7 @@ describe("MockWETH", function() {
         it("Should fail on withdrawing more than balance", async function() {
             await expect(
                 mockWETH.connect(user1).withdraw(DEPOSIT_AMOUNT)
-            ).to.be.revertedWith("ERC20: burn amount exceeds balance");
+            ).to.be.revertedWith("Insufficient balance");
         });
     });
 });

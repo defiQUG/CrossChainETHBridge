@@ -53,7 +53,7 @@ describe("MockWETH Extended Tests", function () {
         it("Should fail withdrawal with insufficient balance", async function () {
             const withdrawAmount = ethers.parseEther("2.0");
             await expect(mockWETH.withdraw(withdrawAmount))
-                .to.be.revertedWith("insufficient balance");
+                .to.be.revertedWith("Insufficient balance");
         });
     });
 
