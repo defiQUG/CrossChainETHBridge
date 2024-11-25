@@ -137,15 +137,7 @@ contract TestRouter is MockRouter, IRouterClient {
         bytes32 messageId = keccak256(abi.encode(message));
         emit MessageSimulated(target, messageId, msg.value);
 
-        (bool success, bytes memory result) = target.call{value: msg.value}(message.data);
-        if (!success) {
-            assembly {
-                revert(add(32, result), mload(result))
-            }
-        }
-
         uint256 gasLimit = gasleft() - 2000;
-
         (bool success, bytes memory result) = target.call{
             gas: gasLimit,
             value: msg.value
