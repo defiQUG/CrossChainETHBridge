@@ -39,23 +39,25 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     function initialize(
         address _admin,
         address _feeToken,
-        uint256 _baseFee,
-        address _oracle
+        uint256 _baseFee
     ) public virtual onlyOwner {
         require(!_routerInitialized, "Already initialized");
         require(_admin != address(0), "Invalid admin address");
         require(_feeToken != address(0), "Invalid fee token address");
         require(_baseFee > 0, "Invalid base fee");
-        require(_oracle != address(0), "Invalid oracle address");
 
         _routerInitialized = true;
         admin = _admin;
         feeToken = _feeToken;
         baseFee = _baseFee;
-        oracle = IDefiOracle(_oracle);
         _transferOwnership(_admin);
 
         emit RouterInitialized(_admin, _feeToken, _baseFee);
+    }
+
+    function setOracle(address _oracle) public virtual onlyOwner {
+        require(_oracle != address(0), "Invalid oracle address");
+        oracle = IDefiOracle(_oracle);
     }
 
     function getOnRamp(uint64 destChainSelector) external view returns (address) {
@@ -142,30 +144,29 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
             revert("Chain not supported");
         }
 
-        // Convert uint64 chain selector to uint256 for oracle calls
-        uint256 chainId = uint256(destinationChainSelector);
-        uint256 adjustedBaseFee;
+        uint256 adjustedBaseFee = baseFee;
 
-        try oracle.getGasFee(chainId) returns (uint256 gasFee) {
-            try oracle.getGasMultiplier(chainId) returns (uint256 multiplier) {
-                // Calculate adjusted base fee with proper scaling
-                // multiplier is in basis points (100 = 1x, 150 = 1.5x)
-                // gasFee is in wei, need to scale appropriately
-                adjustedBaseFee = (baseFee * multiplier * gasFee) / (100 * 1e9);
+        // Only use oracle if it's set
+        if (address(oracle) != address(0)) {
+            // Convert uint64 chain selector to uint256 for oracle calls
+            uint256 chainId = uint256(destinationChainSelector);
 
-                // Add message size fee if needed
-                if (message.extraArgs.length > 0) {
-                    adjustedBaseFee += _extraFee;
+            try oracle.getGasFee(chainId) returns (uint256 gasFee) {
+                try oracle.getGasMultiplier(chainId) returns (uint256 multiplier) {
+                    // Calculate adjusted base fee with proper scaling
+                    // multiplier is in basis points (100 = 1x, 150 = 1.5x)
+                    adjustedBaseFee = (baseFee * multiplier) / 100;
+                } catch {
+                    // If oracle calls fail, use base fee
                 }
-            } catch Error(string memory reason) {
-                revert(string(abi.encodePacked("Gas multiplier error: ", reason)));
             } catch {
-                revert("Failed to get gas multiplier");
+                // If oracle calls fail, use base fee
             }
-        } catch Error(string memory reason) {
-            revert(string(abi.encodePacked("Gas fee error: ", reason)));
-        } catch {
-            revert("Failed to get gas fee");
+        }
+
+        // Add message size fee if needed
+        if (message.extraArgs.length > 0) {
+            adjustedBaseFee += _extraFee;
         }
 
         return adjustedBaseFee;
