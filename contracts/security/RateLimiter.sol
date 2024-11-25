@@ -40,11 +40,12 @@ contract RateLimiter is SecurityBase {
         uint256 currentTimestamp = block.timestamp;
         uint256 periodEnd = _periodStart + _periodDuration;
 
-        // If we're in a new period, reset counters
+        // If we're in a new period, reset counters and align with period boundary
         if (currentTimestamp >= periodEnd) {
-            _periodStart = currentTimestamp;
+            uint256 periodsElapsed = (currentTimestamp - _periodStart) / _periodDuration;
+            _periodStart = _periodStart + (periodsElapsed * _periodDuration);
             _currentPeriodMessages = 0;
-            emit PeriodReset(currentTimestamp);
+            emit PeriodReset(_periodStart);
         }
 
         // After potential reset, check message count

@@ -30,6 +30,7 @@ contract TestRouter is MockRouter, IRouterClient {
         chainGasMultipliers[DEFI_ORACLE_META_CHAIN_SELECTOR] = 100;
         chainGasMultipliers[POLYGON_CHAIN_SELECTOR] = 80;
         _baseFee = BASE_FEE;
+        _extraFee = EXTRA_FEE;
     }
 
     function initialize(
