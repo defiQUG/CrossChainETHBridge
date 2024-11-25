@@ -67,10 +67,10 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         address receiver
     ) external virtual returns (bool success, bytes memory retBytes, uint256 gasUsed) {
         if (!_supportedChains[message.sourceChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         require(validateMessage(message), "Invalid message");
-        require(processMessage(), "RateLimiter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         uint256 startGas = gasleft();
         (success, retBytes) = receiver.call{gas: gasLimit}(message.data);
@@ -130,7 +130,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         return _baseFee + _extraFee;
     }
@@ -140,12 +140,12 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
         if (!_supportedChains[destinationChainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         if (msg.value < getFee(destinationChainSelector, message)) {
             revert("Insufficient fee");
         }
-        require(processMessage(), "RateLimiter: rate limit exceeded");
+        require(processMessage(), "Rate limit exceeded");
 
         bytes32 messageId = keccak256(abi.encode(block.timestamp, message, msg.sender));
         emit MessageSent(messageId, destinationChainSelector, message);
@@ -155,7 +155,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
 
     function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
         if (!_supportedChains[chainSelector]) {
-            revert("Unsupported chain");
+            revert("Chain not supported");
         }
         return _supportedTokens[chainSelector];
     }
