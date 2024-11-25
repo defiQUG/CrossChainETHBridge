@@ -59,7 +59,7 @@ contract TestRouter is MockRouter, IRouterClient {
         }
 
         // Get dynamic gas fee and multiplier from oracle
-        uint256 gasFee = oracle.getGasFee(destinationChainSelector);
+        uint256 gasFee = oracle.getGasFee(destinationChainSelector) * 1 gwei; // Convert gwei to wei
         uint256 multiplier = oracle.getGasMultiplier(destinationChainSelector);
         uint256 adjustedBaseFee = (baseFee * multiplier * gasFee) / 100;
 
