@@ -129,6 +129,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function getFee(uint64 destinationChainSelector, Client.EVM2AnyMessage memory message) public view virtual returns (uint256) {
+        if (destinationChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
         if (!_supportedChains[destinationChainSelector]) {
             revert("Unsupported chain");
         }
@@ -139,6 +142,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         uint64 destinationChainSelector,
         Client.EVM2AnyMessage calldata message
     ) external payable virtual returns (bytes32) {
+        if (destinationChainSelector == 0) {
+            revert("Invalid chain selector");
+        }
         if (!_supportedChains[destinationChainSelector]) {
             revert("Unsupported chain");
         }
@@ -155,6 +161,9 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
     }
 
     function getSupportedTokens(uint64 chainSelector) external view virtual returns (address[] memory) {
+        if (chainSelector == 0) {
+            revert("Invalid chain selector");
+        }
         if (!_supportedChains[chainSelector]) {
             revert("Unsupported chain");
         }
