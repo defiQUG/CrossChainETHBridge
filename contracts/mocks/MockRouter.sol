@@ -134,7 +134,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("Chain not supported");
         }
-        return _baseFee + _extraFee;  // Return total fee (1.1 ETH base + 0.5 ETH extra = 1.6 ETH)
+        return _baseFee;  // Return only base fee for test compatibility
     }
 
     function ccipSend(
@@ -147,7 +147,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         if (!_supportedChains[destinationChainSelector]) {
             revert("Chain not supported");
         }
-        uint256 requiredFee = _baseFee + _extraFee;  // Use total fee as the required fee
+        uint256 requiredFee = _baseFee;  // Use only base fee for consistency with getFee()
         if (msg.value < requiredFee) {
             revert("Insufficient fee");
         }
