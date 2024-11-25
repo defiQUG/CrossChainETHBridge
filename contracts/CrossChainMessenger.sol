@@ -40,10 +40,10 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
         uint256 _bridgeFee,
         uint256 _maxFee
     ) {
-        require(_router != address(0), "Zero router address");
-        require(_weth != address(0), "Zero WETH address");
-        require(_rateLimiter != address(0), "Zero rate limiter address");
-        require(_emergencyPause != address(0), "Zero emergency pause address");
+        require(_router != address(0), "Invalid router address");
+        require(_weth != address(0), "Invalid WETH address");
+        require(_rateLimiter != address(0), "Invalid rate limiter address");
+        require(_emergencyPause != address(0), "Invalid emergency pause address");
         require(_bridgeFee <= _maxFee, "Fee exceeds maximum");
 
         ROUTER = IRouterClient(_router);
@@ -59,10 +59,6 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
 
     function getBridgeFee() external view returns (uint256) {
         return bridgeFee;
-    }
-
-    function paused() external view override returns (bool) {
-        return super.paused() || emergencyPause.paused();
     }
 
     function sendToPolygon(address _recipient) external payable nonReentrant whenNotPaused {
@@ -147,6 +143,9 @@ contract CrossChainMessenger is Ownable, ReentrancyGuard, Pausable {
     function unpause() external onlyOwner {
         _unpause();
     }
+
+    receive() external payable {}
+}
 
     receive() external payable {}
 }
