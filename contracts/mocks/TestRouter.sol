@@ -79,15 +79,8 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("TestRouter: chain not supported");
         }
 
-        // Call parent implementation first to get base fee calculation
-        uint256 fee = super.getFee(destinationChainSelector, message);
-
-        // Add message size fee for large messages
-        if (message.data.length > 0) {
-            fee += message.data.length * MESSAGE_SIZE_FEE;
-        }
-
-        return fee;
+        // Use parent implementation only - no additional fees
+        return super.getFee(destinationChainSelector, message);
     }
 
     function validateMessage(Client.Any2EVMMessage memory message) public pure override returns (bool) {
