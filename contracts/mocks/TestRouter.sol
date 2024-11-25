@@ -58,10 +58,15 @@ contract TestRouter is MockRouter, IRouterClient {
             revert("Chain not supported");
         }
 
-        // Get dynamic gas fee and multiplier from oracle
+        // Get dynamic gas fee from oracle and use chain-specific multiplier
         uint256 gasFee = oracle.getGasFee(destinationChainSelector);
-        uint256 multiplier = oracle.getGasMultiplier(destinationChainSelector);
-        uint256 adjustedBaseFee = baseFee + ((gasFee * multiplier) / 100); // Add base fee to adjusted gas fee
+        uint256 multiplier = chainGasMultipliers[destinationChainSelector];
+        uint256 adjustedBaseFee = (baseFee * multiplier / 100) + ((gasFee * 1 gwei) * multiplier / 100); // Scale both components by chain multiplier
+
+        // Add message size-based fee
+        if (message.data.length > 0) {
+            adjustedBaseFee += message.data.length * MESSAGE_SIZE_FEE;
+        }
 
         // Add extra fee if message has extra args
         if (message.extraArgs.length > 0) {
