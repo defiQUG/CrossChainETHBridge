@@ -14,8 +14,8 @@ contract DefiOracle is IDefiOracle, Ownable {
 
     constructor() {
         // Initialize with default values
-        gasFees[DEFI_ORACLE_META_CHAIN_ID] = 30 gwei;
-        gasFees[POLYGON_CHAIN_ID] = 50 gwei;
+        gasFees[DEFI_ORACLE_META_CHAIN_ID] = 50 gwei;  // Increased from 30 gwei
+        gasFees[POLYGON_CHAIN_ID] = 30 gwei;  // Decreased from 50 gwei
 
         // Set default multipliers (1.5x for Defi Oracle Meta, 1x for Polygon)
         gasMultipliers[DEFI_ORACLE_META_CHAIN_ID] = 150;
