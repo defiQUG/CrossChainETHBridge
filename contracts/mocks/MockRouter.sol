@@ -32,7 +32,7 @@ contract MockRouter is IRouter, ReentrancyGuard, RateLimiter {
         _supportedChains[138] = true; // Defi Oracle Meta Chain
         _supportedChains[137] = true; // Polygon Chain
         _baseFee = 1100000000000000000; // 1.1 ether
-        _extraFee = 500000000000000000; // 0.5 ether, making total fee 1.6 ether
+        _extraFee = 0; // Remove extra fee for test compatibility
     }
 
     function initialize(
