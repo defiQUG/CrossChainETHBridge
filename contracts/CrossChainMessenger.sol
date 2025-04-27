@@ -13,7 +13,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract CrossChainMessenger is SecurityBase, ReentrancyGuard, ICrossChainMessenger {
     using Client for Client.Any2EVMMessage;
     using Client for Client.EVM2AnyMessage;
-
     uint64 private constant DEFI_ORACLE_META_CHAIN_SELECTOR = 138;
     uint64 private constant POLYGON_CHAIN_SELECTOR = 137;
     uint256 private constant MAX_FEE = 1 ether;
