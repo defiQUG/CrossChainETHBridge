@@ -30,7 +30,7 @@ describe("MockRouter Extended Tests", function () {
             receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [user2.address]),
             data: ethers.AbiCoder.defaultAbiCoder().encode(
                 ["address", "uint256"],
-                [user1.address, ethers.parseEther("1.0")]
+                [user1.address, ethers.utils.parseEther("1.0")]
             ),
             tokenAmounts: [],
             extraArgs: "0x",
@@ -80,12 +80,12 @@ describe("MockRouter Extended Tests", function () {
     describe("Error Handling", function () {
         it("Should handle zero chain ID", async function () {
             await expect(router.ccipSend(0, defaultMessage))
-                .to.be.revertedWith("Invalid chain selector");
+                .to.be.revertedWith("MockRouter: invalid chain selector");
         });
 
         it("Should handle invalid chain ID", async function () {
             await expect(router.ccipSend(999999, defaultMessage))
-                .to.be.revertedWith("Unsupported chain");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 });

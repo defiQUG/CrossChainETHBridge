@@ -36,14 +36,14 @@ describe("Security Features", function() {
 
     describe("Rate Limiting", function() {
         it("Should enforce rate limits", async function() {
-            const amount = ethers.parseEther("11.0");
+            const amount = ethers.utils.parseEther("11.0");
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWith("Rate limit exceeded");
         });
 
         it("Should reset rate limit after period", async function() {
-            const amount = ethers.parseEther("5.0");
+            const amount = ethers.utils.parseEther("5.0");
             await crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount });
             await time.increase(3601); // Advance time by more than 1 hour
             await expect(
@@ -54,20 +54,20 @@ describe("Security Features", function() {
 
     describe("Emergency Pause", function() {
         it("Should pause on large transfers", async function() {
-            const amount = ethers.parseEther("101.0");
+            const amount = ethers.utils.parseEther("101.0");
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: amount })
             ).to.be.revertedWith("Contract paused");
         });
 
         it("Should auto-unpause after duration", async function() {
-            const largeAmount = ethers.parseEther("101.0");
+            const largeAmount = ethers.utils.parseEther("101.0");
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: largeAmount })
             ).to.be.revertedWith("Contract paused");
 
             await time.increase(86401); // Advance time by more than 24 hours
-            const smallAmount = ethers.parseEther("1.0");
+            const smallAmount = ethers.utils.parseEther("1.0");
             await expect(
                 crossChainMessenger.connect(user).sendToPolygon(user.address, { value: smallAmount })
             ).to.not.be.reverted;

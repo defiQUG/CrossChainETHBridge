@@ -1,7 +1,6 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
-const { deployContract, getContractAt } = require('./helpers/test-utils');
 
 const {
     BRIDGE_FEE,
@@ -13,7 +12,7 @@ const {
     DEFI_ORACLE_META_CHAIN_SELECTOR
 } = TEST_CONFIG;
 
-const { ZeroAddress } = ethers;
+const { constants } = ethers;
 
 describe("Coverage Improvement Tests", function () {
     let messenger, router, weth, owner, user1, user2;
@@ -22,34 +21,24 @@ describe("Coverage Improvement Tests", function () {
     let INITIAL_BALANCE;
 
     beforeEach(async function () {
-        [owner, user1, user2] = await ethers.getSigners();
-        INITIAL_BALANCE = ethers.parseEther("10.0");
-
-        // Deploy contracts in correct order
-        router = await deployContract("MockRouter");
-        weth = await deployContract("MockWETH", ["Wrapped Ether", "WETH"]);
-        const rateLimiter = await deployContract("RateLimiter", [MAX_MESSAGES, RATE_PERIOD]);
-        const emergencyPause = await deployContract("EmergencyPause", [PAUSE_THRESHOLD, PAUSE_DURATION]);
-
-        messenger = await deployContract("CrossChainMessenger", [
-            await router.getAddress(),
-            await weth.getAddress(),
-            await rateLimiter.getAddress(),
-            await emergencyPause.getAddress(),
-            BRIDGE_FEE,
-            MAX_FEE
-        ]);
+        const contracts = await deployTestContracts();
+        messenger = contracts.crossChainMessenger;
+        router = contracts.mockRouter;
+        weth = contracts.mockWETH;
+        owner = contracts.owner;
+        [, user1, user2] = await ethers.getSigners();
+        INITIAL_BALANCE = ethers.utils.parseEther("10.0");
 
         // Fund the contract
         await owner.sendTransaction({
-            to: await messenger.getAddress(),
+            to: messenger.address,
             value: INITIAL_BALANCE
         });
     });
 
     describe("MockWETH", function () {
         it("Should handle deposit and withdrawal correctly", async function () {
-            const depositAmount = ethers.parseEther("1.0");
+            const depositAmount = ethers.utils.parseEther("1.0");
             await weth.deposit({ value: depositAmount });
             expect(await weth.balanceOf(owner.address)).to.equal(depositAmount);
             await weth.withdraw(depositAmount);
@@ -57,7 +46,7 @@ describe("Coverage Improvement Tests", function () {
         });
 
         it("Should handle transfer correctly", async function () {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await weth.deposit({ value: amount });
             await weth.transfer(user1.address, amount);
             expect(await weth.balanceOf(user1.address)).to.equal(amount);
@@ -66,13 +55,13 @@ describe("Coverage Improvement Tests", function () {
 
     describe("RateLimiter Edge Cases", function () {
         it("Should handle multiple messages within same period", async function () {
-            const messageValue = ethers.parseEther("1.0");
+            const messageValue = ethers.utils.parseEther("1.0");
             for (let i = 0; i < MAX_MESSAGES; i++) {
                 await messenger.sendToPolygon(user1.address, { value: messageValue });
             }
             await expect(
                 messenger.sendToPolygon(user1.address, { value: messageValue })
-            ).to.be.revertedWith("Rate limit exceeded for current period");
+            ).to.be.revertedWith("SecurityBase: Rate limit exceeded");
         });
     });
 
@@ -82,7 +71,7 @@ describe("Coverage Improvement Tests", function () {
             const initialBalance = await ethers.provider.getBalance(user2.address);
             await messenger.emergencyWithdraw(user2.address);
             const finalBalance = await ethers.provider.getBalance(user2.address);
-            expect(finalBalance - initialBalance).to.equal(INITIAL_BALANCE);
+            expect(finalBalance.sub(initialBalance)).to.equal(INITIAL_BALANCE);
         });
 
         it("Should prevent emergency withdraw when not paused", async function () {
@@ -91,30 +80,35 @@ describe("Coverage Improvement Tests", function () {
             }
             await expect(
                 messenger.emergencyWithdraw(user2.address)
-            ).to.be.revertedWith("Pausable: not paused");
+            ).to.be.revertedWith("EmergencyPause: contract not paused");
         });
 
         it("Should prevent emergency withdraw to zero address", async function () {
             await messenger.emergencyPause();
             await expect(
-                messenger.emergencyWithdraw(ZeroAddress)
-            ).to.be.revertedWith("CrossChainMessenger: zero recipient address");
+                messenger.emergencyWithdraw(constants.AddressZero)
+            ).to.be.revertedWith("InvalidRecipient");
         });
     });
 
     describe("MockRouter", function () {
         it("Should handle ccipSend correctly", async function () {
-            const amount = ethers.parseEther("1.0");
-            await messenger.sendToPolygon(user1.address, { value: amount });
+            const amount = ethers.utils.parseEther("1.0");
+            const tx = await messenger.sendToPolygon(user1.address, { value: amount });
+            await tx.wait();
             const events = await router.queryFilter(router.filters.MessageSent());
-            expect(events.length).to.be.above(0);
+            expect(events.length).to.equal(1);
         });
 
         it("Should emit correct events on message send", async function () {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             await expect(
                 messenger.sendToPolygon(user1.address, { value: amount })
-            ).to.emit(router, "MessageSent");
+            ).to.emit(router, "MessageSent").withArgs(
+                messenger.address,
+                amount,
+                user1.address
+            );
         });
     });
 });

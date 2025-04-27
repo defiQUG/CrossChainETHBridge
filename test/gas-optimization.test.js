@@ -35,7 +35,7 @@ describe("Gas Optimization Tests", function() {
 
     describe("Gas Usage Analysis", function() {
         it("Should optimize gas for message sending", async function() {
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['address', 'uint256'],
                 [user.address, amount]
@@ -64,12 +64,12 @@ describe("Gas Optimization Tests", function() {
             // Fund the contract and setup WETH
             await owner.sendTransaction({
                 to: await crossChainMessenger.getAddress(),
-                value: ethers.parseEther("10.0")
+                value: ethers.utils.parseEther("10.0")
             });
-            await mockWeth.deposit({ value: ethers.parseEther("5.0") });
-            await mockWeth.transfer(await crossChainMessenger.getAddress(), ethers.parseEther("5.0"));
+            await mockWeth.deposit({ value: ethers.utils.parseEther("5.0") });
+            await mockWeth.transfer(await crossChainMessenger.getAddress(), ethers.utils.parseEther("5.0"));
 
-            const amount = ethers.parseEther("1.0");
+            const amount = ethers.utils.parseEther("1.0");
             const data = ethers.AbiCoder.defaultAbiCoder().encode(
                 ['address', 'uint256'],
                 [await user.getAddress(), amount]

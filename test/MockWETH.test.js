@@ -16,14 +16,14 @@ const {
 describe("MockWETH", function() {
     let owner, user1, user2;
     let mockWETH;
-    const INITIAL_SUPPLY = ethers.parseEther("1000");
-    const DEPOSIT_AMOUNT = ethers.parseEther("1");
+    const INITIAL_SUPPLY = ethers.utils.parseEther("1000");
+    const DEPOSIT_AMOUNT = ethers.utils.parseEther("1");
 
     beforeEach(async function() {
         [owner, user1, user2] = await ethers.getSigners();
         const MockWETH = await ethers.getContractFactory("MockWETH");
         mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.waitForDeployment();
+        await mockWETH.deployed();
     });
 
     describe("Basic Functionality", function() {
@@ -54,9 +54,12 @@ describe("MockWETH", function() {
             const initialBalance = await ethers.provider.getBalance(user1.address);
             const tx = await mockWETH.connect(user1).withdraw(DEPOSIT_AMOUNT);
             const receipt = await tx.wait();
-            const gasUsed = receipt.gasUsed * receipt.gasPrice;
+            const gasUsed = receipt.gasUsed.mul(receipt.effectiveGasPrice);
             const finalBalance = await ethers.provider.getBalance(user1.address);
-            expect(finalBalance + gasUsed - initialBalance).to.equal(-DEPOSIT_AMOUNT);
+
+            // Calculate balance change using BigNumber operations
+            const balanceChange = finalBalance.sub(initialBalance).add(gasUsed);
+            expect(balanceChange).to.equal(DEPOSIT_AMOUNT);
             expect(await mockWETH.balanceOf(user1.address)).to.equal(0);
         });
 
@@ -78,7 +81,7 @@ describe("MockWETH", function() {
         it("Should fail on zero address transfers", async function() {
             await mockWETH.connect(user1).deposit({ value: DEPOSIT_AMOUNT });
             await expect(
-                mockWETH.connect(user1).transfer(ethers.ZeroAddress, DEPOSIT_AMOUNT)
+                mockWETH.connect(user1).transfer(ethers.constants.AddressZero, DEPOSIT_AMOUNT)
             ).to.be.revertedWith("ERC20: transfer to the zero address");
         });
 

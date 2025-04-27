@@ -5,7 +5,7 @@ async function getSigners() {
 }
 
 async function parseEther(amount) {
-  return ethers.parseEther(amount.toString());
+  return ethers.utils.parseEther(amount.toString());
 }
 
 async function deployContract(name, ...args) {
@@ -14,7 +14,7 @@ async function deployContract(name, ...args) {
   const contract = Array.isArray(args[0]) ?
     await Contract.deploy(...args[0]) :
     await Contract.deploy(...args);
-  await contract.waitForDeployment();
+  await contract.deployed();
   return contract;
 }
 

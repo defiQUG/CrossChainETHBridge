@@ -20,7 +20,7 @@ describe("MockWETH Extended Tests", function () {
         [owner, addr1, addr2] = await ethers.getSigners();
         const MockWETH = await ethers.getContractFactory("MockWETH");
         mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-        await mockWETH.waitForDeployment();
+        await mockWETH.deployed();
     });
 
     describe("Token Metadata", function () {
@@ -36,7 +36,7 @@ describe("MockWETH Extended Tests", function () {
 
     describe("Deposit and Withdrawal", function () {
         it("Should handle multiple deposits and withdrawals", async function () {
-            const depositAmount = ethers.parseEther("1.0");
+            const depositAmount = ethers.utils.parseEther("1.0");
             await mockWETH.deposit({ value: depositAmount });
             await mockWETH.connect(addr1).deposit({ value: depositAmount });
 
@@ -51,28 +51,28 @@ describe("MockWETH Extended Tests", function () {
         });
 
         it("Should fail withdrawal with insufficient balance", async function () {
-            const withdrawAmount = ethers.parseEther("2.0");
+            const withdrawAmount = ethers.utils.parseEther("2.0");
             await expect(mockWETH.withdraw(withdrawAmount))
                 .to.be.revertedWith("insufficient balance");
         });
     });
 
     describe("Transfer Functionality", function () {
-        const depositAmount = ethers.parseEther("1.0");
+        const depositAmount = ethers.utils.parseEther("1.0");
 
         beforeEach(async function () {
             await mockWETH.deposit({ value: depositAmount });
         });
 
         it("Should handle transfers between accounts", async function () {
-            const transferAmount = ethers.parseEther("0.5");
+            const transferAmount = ethers.utils.parseEther("0.5");
             await mockWETH.transfer(addr1.address, transferAmount);
             expect(await mockWETH.balanceOf(addr1.address)).to.equal(transferAmount);
             expect(await mockWETH.balanceOf(owner.address)).to.equal(transferAmount);
         });
 
         it("Should handle transferFrom with approval", async function () {
-            const approveAmount = ethers.parseEther("0.5");
+            const approveAmount = ethers.utils.parseEther("0.5");
             await mockWETH.approve(addr1.address, approveAmount);
             await mockWETH.connect(addr1).transferFrom(owner.address, addr2.address, approveAmount);
             expect(await mockWETH.balanceOf(addr2.address)).to.equal(approveAmount);

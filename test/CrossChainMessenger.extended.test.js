@@ -15,8 +15,8 @@ const {
 
 describe("CrossChainMessenger Extended Tests", function() {
     let messenger, router, weth, owner, user, addr1, addr2, mockRouter, mockWETH, crossChainMessenger;
-    const INITIAL_FEE = ethers.parseEther("0.001");
-    const NEW_FEE = ethers.parseEther("0.002");
+    const INITIAL_FEE = ethers.utils.parseEther("0.001");
+    const NEW_FEE = ethers.utils.parseEther("0.002");
 
     beforeEach(async function() {
         const contracts = await deployTestContracts();
@@ -35,8 +35,8 @@ describe("CrossChainMessenger Extended Tests", function() {
         messenger = await CrossChainMessenger.deploy(
             router.address,
             weth.address,
-            ethers.parseEther("10"), // maxMessagesPerPeriod
-            ethers.parseEther("100"), // pauseThreshold
+            ethers.utils.parseEther("10"), // maxMessagesPerPeriod
+            ethers.utils.parseEther("100"), // pauseThreshold
             86400 // pauseDuration (24 hours)
         );
     });

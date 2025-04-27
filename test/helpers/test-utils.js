@@ -5,22 +5,19 @@ async function deployContract(name, args = [], options = {}) {
     let contractName = name;
     if (name === "EmergencyPause" || name === "RateLimiter" || name === "SecurityBase") {
         contractName = `contracts/security/${name}.sol:${name}`;
-        // Add default arguments for RateLimiter
-        if (name === "RateLimiter" && (!args || args.length === 0)) {
-            args = [10, 3600]; // 10 messages per hour
-        }
     } else if (name === "TestRouter" || name === "MockRouter") {
         contractName = `contracts/mocks/${name}.sol:${name}`;
-        // Default arguments for Router (including rate limiter params)
-        if (!args || args.length === 0) {
-            args = [10, 3600]; // RateLimiter constructor params
-        }
     }
 
     const Factory = await ethers.getContractFactory(contractName);
-    const deploymentArgs = args.map(arg => {
+
+    // Ensure args is an array and remove any undefined values
+    const cleanArgs = (Array.isArray(args) ? args : [args]).filter(arg => arg !== undefined);
+
+    // Convert numeric values to BigNumber
+    const deploymentArgs = cleanArgs.map(arg => {
         if (typeof arg === 'number' || typeof arg === 'bigint') {
-            return ethers.getBigInt(arg.toString());
+            return ethers.BigNumber.from(arg.toString());
         }
         if (typeof arg === 'string' && arg.startsWith('0x')) {
             return arg; // Keep hex strings as-is
@@ -28,13 +25,27 @@ async function deployContract(name, args = [], options = {}) {
         return arg;
     });
 
-    // Deploy with proper options handling
+    // Debug logging
+    console.log(`Deploying ${name}:`, {
+        contractName,
+        args: deploymentArgs,
+        argsLength: deploymentArgs.length,
+        argTypes: deploymentArgs.map(arg => typeof arg)
+    });
+
     try {
-        const contract = await Factory.deploy(...deploymentArgs, { ...options });
-        await contract.waitForDeployment();
+        // Deploy with proper ethers v5 overrides format
+        const contract = await Factory.deploy(...deploymentArgs);
+        await contract.deployed();
+        console.log(`Successfully deployed ${name} at ${contract.address}`);
         return contract;
     } catch (error) {
-        console.error(`Failed to deploy ${name}:`, error);
+        console.error(`Failed to deploy ${name}:`, {
+            error: error.message,
+            contractName,
+            args: deploymentArgs,
+            argsLength: deploymentArgs.length
+        });
         throw error;
     }
 }
@@ -49,12 +60,12 @@ async function getContractAt(name, address) {
 }
 
 function createCCIPMessage({
-    messageId = ethers.hexlify(ethers.randomBytes(32)),
+    messageId = ethers.utils.hexlify(ethers.utils.randomBytes(32)),
     sourceChainSelector = 138n,
     sender,
     data,
     destTokenAmounts = [],
-    feeToken = ethers.ZeroAddress,
+    feeToken = ethers.constants.AddressZero,
     extraArgs = "0x"
 } = {}) {
     if (!sender) throw new Error("Sender address is required");
@@ -63,7 +74,7 @@ function createCCIPMessage({
     return {
         messageId,
         sourceChainSelector,
-        sender: ethers.zeroPadValue(sender, 20),
+        sender: ethers.utils.hexZeroPad(sender, 20),
         data,
         destTokenAmounts,
         feeToken,

@@ -6,44 +6,44 @@ async function deployTestContracts() {
     // Deploy mock WETH
     const MockWETH = await ethers.getContractFactory('MockWETH');
     const mockWETH = await MockWETH.deploy("Wrapped Ether", "WETH");
-    await mockWETH.waitForDeployment();
+    await mockWETH.deployed();
 
     // Deploy RateLimiter with constructor arguments
     const RateLimiter = await ethers.getContractFactory('RateLimiter');
     const rateLimiter = await RateLimiter.deploy(10, 3600); // 10 messages per hour
-    await rateLimiter.waitForDeployment();
+    await rateLimiter.deployed();
 
     // Deploy EmergencyPause
     const EmergencyPause = await ethers.getContractFactory('EmergencyPause');
     const emergencyPause = await EmergencyPause.deploy(
-        ethers.parseEther('100'), // 100 ETH threshold
+        ethers.utils.parseEther('100'), // 100 ETH threshold
         3600 // 1 hour pause duration
     );
-    await emergencyPause.waitForDeployment();
+    await emergencyPause.deployed();
 
     // Deploy TestRouter (concrete implementation of MockRouter)
     const TestRouter = await ethers.getContractFactory('TestRouter');
     const mockRouter = await TestRouter.deploy(10, 3600); // 10 messages per hour
-    await mockRouter.waitForDeployment();
+    await mockRouter.deployed();
 
     // Initialize TestRouter with configuration (removed rate limiter initialization)
     await mockRouter.initialize(
         owner.address, // admin
-        await mockWETH.getAddress(), // fee token
-        ethers.parseEther('0.001') // base fee
+        mockWETH.address, // fee token
+        ethers.utils.parseEther('0.001') // base fee
     );
 
     // Deploy CrossChainMessenger
     const CrossChainMessenger = await ethers.getContractFactory('CrossChainMessenger');
     const messenger = await CrossChainMessenger.deploy(
-        await mockRouter.getAddress(),
-        await mockWETH.getAddress(),
-        await rateLimiter.getAddress(),
-        await emergencyPause.getAddress(),
-        ethers.parseEther('0.001'), // 0.001 ETH bridge fee
-        ethers.parseEther('1') // 1 ETH max fee
+        mockRouter.address,
+        mockWETH.address,
+        rateLimiter.address,
+        emergencyPause.address,
+        ethers.utils.parseEther('0.001'), // 0.001 ETH bridge fee
+        ethers.utils.parseEther('1') // 1 ETH max fee
     );
-    await messenger.waitForDeployment();
+    await messenger.deployed();
 
     return {
         owner,

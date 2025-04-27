@@ -26,12 +26,12 @@ describe("CrossChainMessenger Edge Cases", function() {
 
     describe("Error Handling", function() {
         it("Should handle malformed message data", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const malformedData = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const malformedData = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256", "bytes32"],
-                [user.address, amount, ethers.randomBytes(32)]
+                [user.address, amount, ethers.utils.randomBytes(32)]
             );
 
             const message = {
@@ -44,19 +44,19 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Invalid message format");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "InvalidMessageFormat");
         });
 
         it("Should handle message with invalid recipient", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const invalidData = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const invalidData = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
-                [ethers.ZeroAddress, amount]
+                [ethers.constants.AddressZero, amount]
             );
 
             const message = {
@@ -69,17 +69,17 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Invalid recipient");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "InvalidReceiver");
         });
 
         it("Should handle WETH transfer failures", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const data = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
@@ -97,59 +97,72 @@ describe("CrossChainMessenger Edge Cases", function() {
 
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("WETH transfer failed");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "TransferFailed");
         });
     });
 
     describe("Security Edge Cases", function() {
         it("Should handle multiple rapid transfers near threshold", async function() {
-            const amount = PAUSE_THRESHOLD - ethers.parseEther("0.1");
+            const amount = ethers.BigNumber.from(PAUSE_THRESHOLD)
+                .div(2)  // Split threshold into two parts
+                .add(BRIDGE_FEE);  // Add bridge fee to compensate for fee subtraction in contract
 
-            // Send multiple transfers rapidly
+            // First transfer should succeed
             await crossChainMessenger.sendToPolygon(addr1.address, { value: amount });
+
+            // Second transfer should succeed
             await crossChainMessenger.sendToPolygon(addr2.address, { value: amount });
 
-            // This should trigger pause
+            // Third transfer should trigger pause
             await expect(
                 crossChainMessenger.sendToPolygon(user.address, { value: amount })
-            ).to.be.revertedWith("EmergencyPause: threshold exceeded");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "EmergencyPaused");
 
-            expect(await crossChainMessenger.isPaused()).to.be.true;
+            expect(await crossChainMessenger.paused()).to.be.true;
         });
 
         it("Should handle message replay attempts", async function() {
-            const amount = ethers.parseEther("1");
-            const messageId = ethers.randomBytes(32);
-            const sender = ethers.zeroPadValue(user.address, 32);
-            const data = ethers.AbiCoder.defaultAbiCoder().encode(
+            const amount = ethers.utils.parseEther("1");
+            const messageId = ethers.utils.randomBytes(32);
+            const sender = ethers.utils.hexZeroPad(user.address, 32);
+            const data = ethers.utils.defaultAbiCoder.encode(
                 ["address", "uint256"],
                 [user.address, amount]
             );
+
+            // Mint WETH tokens to CrossChainMessenger contract
+            await mockWETH.deposit({ value: amount });
+            await mockWETH.transfer(crossChainMessenger.address, amount);
 
             const message = {
                 messageId: messageId,
                 sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR,
                 sender: sender,
                 data: data,
-                destTokenAmounts: []
+                destTokenAmounts: [
+                    {
+                        token: mockWETH.address,
+                        amount: amount
+                    }
+                ]
             };
 
             // First message should succeed
             await mockRouter.simulateMessageReceived(
-                await crossChainMessenger.getAddress(),
+                crossChainMessenger.address,
                 message
             );
 
             // Replay should fail
             await expect(
                 mockRouter.simulateMessageReceived(
-                    await crossChainMessenger.getAddress(),
+                    crossChainMessenger.address,
                     message
                 )
-            ).to.be.revertedWith("Message already processed");
+            ).to.be.revertedWithCustomError(crossChainMessenger, "MessageAlreadyProcessed");
         });
     });
 });

@@ -2,10 +2,13 @@
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "../errors/CrossChainErrors.sol";
 
 contract MockWETH is ERC20 {
     event Deposit(address indexed dst, uint256 wad);
     event Withdrawal(address indexed src, uint256 wad);
+
+    bool private transferShouldFail;
 
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 
@@ -15,14 +18,29 @@ contract MockWETH is ERC20 {
     }
 
     function withdraw(uint256 amount) external {
-        require(balanceOf(msg.sender) >= amount, "ERC20: burn amount exceeds balance");
+        // Check transfer fail flag first
+        if (transferShouldFail) {
+            revert CrossChainErrors.TransferFailed();
+        }
+
+        // Then check balance
+        require(
+            balanceOf(msg.sender) >= amount,
+            "ERC20: burn amount exceeds balance"
+        );
+
         _burn(msg.sender, amount);
-        (bool success,) = msg.sender.call{value: amount}("");
+        (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "MockWETH: ETH transfer failed");
         emit Withdrawal(msg.sender, amount);
     }
 
     receive() external payable {
         deposit();
+    }
+
+    // Test helper function to simulate transfer failures
+    function setTransferFail(bool shouldFail) external {
+        transferShouldFail = shouldFail;
     }
 }

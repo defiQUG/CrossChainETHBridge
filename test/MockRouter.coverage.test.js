@@ -38,7 +38,7 @@ describe("Router Coverage Tests", function () {
 
         it("Should revert getSupportedTokens for invalid chain", async function () {
             await expect(router.getSupportedTokens(138)) // Defi Oracle Meta
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 
@@ -67,7 +67,7 @@ describe("Router Coverage Tests", function () {
             const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
 
-            const depositAmount = ethers.parseEther("1.0");
+            const depositAmount = ethers.utils.parseEther("1.0");
             const receiverAddress = await receiver.getAddress();
 
             // Update message with correct receiver and data
@@ -94,12 +94,12 @@ describe("Router Coverage Tests", function () {
         it("Should revert simulation with invalid source chain", async function () {
             const invalidMessage = { ...message, sourceChainSelector: DEFI_ORACLE_META_CHAIN_SELECTOR };
             await expect(router.simulateMessageReceived(addr1.address, invalidMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should revert simulation with zero address target", async function () {
             await expect(router.simulateMessageReceived(ethers.ZeroAddress, message))
-                .to.be.revertedWith("Invalid target address");
+                .to.be.revertedWith("MockRouter: invalid target address");
         });
     });
 
@@ -114,7 +114,7 @@ describe("Router Coverage Tests", function () {
                 receiver: addr1.address,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 ),
                 tokenAmounts: [],
                 destTokenAmounts: [],
@@ -130,7 +130,7 @@ describe("Router Coverage Tests", function () {
                 sourceChainSelector: POLYGON_CHAIN_SELECTOR,
                 data: ethers.AbiCoder.defaultAbiCoder().encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 )
             };
 
@@ -149,41 +149,41 @@ describe("Router Coverage Tests", function () {
         });
 
         it("Should handle fee calculations correctly", async function () {
-            const BASE_FEE = ethers.parseEther("0.6"); // 0.6 ETH base fee
+            const BASE_FEE = ethers.utils.parseEther("0.6"); // 0.6 ETH base fee
             const messageFee = await router.getFee(POLYGON_CHAIN_SELECTOR, ccipMessage);
             expect(messageFee).to.equal(BASE_FEE);
 
             // Test unsupported chain
             await expect(router.getFee(999, ccipMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should validate message data correctly", async function () {
             // Test invalid message ID
             const invalidMessageId = { ...ccipMessage, messageId: ethers.ZeroHash };
             await expect(router.validateMessage(invalidMessageId))
-                .to.be.revertedWith("Invalid message ID");
+                .to.be.revertedWith("MockRouter: invalid message ID");
 
             // Test invalid sender length
             const invalidSender = { ...ccipMessage, sender: ethers.hexlify(ethers.randomBytes(10)) };
             await expect(router.validateMessage(invalidSender))
-                .to.be.revertedWith("Invalid sender length");
+                .to.be.revertedWith("MockRouter: empty sender address");
 
             // Test empty message data
             const emptyData = { ...ccipMessage, data: "0x" };
             await expect(router.validateMessage(emptyData))
-                .to.be.revertedWith("Empty message data");
+                .to.be.revertedWith("MockRouter: empty message data");
 
             // Test invalid token amounts
             const invalidTokens = { ...ccipMessage, destTokenAmounts: [{ token: ethers.ZeroAddress, amount: 1 }] };
             await expect(router.validateMessage(invalidTokens))
-                .to.be.revertedWith("Token transfers not supported");
+                .to.be.revertedWith("MockRouter: token transfers not supported");
         });
 
         it("Should handle message validation errors", async function () {
             const invalidMessage = { ...ccipMessage, sourceChainSelector: 0 };
             await expect(router.validateMessage(invalidMessage))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: invalid chain selector");
         });
 
         it("Should handle routeMessage execution correctly", async function () {
@@ -254,7 +254,7 @@ describe("Router Coverage Tests", function () {
                     tooLowGasLimit,
                     receiverAddress
                 )
-            ).to.be.revertedWith("Gas limit exceeded");
+            ).to.be.revertedWith("MockRouter: gas limit exceeded");
         });
     });
 });

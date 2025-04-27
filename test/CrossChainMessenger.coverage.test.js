@@ -2,6 +2,7 @@ const { ethers } = require('hardhat');
 const { expect } = require('chai');
 const { deployTestContracts, TEST_CONFIG } = require('./helpers/setup');
 const { deployContract, getContractAt } = require('./helpers/test-utils');
+const CrossChainMessenger = require('../artifacts/contracts/CrossChainMessenger.sol/CrossChainMessenger.json');
 
 const {
     BRIDGE_FEE,
@@ -14,7 +15,7 @@ const {
 } = TEST_CONFIG;
 
 describe("CrossChainMessenger Coverage Tests", function () {
-    let messenger, owner, addr1, mockRouter, mockWETH;
+    let messenger, owner, addr1, mockRouter, mockWETH, emergencyPause;
 
     beforeEach(async function () {
         const contracts = await deployTestContracts();
@@ -23,6 +24,7 @@ describe("CrossChainMessenger Coverage Tests", function () {
         mockRouter = contracts.mockRouter;
         mockWETH = contracts.mockWETH;
         messenger = contracts.crossChainMessenger;
+        emergencyPause = contracts.emergencyPause;
     });
 
     describe("Edge Cases and Error Handling", function () {
@@ -31,35 +33,41 @@ describe("CrossChainMessenger Coverage Tests", function () {
             const bridgeFee = await messenger.getBridgeFee();
             await expect(
                 messenger.sendToPolygon(recipient, { value: bridgeFee })
-            ).to.be.revertedWith("CrossChainMessenger: insufficient payment");
+            ).to.be.revertedWithCustomError(messenger, "InvalidFeeAmount");
         });
 
         it("Should handle emergency withdrawals correctly", async function () {
-            await messenger.pause();
-            const amount = ethers.parseEther("1.0");
+            const pauseThreshold = await emergencyPause.pauseThreshold();
+            const amount = pauseThreshold.add(ethers.utils.parseEther("1.0"));
+            await emergencyPause.checkAndPause(amount);
             await owner.sendTransaction({
-                to: await messenger.getAddress(),
+                to: messenger.address,
                 value: amount
             });
             await messenger.emergencyWithdraw(owner.address);
-            expect(await ethers.provider.getBalance(await messenger.getAddress())).to.equal(0n);
+            expect(await ethers.provider.getBalance(messenger.address)).to.equal(0n);
         });
 
         it("Should handle invalid chain ID correctly", async function () {
+            const INVALID_CHAIN_SELECTOR = 999n;
             const message = {
-                messageId: ethers.hexlify(ethers.randomBytes(32)),
-                sourceChainSelector: POLYGON_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(owner.address, 32),
-                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
+                sourceChainSelector: INVALID_CHAIN_SELECTOR,
+                sender: ethers.utils.hexZeroPad(owner.address, 32),
+                data: ethers.utils.defaultAbiCoder.encode(
                     ['address', 'uint256'],
-                    [addr1.address, ethers.parseEther("1.0")]
+                    [addr1.address, ethers.utils.parseEther("1.0")]
                 ),
-                destTokenAmounts: []
+                destTokenAmounts: [],
+                feeToken: ethers.constants.AddressZero,
+                feeTokenAmount: 0n,
+                extraArgs: "0x"
             };
 
+            // Use direct contract call to ensure proper error propagation
             await expect(
-                mockRouter.simulateMessageReceived(await messenger.getAddress(), message)
-            ).to.be.revertedWith("Invalid source chain");
+                messenger.ccipReceive(message)
+            ).to.be.revertedWithCustomError(messenger, "InvalidSourceChain");
         });
     });
 });

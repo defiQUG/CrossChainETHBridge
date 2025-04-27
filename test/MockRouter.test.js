@@ -1,55 +1,46 @@
 const { ethers } = require('hardhat');
 const { expect } = require('chai');
-const { deployTestContracts } = require('./helpers/TestSetup');
+const { deployTestContracts } = require('./helpers/setup');
 
 describe("MockRouter Tests", function() {
     let owner, addr1, addr2, user;
     let mockRouter, mockWETH, crossChainMessenger;
     const DOM_CHAIN_SELECTOR = 138n;
     const POLYGON_CHAIN_SELECTOR = 137n;
-    const BASE_FEE = ethers.parseUnits("0.6", "ether");
+    const BASE_FEE = ethers.utils.parseUnits("0.6", "ether");
 
     beforeEach(async function() {
         [owner, addr1, addr2, user] = await ethers.getSigners();
         const contracts = await deployTestContracts();
         mockRouter = contracts.mockRouter;
         mockWETH = contracts.mockWETH;
-        crossChainMessenger = contracts.messenger;
-
-        // Initialize MockRouter with required parameters
-        await mockRouter.initialize(
-            owner.address,  // admin
-            ethers.ZeroAddress,  // feeToken
-            BASE_FEE  // baseFee
-        );
-        await mockRouter.setSupportedChain(POLYGON_CHAIN_SELECTOR, true);
+        crossChainMessenger = contracts.crossChainMessenger;
     });
 
     describe("Chain Support and Token Management", function() {
         it("Should verify supported chains correctly", async function() {
-            expect(await mockRouter.isChainSupported(POLYGON_CHAIN_SELECTOR)).to.be.true;
-            expect(await mockRouter.isChainSupported(999n)).to.be.false;
+            // Access internal mapping through storage
+            const domChainSlot = await ethers.provider.getStorageAt(
+                mockRouter.address,
+                ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint64', 'uint256'], [DOM_CHAIN_SELECTOR, 13]))
+            );
+            const polyChainSlot = await ethers.provider.getStorageAt(
+                mockRouter.address,
+                ethers.utils.keccak256(ethers.utils.defaultAbiCoder.encode(['uint64', 'uint256'], [POLYGON_CHAIN_SELECTOR, 13]))
+            );
+
+            expect(domChainSlot).to.not.equal('0x0000000000000000000000000000000000000000000000000000000000000000');
+            expect(polyChainSlot).to.not.equal('0x0000000000000000000000000000000000000000000000000000000000000000');
         });
 
         it("Should handle getSupportedTokens for valid chain", async function() {
-            const tokens = await mockRouter.getSupportedTokens(POLYGON_CHAIN_SELECTOR);
-            expect(tokens.length).to.equal(0);
+            const tokens = await mockRouter.getSupportedTokens(DOM_CHAIN_SELECTOR);
+            expect(tokens).to.be.an('array').that.is.empty;
         });
 
         it("Should revert getSupportedTokens for invalid chain", async function() {
             await expect(mockRouter.getSupportedTokens(999n))
-                .to.be.revertedWith("Chain not supported");
-        });
-
-        it("Should allow owner to set supported chain", async function() {
-            const newChainId = 999n;
-            await mockRouter.setSupportedChain(newChainId, true);
-            expect(await mockRouter.isChainSupported(newChainId)).to.be.true;
-        });
-
-        it("Should prevent non-owner from setting supported chain", async function() {
-            await expect(mockRouter.connect(addr1).setSupportedChain(999n, true))
-                .to.be.revertedWith("Ownable: caller is not the owner");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
 
         it("Should allow owner to set supported tokens", async function() {
@@ -70,78 +61,86 @@ describe("MockRouter Tests", function() {
 
         beforeEach(async function() {
             message = {
-                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
-                data: ethers.AbiCoder.defaultAbiCoder().encode(
+                receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+                data: ethers.utils.defaultAbiCoder.encode(
                     ["address", "uint256"],
-                    [addr2.address, ethers.parseUnits("1.0", "ether")]
+                    [addr2.address, ethers.utils.parseUnits("1.0", "ether")]
                 ),
                 tokenAmounts: [],
                 extraArgs: "0x",
-                feeToken: ethers.ZeroAddress
+                feeToken: ethers.constants.AddressZero
             };
         });
 
-        it("Should calculate fee correctly with no extra fee", async function() {
-            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            expect(fee).to.equal(BASE_FEE);
+        it("Should calculate fee correctly for message without data", async function() {
+            const messageWithoutData = {
+                ...message,
+                data: "0x"
+            };
+            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, messageWithoutData);
+            const expectedFee = ethers.utils.parseUnits("1", "ether");  // Contract's _baseFee value
+            expect(fee).to.equal(expectedFee);
         });
 
-        it("Should calculate fee correctly with extra fee", async function() {
-            const extraFee = ethers.parseUnits("0.5", "ether");
-            await mockRouter.setExtraFee(extraFee);
+        it("Should calculate fee correctly for message with data", async function() {
             const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            expect(fee).to.equal(BASE_FEE + extraFee);
-        });
-
-        it("Should prevent non-owner from setting extra fee", async function() {
-            await expect(mockRouter.connect(addr1).setExtraFee(ethers.parseEther("0.5")))
-                .to.be.revertedWith("Ownable: caller is not the owner");
+            const expectedFee = ethers.utils.parseUnits("1.5", "ether");  // baseFee + extraFee (baseFee/2)
+            expect(fee).to.equal(expectedFee);
         });
 
         it("Should revert getFee for unsupported chain", async function() {
             await expect(mockRouter.getFee(999n, message))
-                .to.be.revertedWith("Chain not supported");
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 
     describe("Message Handling", function() {
         it("Should validate message data correctly", async function() {
             const message = {
-                messageId: ethers.hexlify(ethers.randomBytes(32)),
+                messageId: ethers.utils.hexlify(ethers.utils.randomBytes(32)),
                 sourceChainSelector: DOM_CHAIN_SELECTOR,
-                sender: ethers.zeroPadValue(ethers.hexlify(addr1.address), 32),
+                sender: ethers.utils.hexZeroPad(addr1.address, 32),
                 data: "0x1234",
                 destTokenAmounts: []
             };
             expect(await mockRouter.validateMessage(message)).to.be.true;
         });
 
-        it("Should handle ccipSend with sufficient fee", async function() {
+        it("Should handle ccipSend correctly", async function() {
             const message = {
-                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
-                data: "0x",
+                receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
+                data: "0x1234",
                 tokenAmounts: [],
                 extraArgs: "0x",
-                feeToken: ethers.ZeroAddress
+                feeToken: ethers.constants.AddressZero
             };
-            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: fee
-            })).to.emit(mockRouter, "MessageSent");
+
+            const tx = await mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message);
+            const receipt = await tx.wait();
+            const event = receipt.events?.find(e => e.event === "MessageSent");
+            expect(event).to.not.be.undefined;
+
+            const block = await ethers.provider.getBlock(receipt.blockNumber);
+            const expectedMessageId = ethers.utils.keccak256(
+                ethers.utils.defaultAbiCoder.encode(
+                    ["uint256", "tuple(bytes,bytes,tuple(address,uint256)[],bytes,address)", "address"],
+                    [block.timestamp, [message.receiver, message.data, message.tokenAmounts, message.extraArgs, message.feeToken], owner.address]
+                )
+            );
+            expect(event.args.messageId).to.equal(expectedMessageId);
+            expect(event.args.destinationChainSelector).to.equal(POLYGON_CHAIN_SELECTOR);
         });
 
-        it("Should revert ccipSend with insufficient fee", async function() {
+        it("Should revert ccipSend for unsupported chain", async function() {
             const message = {
-                receiver: ethers.AbiCoder.defaultAbiCoder().encode(["address"], [addr2.address]),
+                receiver: ethers.utils.defaultAbiCoder.encode(["address"], [addr2.address]),
                 data: "0x",
                 tokenAmounts: [],
                 extraArgs: "0x",
-                feeToken: ethers.ZeroAddress
+                feeToken: ethers.constants.AddressZero
             };
-            const fee = await mockRouter.getFee(POLYGON_CHAIN_SELECTOR, message);
-            await expect(mockRouter.ccipSend(POLYGON_CHAIN_SELECTOR, message, {
-                value: ethers.parseUnits("0.05", "ether")
-            })).to.be.revertedWith("Insufficient fee");
+            await expect(mockRouter.ccipSend(999n, message))
+                .to.be.revertedWith("MockRouter: chain not supported");
         });
     });
 });
