@@ -68,7 +68,7 @@ describe("Router Coverage Tests", function () {
             await receiver.waitForDeployment();
 
             const depositAmount = ethers.utils.parseEther("1.0");
-            const receiverAddress = await receiver.getAddress();
+            const receiverAddress = receiver.address;
 
             // Update message with correct receiver and data
             message.receiver = receiverAddress;
@@ -191,7 +191,7 @@ describe("Router Coverage Tests", function () {
             const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
 
-            const receiverAddress = await receiver.getAddress();
+            const receiverAddress = receiver.address;
             const depositInterface = new ethers.Interface(["function deposit() payable"]);
             const depositCall = depositInterface.encodeFunctionData("deposit");
 
@@ -234,7 +234,7 @@ describe("Router Coverage Tests", function () {
             const receiver = await MockWETH.deploy("Wrapped Ether", "WETH");
             await receiver.waitForDeployment();
 
-            const receiverAddress = await receiver.getAddress();
+            const receiverAddress = receiver.address;
             const depositInterface = new ethers.Interface(["function deposit() payable"]);
             const depositCall = depositInterface.encodeFunctionData("deposit");
 
